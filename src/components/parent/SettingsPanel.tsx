@@ -2,11 +2,22 @@ import { useState } from 'react';
 import { useGrubClub } from '../../state/GrubClubContext';
 
 export function SettingsPanel() {
-  const { state, saveSetting, resetToday, resetAll } = useGrubClub();
+  const {
+    state,
+    saveSetting,
+    resetToday,
+    resetAll,
+    householdCode,
+    syncStatus,
+    createHousehold,
+    joinHousehold,
+    leaveHousehold,
+  } = useGrubClub();
   const [foodPts, setFoodPts] = useState(String(state.settings.foodPts));
   const [bonusPts, setBonusPts] = useState(String(state.settings.bonusPts));
   const [weeklyCap, setWeeklyCap] = useState(String(state.settings.weeklyCap));
   const [pin, setPin] = useState(String(state.settings.pin));
+  const [joinCode, setJoinCode] = useState('');
 
   const handleResetAll = () => {
     if (!window.confirm('⚠️ This will delete ALL progress. Are you sure?')) return;
@@ -19,8 +30,60 @@ export function SettingsPanel() {
     resetToday();
   };
 
+  const handleJoin = () => {
+    if (!joinCode.trim()) return;
+    joinHousehold(joinCode).then((ok) => {
+      if (ok) setJoinCode('');
+    });
+  };
+
+  const handleLeave = () => {
+    if (!window.confirm('Turn off cloud sync on this device?')) return;
+    leaveHousehold();
+  };
+
   return (
     <div>
+      <div className="section-label">Cloud Sync</div>
+      {householdCode ? (
+        <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+          <div>
+            <div className="settings-label">
+              Household code: <strong>{householdCode}</strong>
+            </div>
+            <div className="settings-sub">
+              {syncStatus === 'syncing' && 'Syncing…'}
+              {syncStatus === 'idle' && 'Synced ✓ — enter this code on other phones to sync them'}
+              {syncStatus === 'error' && '⚠️ Sync error — will retry'}
+            </div>
+          </div>
+          <button className="btn btn-primary" style={{ background: '#888' }} onClick={handleLeave}>
+            Turn off cloud sync
+          </button>
+        </div>
+      ) : (
+        <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+          <div>
+            <div className="settings-label">Sync across phones</div>
+            <div className="settings-sub">Create a household code, then enter it on other devices</div>
+          </div>
+          <button className="btn btn-primary" onClick={() => createHousehold()} disabled={syncStatus === 'syncing'}>
+            ☁️ Enable cloud sync
+          </button>
+          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+            <input
+              type="text"
+              placeholder="Enter household code"
+              value={joinCode}
+              onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+              style={{ flex: 1 }}
+            />
+            <button className="btn btn-primary" onClick={handleJoin} disabled={syncStatus === 'syncing'}>
+              Join
+            </button>
+          </div>
+        </div>
+      )}
       <div className="section-label">Points & Caps</div>
       <div className="settings-row">
         <div>
