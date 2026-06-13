@@ -1,8 +1,19 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Chore, GrubClubState, Reward, Settings } from './types';
 import { applyDayRollover, loadState, saveState, cloneDefaultState } from './defaultState';
 import { FOODS } from '../data/foods';
 import { findNewlyEarnedBadges, getBadgeDisplay } from './badges';
+import {
+  createHousehold as createHouseholdRow,
+  fetchHousehold,
+  generateHouseholdCode,
+  pushHouseholdState,
+  subscribeToHousehold,
+} from './sync';
+
+export type SyncStatus = 'idle' | 'syncing' | 'error';
+
+const HOUSEHOLD_CODE_KEY = 'grubclub_household_code';
 
 export interface ToastItem {
   id: number;
@@ -36,6 +47,11 @@ interface GrubClubContextValue {
   resetToday: () => void;
   resetAll: () => void;
   updateBadgeConfig: (id: string, key: 'enabled' | 'name' | 'emoji', value: string | boolean) => void;
+  householdCode: string | null;
+  syncStatus: SyncStatus;
+  createHousehold: () => Promise<string | null>;
+  joinHousehold: (code: string) => Promise<boolean>;
+  leaveHousehold: () => void;
 }
 
 const GrubClubContext = createContext<GrubClubContextValue | null>(null);
@@ -51,10 +67,43 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [celebration, setCelebration] = useState<CelebrationData | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
+  const [householdCode, setHouseholdCode] = useState<string | null>(() =>
+    localStorage.getItem(HOUSEHOLD_CODE_KEY),
+  );
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const lastSyncedRef = useRef<string | null>(null);
 
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  // Push local changes to Supabase when in a synced household
+  useEffect(() => {
+    if (!householdCode) return;
+    const json = JSON.stringify(state);
+    if (json === lastSyncedRef.current) return;
+    setSyncStatus('syncing');
+    const timeout = setTimeout(() => {
+      pushHouseholdState(householdCode, state)
+        .then(() => {
+          lastSyncedRef.current = json;
+          setSyncStatus('idle');
+        })
+        .catch(() => setSyncStatus('error'));
+    }, 800);
+    return () => clearTimeout(timeout);
+  }, [state, householdCode]);
+
+  // Receive remote changes from other devices in the household
+  useEffect(() => {
+    if (!householdCode) return;
+    return subscribeToHousehold(householdCode, (remoteState) => {
+      const json = JSON.stringify(remoteState);
+      if (json === lastSyncedRef.current) return;
+      lastSyncedRef.current = json;
+      setState(applyDayRollover(clone(remoteState)));
+    });
+  }, [householdCode]);
 
   // Re-check the day rollover whenever the tab regains focus
   useEffect(() => {
@@ -302,6 +351,56 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const createHousehold = useCallback(async () => {
+    setSyncStatus('syncing');
+    const code = generateHouseholdCode();
+    try {
+      await createHouseholdRow(code, state);
+      lastSyncedRef.current = JSON.stringify(state);
+      localStorage.setItem(HOUSEHOLD_CODE_KEY, code);
+      setHouseholdCode(code);
+      setSyncStatus('idle');
+      showToast('☁️', `Cloud sync enabled! Code: ${code}`);
+      return code;
+    } catch {
+      setSyncStatus('error');
+      showToast('❌', 'Failed to enable cloud sync');
+      return null;
+    }
+  }, [state, showToast]);
+
+  const joinHousehold = useCallback(async (code: string) => {
+    const normalized = code.trim().toUpperCase();
+    setSyncStatus('syncing');
+    try {
+      const remoteState = await fetchHousehold(normalized);
+      if (!remoteState) {
+        setSyncStatus('error');
+        showToast('❌', 'Household code not found');
+        return false;
+      }
+      lastSyncedRef.current = JSON.stringify(remoteState);
+      setState(applyDayRollover(clone(remoteState)));
+      localStorage.setItem(HOUSEHOLD_CODE_KEY, normalized);
+      setHouseholdCode(normalized);
+      setSyncStatus('idle');
+      showToast('☁️', 'Joined household sync!');
+      return true;
+    } catch {
+      setSyncStatus('error');
+      showToast('❌', 'Failed to join household');
+      return false;
+    }
+  }, [showToast]);
+
+  const leaveHousehold = useCallback(() => {
+    localStorage.removeItem(HOUSEHOLD_CODE_KEY);
+    setHouseholdCode(null);
+    lastSyncedRef.current = null;
+    setSyncStatus('idle');
+    showToast('☁️', 'Cloud sync turned off');
+  }, [showToast]);
+
   const value: GrubClubContextValue = {
     state,
     toasts,
@@ -322,6 +421,11 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     resetToday,
     resetAll,
     updateBadgeConfig,
+    householdCode,
+    syncStatus,
+    createHousehold,
+    joinHousehold,
+    leaveHousehold,
   };
 
   return <GrubClubContext.Provider value={value}>{children}</GrubClubContext.Provider>;
