@@ -10,7 +10,7 @@ export function FoodTray() {
 
   return (
     <div className="card">
-      <div className="flex-between" style={{ marginBottom: 12 }}>
+      <div className="flex-between" style={{ marginBottom: 8 }}>
         <div className="card-title mb-0"><FontAwesomeIcon icon={faUtensils} /> Today's Tray</div>
         <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--orange)' }}>
           {all ? '🎉 Full Tray Bonus!' : `${eatenCount}/5 eaten`}
