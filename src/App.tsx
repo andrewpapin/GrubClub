@@ -24,11 +24,11 @@ function AppShell() {
     <>
       {view === 'kid' && (
         <div id="kidApp">
-          {tab === 'home' && <HomeScreen />}
-          {tab === 'store' && <StoreScreen />}
-          {tab === 'badges' && <BadgesScreen onShowBadge={setActiveBadge} />}
-          {tab === 'calendar' && <CalendarScreen />}
-          <BottomNav active={tab} onChange={setTab} onEnterParent={() => setView('pin')} />
+          {tab === 'home' && <HomeScreen onEnterParent={() => setView('pin')} />}
+          {tab === 'store' && <StoreScreen onEnterParent={() => setView('pin')} />}
+          {tab === 'badges' && <BadgesScreen onShowBadge={setActiveBadge} onEnterParent={() => setView('pin')} />}
+          {tab === 'calendar' && <CalendarScreen onEnterParent={() => setView('pin')} />}
+          <BottomNav active={tab} onChange={setTab} />
         </div>
       )}
 

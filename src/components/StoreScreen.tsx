@@ -3,14 +3,18 @@ import { faStore, faHourglassHalf, faStar } from '@fortawesome/free-solid-svg-ic
 import { TopBar } from './TopBar';
 import { useGrubClub } from '../state/GrubClubContext';
 
-export function StoreScreen() {
+interface StoreScreenProps {
+  onEnterParent: () => void;
+}
+
+export function StoreScreen({ onEnterParent }: StoreScreenProps) {
   const { state, requestReward } = useGrubClub();
   const pendingIds = state.pendingRewards.map((r) => r.rewardId);
   const available = state.rewards.filter((r) => !pendingIds.includes(r.id));
 
   return (
     <div className="screen active">
-      <TopBar title="Reward Store" />
+      <TopBar title="Reward Store" onEnterParent={onEnterParent} />
       <div className="scroll-area">
         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--muted)', marginBottom: 14, textAlign: 'center' }}>
           Tap a reward to spend your points!

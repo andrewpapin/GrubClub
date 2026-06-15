@@ -1,13 +1,14 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faUserGroup } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../state/GrubClubContext';
 
 interface TopBarProps {
   title: string;
   highlightLast?: boolean;
+  onEnterParent: () => void;
 }
 
-export function TopBar({ title, highlightLast }: TopBarProps) {
+export function TopBar({ title, highlightLast, onEnterParent }: TopBarProps) {
   const { state } = useGrubClub();
   const splitIndex = title.lastIndexOf(' ');
   return (
@@ -23,6 +24,9 @@ export function TopBar({ title, highlightLast }: TopBarProps) {
       <div className="points-pill">
         <FontAwesomeIcon icon={faStar} /> <span>{state.points}</span>
       </div>
+      <button className="topbar-icon-btn" onClick={onEnterParent} aria-label="Grown-ups">
+        <FontAwesomeIcon icon={faUserGroup} />
+      </button>
     </div>
   );
 }
