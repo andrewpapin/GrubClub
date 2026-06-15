@@ -24,6 +24,49 @@ export function getEnabledBadges(state: GrubClubState): BadgeDef[] {
   });
 }
 
+export interface BadgeProgress {
+  current: number;
+  target: number;
+}
+
+// Returns current/target progress towards a badge, or null if it's not a
+// progress-trackable badge (e.g. "first time" badges).
+export function getBadgeProgress(state: GrubClubState, badge: BadgeDef): BadgeProgress | null {
+  const c = state.counters;
+  const [type, threshStr] = badge.trigger.split(':');
+  const thresh = parseInt(threshStr) || 0;
+  switch (type) {
+    case 'fruit':
+    case 'veggie':
+    case 'protein':
+    case 'dairy':
+    case 'grain':
+      return { current: c.foodLogs[type] || 0, target: thresh };
+    case 'food_count': {
+      const total = Object.values(c.foodLogs).reduce((s, v) => s + v, 0);
+      return { current: total, target: thresh };
+    }
+    case 'full_tray':
+      return { current: c.fullTrayDays, target: thresh };
+    case 'chore_count':
+      return { current: c.totalChores, target: thresh };
+    case 'all_chores':
+      return { current: c.allChoresDays, target: thresh };
+    case 'pts':
+      return { current: state.totalPoints, target: thresh };
+    case 'pts_day':
+      return { current: c.maxDayPoints, target: thresh };
+    case 'streak':
+      return { current: state.streak, target: thresh };
+    case 'reward_count':
+      return { current: c.totalRewards, target: thresh };
+    case 'combo':
+      return { current: c.comboDays, target: thresh };
+    default:
+      return null;
+  }
+}
+
 export function getEnabledBadgeCount(state: GrubClubState): number {
   return BADGE_MASTER.filter((b) => {
     const cfg = state.badgeConfig[b.id];

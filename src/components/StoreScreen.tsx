@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCartShopping, faStore, faHourglassHalf, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faHourglassHalf, faStar } from '@fortawesome/free-solid-svg-icons';
 import { TopBar } from './TopBar';
 import { useGrubClub } from '../state/GrubClubContext';
 
@@ -9,7 +9,7 @@ export function StoreScreen() {
 
   return (
     <div className="screen active">
-      <TopBar logo={<FontAwesomeIcon icon={faCartShopping} />} title="Reward Store" />
+      <TopBar title="Reward Store" />
       <div className="scroll-area">
         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--muted)', marginBottom: 14, textAlign: 'center' }}>
           Tap a reward to spend your points!

@@ -1,20 +1,17 @@
-import type { ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../state/GrubClubContext';
 
 interface TopBarProps {
-  logo?: ReactNode;
   title: string;
   highlightLast?: boolean;
 }
 
-export function TopBar({ logo, title, highlightLast }: TopBarProps) {
+export function TopBar({ title, highlightLast }: TopBarProps) {
   const { state } = useGrubClub();
   const splitIndex = title.lastIndexOf(' ');
   return (
     <div className="topbar">
-      {logo && <span className="topbar-logo">{logo}</span>}
       {highlightLast && splitIndex !== -1 ? (
         <span className="topbar-title">
           {title.slice(0, splitIndex)}{' '}
