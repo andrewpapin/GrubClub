@@ -21,6 +21,7 @@ import {
   pushHouseholdState,
   subscribeToHousehold,
 } from './sync';
+import { applyTheme, getStoredTheme, setStoredTheme, type ThemeMode } from './theme';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error';
 
@@ -63,6 +64,8 @@ interface GrubClubContextValue {
   createHousehold: () => Promise<string | null>;
   joinHousehold: (code: string) => Promise<boolean>;
   leaveHousehold: () => void;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
 }
 
 const GrubClubContext = createContext<GrubClubContextValue | null>(null);
@@ -83,6 +86,13 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
   );
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const lastSyncedRef = useRef<string | null>(null);
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(() => getStoredTheme());
+
+  const setThemeMode = useCallback((mode: ThemeMode) => {
+    setThemeModeState(mode);
+    applyTheme(mode);
+    setStoredTheme(mode);
+  }, []);
 
   useEffect(() => {
     saveState(state);
@@ -426,6 +436,8 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     createHousehold,
     joinHousehold,
     leaveHousehold,
+    themeMode,
+    setThemeMode,
   };
 
   return <GrubClubContext.Provider value={value}>{children}</GrubClubContext.Provider>;

@@ -14,6 +14,8 @@ export function SettingsPanel() {
     createHousehold,
     joinHousehold,
     leaveHousehold,
+    themeMode,
+    setThemeMode,
   } = useGrubClub();
   const [foodPts, setFoodPts] = useState(String(state.settings.foodPts));
   const [bonusPts, setBonusPts] = useState(String(state.settings.bonusPts));
@@ -85,6 +87,24 @@ export function SettingsPanel() {
           </div>
         </div>
       )}
+      <div className="section-label">Appearance</div>
+      <div className="settings-row">
+        <div>
+          <div className="settings-label">Theme</div>
+          <div className="settings-sub">Choose how Grub Club looks on this device</div>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        {(['system', 'light', 'dark'] as const).map((m) => (
+          <button
+            key={m}
+            className={`group-pill ${themeMode === m ? 'active' : ''}`}
+            onClick={() => setThemeMode(m)}
+          >
+            {m === 'system' ? 'System' : m === 'light' ? 'Light' : 'Dark'}
+          </button>
+        ))}
+      </div>
       <div className="section-label">Profile</div>
       <div className="settings-row">
         <div>
