@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMedal, faMoon } from '@fortawesome/free-solid-svg-icons';
+import { faMoon } from '@fortawesome/free-solid-svg-icons';
 import { TopBar } from './TopBar';
-import { getBadgeDisplay, getEnabledBadges } from '../state/badges';
+import { getBadgeDisplay, getBadgeProgress, getEnabledBadges } from '../state/badges';
 import { useGrubClub } from '../state/GrubClubContext';
 
 interface BadgesScreenProps {
@@ -14,7 +14,7 @@ export function BadgesScreen({ onShowBadge }: BadgesScreenProps) {
 
   return (
     <div className="screen active">
-      <TopBar logo={<FontAwesomeIcon icon={faMedal} />} title="My Badges" />
+      <TopBar title="My Badges" />
       <div className="scroll-area">
         {visible.length === 0 ? (
           <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
@@ -31,6 +31,7 @@ export function BadgesScreen({ onShowBadge }: BadgesScreenProps) {
               const display = getBadgeDisplay(state, b.id);
               if (!display) return null;
               const earned = state.earnedBadges.includes(b.id);
+              const progress = getBadgeProgress(state, b);
               return (
                 <div key={b.id} className={`badge-tile ${earned ? 'unlocked' : 'locked'}`}>
                   <button className="badge-info-btn" onClick={() => onShowBadge(b.id)}>
@@ -38,6 +39,14 @@ export function BadgesScreen({ onShowBadge }: BadgesScreenProps) {
                   </button>
                   <span className="badge-icon">{display.emoji}</span>
                   <div className="badge-name">{display.name}</div>
+                  {progress && !earned && (
+                    <div className="badge-progress">
+                      <div
+                        className="badge-progress-fill"
+                        style={{ width: `${Math.min(100, (progress.current / progress.target) * 100)}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -59,7 +59,6 @@ body {
 }
 .topbar-title { font-size: 1.2rem; font-weight: 900; letter-spacing: -0.5px; }
 .topbar-title-accent { color: var(--coral); }
-.topbar-logo { font-size: 1.4rem; }
 .points-pill {
   background: var(--yellow);
   color: var(--dark);
@@ -402,6 +401,19 @@ body {
 .badge-icon { font-size: 2rem; display: block; margin-bottom: 6px; }
 .badge-name { font-size: 0.65rem; font-weight: 800; color: var(--text); }
 .badge-tile.unlocked { border-color: var(--yellow); }
+.badge-progress {
+  margin-top: 8px;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--cream);
+  border: 2px solid var(--dark);
+  overflow: hidden;
+}
+.badge-progress-fill {
+  height: 100%;
+  background: var(--sage);
+  border-radius: 2px;
+}
 .badge-tile.unlocked::after {
   content: '★';
   position: absolute;
