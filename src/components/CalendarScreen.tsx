@@ -19,7 +19,11 @@ function toDateStr(year: number, month: number, day: number): string {
   return `${year}-${m}-${d}`;
 }
 
-export function CalendarScreen() {
+interface CalendarScreenProps {
+  onEnterParent: () => void;
+}
+
+export function CalendarScreen({ onEnterParent }: CalendarScreenProps) {
   const { state } = useGrubClub();
   const today = todayStr();
   const now = new Date();
@@ -81,7 +85,7 @@ export function CalendarScreen() {
 
   return (
     <div className="screen active">
-      <TopBar title="Calendar" highlightLast />
+      <TopBar title="Calendar" highlightLast onEnterParent={onEnterParent} />
       <div className="scroll-area">
         <div className="card">
           <div className="calendar-header">
