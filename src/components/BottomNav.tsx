@@ -19,7 +19,11 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
         <span className="nav-icon"><FontAwesomeIcon icon={faHouse} /></span>Home
       </button>
       <button className={`nav-btn ${active === 'store' ? 'active' : ''}`} onClick={() => onChange('store')}>
-        <span className="nav-icon nav-badge" data-count={pendingCount}>
+        <span
+          className="nav-icon nav-badge"
+          data-count={pendingCount}
+          title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
+        >
           <FontAwesomeIcon icon={faCartShopping} />
         </span>
         Store

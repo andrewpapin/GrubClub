@@ -24,7 +24,7 @@ interface CalendarScreenProps {
 }
 
 export function CalendarScreen({ onEnterParent }: CalendarScreenProps) {
-  const { state } = useGrubClub();
+  const { state, showToast } = useGrubClub();
   const today = todayStr();
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -43,7 +43,10 @@ export function CalendarScreen({ onEnterParent }: CalendarScreenProps) {
   };
 
   const nextMonth = () => {
-    if (isCurrentMonth) return;
+    if (isCurrentMonth) {
+      showToast(faCalendarDays, "Can't peek into the future yet!");
+      return;
+    }
     if (viewMonth === 11) {
       setViewYear((y) => y + 1);
       setViewMonth(0);
@@ -93,7 +96,11 @@ export function CalendarScreen({ onEnterParent }: CalendarScreenProps) {
               <FontAwesomeIcon icon={faChevronLeft} />
             </button>
             <div className="calendar-month-label">{MONTH_NAMES[viewMonth]} {viewYear}</div>
-            <button className="calendar-nav-btn" onClick={nextMonth} disabled={isCurrentMonth}>
+            <button
+              className={`calendar-nav-btn ${isCurrentMonth ? 'muted' : ''}`}
+              onClick={nextMonth}
+              aria-label={isCurrentMonth ? "Can't view future months" : 'Next month'}
+            >
               <FontAwesomeIcon icon={faChevronRight} />
             </button>
           </div>
@@ -118,6 +125,7 @@ export function CalendarScreen({ onEnterParent }: CalendarScreenProps) {
                   onClick={() => setSelectedDate(dateStr)}
                 >
                   {day}
+                  {isToday && <div className="calendar-day-today-marker" aria-label="Today" />}
                   {hasLog && <div className="calendar-day-dot" />}
                 </div>
               );

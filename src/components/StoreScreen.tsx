@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStore, faHourglassHalf, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faStore, faHourglassHalf, faStar, faLock } from '@fortawesome/free-solid-svg-icons';
 import { TopBar } from './TopBar';
 import { useGrubClub } from '../state/GrubClubContext';
 
@@ -17,7 +17,7 @@ export function StoreScreen({ onEnterParent }: StoreScreenProps) {
       <TopBar title="Reward Store" onEnterParent={onEnterParent} />
       <div className="scroll-area">
         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--muted)', marginBottom: 14, textAlign: 'center' }}>
-          Tap a reward to spend your points!
+          Tap a reward to ask for it — a grown-up will need to say yes!
         </div>
 
         {state.rewards.length === 0 ? (
@@ -43,10 +43,22 @@ export function StoreScreen({ onEnterParent }: StoreScreenProps) {
             {available.map((r) => {
               const affordable = state.points >= r.cost;
               return (
-                <div key={r.id} className="store-item" onClick={() => requestReward(r.id)}>
+                <div
+                  key={r.id}
+                  className={`store-item ${!affordable ? 'unaffordable' : ''}`}
+                  onClick={() => requestReward(r.id)}
+                >
+                  {!affordable && (
+                    <span className="store-lock">
+                      <FontAwesomeIcon icon={faLock} />
+                    </span>
+                  )}
                   <span className="store-emoji">{r.emoji}</span>
                   <div className="store-name">{r.name}</div>
                   <div className={`store-cost ${!affordable ? 'unaffordable' : ''}`}><FontAwesomeIcon icon={faStar} /> {r.cost}</div>
+                  {!affordable && (
+                    <div className="store-need-more">Need {r.cost - state.points} more</div>
+                  )}
                 </div>
               );
             })}

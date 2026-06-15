@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faUserGroup } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faUserGroup, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../state/GrubClubContext';
 
 interface TopBarProps {
@@ -9,8 +9,9 @@ interface TopBarProps {
 }
 
 export function TopBar({ title, highlightLast, onEnterParent }: TopBarProps) {
-  const { state } = useGrubClub();
+  const { state, householdCode, syncStatus } = useGrubClub();
   const splitIndex = title.lastIndexOf(' ');
+  const syncError = !!householdCode && syncStatus === 'error';
   return (
     <div className="topbar">
       {highlightLast && splitIndex !== -1 ? (
@@ -23,6 +24,11 @@ export function TopBar({ title, highlightLast, onEnterParent }: TopBarProps) {
       )}
       <div className="points-pill">
         <FontAwesomeIcon icon={faStar} /> <span>{state.points}</span>
+        {syncError && (
+          <span className="sync-warning-icon" title="Sync issue — your progress is saved here and will sync once connection is back">
+            <FontAwesomeIcon icon={faCloudArrowUp} />
+          </span>
+        )}
       </div>
       <button className="topbar-icon-btn" onClick={onEnterParent} aria-label="Grown-ups">
         <FontAwesomeIcon icon={faUserGroup} />
