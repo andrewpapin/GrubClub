@@ -4,10 +4,16 @@ import { useGrubClub } from '../state/GrubClubContext';
 
 export function ChoreList() {
   const { state, toggleChore } = useGrubClub();
+  const completed = state.chores.filter((c) => state.todayChores.includes(c.id)).length;
 
   return (
     <div className="card">
-      <div className="card-title"><FontAwesomeIcon icon={faBroom} /> Chores</div>
+      <div className="flex-between" style={{ marginBottom: 12 }}>
+        <div className="chore-card-title"><FontAwesomeIcon icon={faBroom} /> Chores</div>
+        {state.chores.length > 0 && (
+          <div className="chore-progress-badge">{completed}/{state.chores.length} done</div>
+        )}
+      </div>
       {state.chores.length === 0 ? (
         <div className="empty-state">
           <span className="empty-state-emoji"><FontAwesomeIcon icon={faMoon} /></span>
