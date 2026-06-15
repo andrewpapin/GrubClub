@@ -3,13 +3,21 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloud, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../state/GrubClubContext';
 
+const SYNC_SKIPPED_KEY = 'grubclub_sync_skipped';
+
 export function SyncGateModal() {
   const { householdCode, syncStatus, createHousehold, joinHousehold } = useGrubClub();
   const [joinCode, setJoinCode] = useState('');
+  const [dismissed, setDismissed] = useState(() => localStorage.getItem(SYNC_SKIPPED_KEY) === 'true');
 
-  if (householdCode) return null;
+  if (householdCode || dismissed) return null;
 
   const syncing = syncStatus === 'syncing';
+
+  const handleSkip = () => {
+    localStorage.setItem(SYNC_SKIPPED_KEY, 'true');
+    setDismissed(true);
+  };
 
   const handleJoin = () => {
     if (!joinCode.trim()) return;
@@ -48,6 +56,9 @@ export function SyncGateModal() {
             <FontAwesomeIcon icon={faTriangleExclamation} /> Couldn't connect — check the code and try again
           </div>
         )}
+        <button className="btn btn-sm btn-ghost sync-gate-skip" onClick={handleSkip}>
+          Maybe later — use this device only
+        </button>
       </div>
     </div>
   );

@@ -12,9 +12,11 @@ export function PinScreen({ onSuccess, onBack }: PinScreenProps) {
   const { state } = useGrubClub();
   const [pin, setPin] = useState('');
   const [showError, setShowError] = useState(false);
+  const [shake, setShake] = useState(false);
 
   const pinKey = (digit: string) => {
     if (pin.length >= 4) return;
+    setShowError(false);
     const next = pin + digit;
     setPin(next);
     if (next.length === 4) {
@@ -29,20 +31,23 @@ export function PinScreen({ onSuccess, onBack }: PinScreenProps) {
     } else {
       setShowError(true);
       setPin('');
-      setTimeout(() => setShowError(false), 2000);
+      setShake(true);
     }
   };
 
-  const pinDelete = () => setPin((p) => p.slice(0, -1));
+  const pinDelete = () => {
+    setShowError(false);
+    setPin((p) => p.slice(0, -1));
+  };
 
   return (
     <div className="pin-screen">
       <div style={{ fontSize: '3rem' }}><FontAwesomeIcon icon={faLock} /></div>
       <div className="pin-title">Grown-Up Mode</div>
       <div className="pin-sub">Enter the 4-digit PIN</div>
-      <div className="pin-dots">
+      <div className={`pin-dots ${shake ? 'shake' : ''}`} onAnimationEnd={() => setShake(false)}>
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className={`pin-dot ${i < pin.length ? 'filled' : ''}`} />
+          <div key={i} className={`pin-dot ${i < pin.length ? 'filled' : ''} ${showError ? 'error' : ''}`} />
         ))}
       </div>
       <div className={`pin-error ${showError ? 'show' : ''}`}>Wrong PIN — try again!</div>

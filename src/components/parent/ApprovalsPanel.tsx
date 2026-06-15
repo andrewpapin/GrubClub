@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMoon, faStar, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faMoon, faStar, faCheck, faXmark, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../../state/GrubClubContext';
 
 export function ApprovalsPanel() {
@@ -23,12 +23,18 @@ export function ApprovalsPanel() {
       {state.pendingRewards.map((pr) => {
         const reward = state.rewards.find((r) => r.id === pr.rewardId);
         if (!reward) return null;
+        const insufficient = state.points < reward.cost;
         return (
           <div className="parent-item" key={pr.id}>
             <div className="parent-item-emoji">{reward.emoji}</div>
             <div className="parent-item-info">
               <div className="parent-item-name">{reward.name}</div>
               <div className="parent-item-pts"><FontAwesomeIcon icon={faStar} /> {reward.cost} pts requested</div>
+              {insufficient && (
+                <div className="parent-item-warning">
+                  <FontAwesomeIcon icon={faTriangleExclamation} /> Only {state.points} pts available — approving will use all of them
+                </div>
+              )}
             </div>
             <div className="approve-btns">
               <button className="btn btn-sm btn-green" onClick={() => approveReward(pr.id)}>

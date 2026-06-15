@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTriangleExclamation, faCheck, faCloud, faRotate } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../../state/GrubClubContext';
+import { ConfirmDialog } from '../ConfirmDialog';
+
+type ConfirmStep = 'none' | 'resetToday' | 'resetAll1' | 'resetAll2' | 'leaveSync';
 
 export function SettingsPanel() {
   const {
@@ -20,16 +23,14 @@ export function SettingsPanel() {
   const [pin, setPin] = useState(String(state.settings.pin));
   const [childName, setChildName] = useState(state.settings.childName);
   const [joinCode, setJoinCode] = useState('');
+  const [confirmStep, setConfirmStep] = useState<ConfirmStep>('none');
+  const [savedField, setSavedField] = useState<string | null>(null);
+  const savedTimerRef = useRef<number | null>(null);
 
-  const handleResetAll = () => {
-    if (!window.confirm('⚠️ This will delete ALL progress. Are you sure?')) return;
-    if (!window.confirm('Really? All points, badges, and history will be gone!')) return;
-    resetAll();
-  };
-
-  const handleResetToday = () => {
-    if (!window.confirm("Reset today's food and chore progress?")) return;
-    resetToday();
+  const flashSaved = (field: string) => {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    setSavedField(field);
+    savedTimerRef.current = window.setTimeout(() => setSavedField(null), 1400);
   };
 
   const handleJoin = () => {
@@ -37,11 +38,6 @@ export function SettingsPanel() {
     joinHousehold(joinCode).then((ok) => {
       if (ok) setJoinCode('');
     });
-  };
-
-  const handleLeave = () => {
-    if (!window.confirm('Turn off cloud sync on this device?')) return;
-    leaveHousehold();
   };
 
   return (
@@ -59,7 +55,7 @@ export function SettingsPanel() {
               {syncStatus === 'error' && <><FontAwesomeIcon icon={faTriangleExclamation} /> Sync error — will retry</>}
             </div>
           </div>
-          <button className="btn btn-primary btn-ghost" onClick={handleLeave}>
+          <button className="btn btn-primary btn-ghost" onClick={() => setConfirmStep('leaveSync')}>
             Turn off cloud sync
           </button>
         </div>
@@ -88,7 +84,10 @@ export function SettingsPanel() {
       <div className="section-label">Profile</div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">Child's name</div>
+          <div className="settings-label">
+            Child's name
+            {savedField === 'childName' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
+          </div>
           <div className="settings-sub">Shown throughout the app</div>
         </div>
         <input
@@ -97,13 +96,19 @@ export function SettingsPanel() {
           placeholder="Zack"
           value={childName}
           onChange={(e) => setChildName(e.target.value)}
-          onBlur={(e) => saveSetting('childName', e.target.value)}
+          onBlur={(e) => {
+            saveSetting('childName', e.target.value);
+            flashSaved('childName');
+          }}
         />
       </div>
       <div className="section-label">Points</div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">Points per food group</div>
+          <div className="settings-label">
+            Points per food group
+            {savedField === 'foodPts' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
+          </div>
           <div className="settings-sub">Awarded when {state.settings.childName} taps each food group</div>
         </div>
         <input
@@ -112,12 +117,18 @@ export function SettingsPanel() {
           max={100}
           value={foodPts}
           onChange={(e) => setFoodPts(e.target.value)}
-          onBlur={(e) => saveSetting('foodPts', e.target.value)}
+          onBlur={(e) => {
+            saveSetting('foodPts', e.target.value);
+            flashSaved('foodPts');
+          }}
         />
       </div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">Full tray bonus</div>
+          <div className="settings-label">
+            Full tray bonus
+            {savedField === 'bonusPts' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
+          </div>
           <div className="settings-sub">Bonus for eating all 5 food groups</div>
         </div>
         <input
@@ -126,13 +137,19 @@ export function SettingsPanel() {
           max={500}
           value={bonusPts}
           onChange={(e) => setBonusPts(e.target.value)}
-          onBlur={(e) => saveSetting('bonusPts', e.target.value)}
+          onBlur={(e) => {
+            saveSetting('bonusPts', e.target.value);
+            flashSaved('bonusPts');
+          }}
         />
       </div>
       <div className="section-label">PIN</div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">Change PIN</div>
+          <div className="settings-label">
+            Change PIN
+            {savedField === 'pin' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
+          </div>
           <div className="settings-sub">Enter a new 4-digit PIN</div>
         </div>
         <input
@@ -142,16 +159,69 @@ export function SettingsPanel() {
           placeholder="1234"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
-          onBlur={(e) => saveSetting('pin', e.target.value)}
+          onBlur={(e) => {
+            saveSetting('pin', e.target.value);
+            flashSaved('pin');
+          }}
         />
       </div>
       <div className="section-label">Reset</div>
-      <button className="btn btn-primary btn-pink mt-8" onClick={handleResetToday}>
+      <button className="btn btn-primary btn-pink mt-8" onClick={() => setConfirmStep('resetToday')}>
         <FontAwesomeIcon icon={faRotate} /> Reset Today's Progress
       </button>
-      <button className="btn btn-primary btn-dark mt-8" style={{ marginTop: 8 }} onClick={handleResetAll}>
+      <button className="btn btn-primary btn-dark mt-8" style={{ marginTop: 8 }} onClick={() => setConfirmStep('resetAll1')}>
         <FontAwesomeIcon icon={faTriangleExclamation} /> Reset Everything
       </button>
+
+      <ConfirmDialog
+        open={confirmStep === 'resetToday'}
+        icon={faRotate}
+        title="Reset today's progress?"
+        message="This will clear today's food and chore checkmarks. Points already earned today will be removed."
+        confirmLabel="Reset"
+        danger
+        onConfirm={() => {
+          resetToday();
+          setConfirmStep('none');
+        }}
+        onCancel={() => setConfirmStep('none')}
+      />
+      <ConfirmDialog
+        open={confirmStep === 'resetAll1'}
+        icon={faTriangleExclamation}
+        title="Reset everything?"
+        message="This will delete ALL progress — points, badges, history, chores, and rewards. This can't be undone."
+        confirmLabel="Continue"
+        danger
+        onConfirm={() => setConfirmStep('resetAll2')}
+        onCancel={() => setConfirmStep('none')}
+      />
+      <ConfirmDialog
+        open={confirmStep === 'resetAll2'}
+        icon={faTriangleExclamation}
+        title="Are you really sure?"
+        message="All points, badges, and history will be gone for good."
+        confirmLabel="Yes, reset everything"
+        danger
+        onConfirm={() => {
+          resetAll();
+          setConfirmStep('none');
+        }}
+        onCancel={() => setConfirmStep('none')}
+      />
+      <ConfirmDialog
+        open={confirmStep === 'leaveSync'}
+        icon={faCloud}
+        title="Turn off cloud sync?"
+        message="This device will stop syncing with the rest of the household. Your data stays on this device."
+        confirmLabel="Turn off"
+        danger
+        onConfirm={() => {
+          leaveHousehold();
+          setConfirmStep('none');
+        }}
+        onCancel={() => setConfirmStep('none')}
+      />
     </div>
   );
 }

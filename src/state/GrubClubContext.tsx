@@ -9,6 +9,7 @@ import {
   faEnvelope,
   faCloud,
   faUtensils,
+  faTrashCan,
 } from '@fortawesome/free-solid-svg-icons';
 import type { Chore, GrubClubState, Reward, Settings } from './types';
 import { applyDayRollover, loadState, saveState, cloneDefaultState } from './defaultState';
@@ -26,10 +27,16 @@ export type SyncStatus = 'idle' | 'syncing' | 'error';
 
 const HOUSEHOLD_CODE_KEY = 'grubclub_household_code';
 
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface ToastItem {
   id: number;
   icon: IconDefinition | string;
   msg: string;
+  action?: ToastAction;
 }
 
 export interface CelebrationData {
@@ -43,6 +50,7 @@ interface GrubClubContextValue {
   toasts: ToastItem[];
   celebration: CelebrationData | null;
   confettiTrigger: number;
+  showToast: (icon: IconDefinition | string, msg: string, action?: ToastAction) => void;
   dismissToast: (id: number) => void;
   hideCelebration: () => void;
   logFood: (id: string) => void;
@@ -83,6 +91,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
   );
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const lastSyncedRef = useRef<string | null>(null);
+  const pendingTimersRef = useRef<number[]>([]);
 
   useEffect(() => {
     saveState(state);
@@ -127,12 +136,12 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, []);
 
-  const showToast = useCallback((icon: IconDefinition | string, msg: string) => {
+  const showToast = useCallback((icon: IconDefinition | string, msg: string, action?: ToastAction) => {
     const id = ++toastIdCounter;
-    setToasts((t) => [...t, { id, icon, msg }]);
+    setToasts((t) => [...t, { id, icon, msg, action }]);
     setTimeout(() => {
       setToasts((t) => t.filter((toast) => toast.id !== id));
-    }, 2800);
+    }, action ? 4500 : 2800);
   }, []);
 
   const dismissToast = useCallback((id: number) => {
@@ -148,26 +157,38 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
 
   // Awards points and mutates the given draft state in place
   const awardPoints = useCallback(
-    (next: GrubClubState, pts: number, reason: string) => {
+    (next: GrubClubState, pts: number, reason: string, opts?: { silent?: boolean; action?: ToastAction }) => {
       next.points += pts;
       next.totalPoints += pts;
       next.todayPoints += pts;
       if (next.todayPoints > (next.counters.maxDayPoints || 0)) {
         next.counters.maxDayPoints = next.todayPoints;
       }
-      showToast(`+${pts} ⭐`, reason || '');
+      if (!opts?.silent) {
+        showToast(`+${pts} ⭐`, reason || '', opts?.action);
+      }
     },
     [showToast],
   );
 
+  // Checks for newly-earned badges and announces them. When delayMs is set,
+  // the announcement is deferred so it doesn't pile up on top of a
+  // celebration overlay shown for the same action.
   const checkBadges = useCallback(
-    (next: GrubClubState) => {
+    (next: GrubClubState, delayMs = 0) => {
       const newlyEarned = findNewlyEarnedBadges(next);
       newlyEarned.forEach((id) => {
         next.earnedBadges.push(id);
         const display = getBadgeDisplay(next, id);
         if (display && display.enabled !== false) {
-          showToast(display.emoji, `Badge unlocked: ${display.name}!`);
+          if (delayMs > 0) {
+            const timer = window.setTimeout(() => {
+              showToast(display.emoji, `Badge unlocked: ${display.name}!`);
+            }, delayMs);
+            pendingTimersRef.current.push(timer);
+          } else {
+            showToast(display.emoji, `Badge unlocked: ${display.name}!`);
+          }
         }
       });
     },
@@ -176,24 +197,35 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
 
   const logFood = useCallback((id: string) => {
     setState((prev) => {
+      const snapshot = clone(prev);
       const next = clone(prev);
       const wasFull = FOODS.every((f) => (next.todayFoodCounts[f.id] || 0) > 0);
       next.todayFoodCounts[id] = (next.todayFoodCounts[id] || 0) + 1;
       next.counters.foodLogs[id] = (next.counters.foodLogs[id] || 0) + 1;
       const food = FOODS.find((f) => f.id === id);
-      awardPoints(next, next.settings.foodPts, `${food?.label ?? ''} logged!`);
+
+      const undo = () => {
+        pendingTimersRef.current.forEach((t) => clearTimeout(t));
+        pendingTimersRef.current = [];
+        setState(() => snapshot);
+      };
+      awardPoints(next, next.settings.foodPts, `${food?.label ?? ''} logged!`, {
+        action: { label: 'Undo', onClick: undo },
+      });
 
       const isFull = FOODS.every((f) => (next.todayFoodCounts[f.id] || 0) > 0);
       if (!wasFull && isFull) {
         next.counters.fullTrayDays++;
         if (next.settings.bonusPts > 0) {
-          awardPoints(next, next.settings.bonusPts, '🎉 Full Tray Bonus!');
+          // Silent — the celebration overlay already announces the bonus.
+          awardPoints(next, next.settings.bonusPts, '🎉 Full Tray Bonus!', { silent: true });
         }
         const allChoresDone = next.chores.length > 0 && next.chores.every((c) => next.todayChores.includes(c.id));
         if (allChoresDone) next.counters.comboDays++;
         showCelebration(faUtensils, 'Full Tray!', `All 5 food groups eaten! +${next.settings.bonusPts} bonus!`);
       }
-      checkBadges(next);
+      // Defer badge toasts so they don't pile up on top of the celebration overlay.
+      checkBadges(next, !wasFull && isFull ? 1400 : 0);
       return next;
     });
   }, [awardPoints, checkBadges, showCelebration]);
@@ -277,12 +309,19 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
 
   const removeChore = useCallback((id: number) => {
     setState((prev) => {
+      const chore = prev.chores.find((c) => c.id === id);
+      if (!chore) return prev;
+      const snapshot = clone(prev);
       const next = clone(prev);
       next.chores = next.chores.filter((c) => c.id !== id);
       next.todayChores = next.todayChores.filter((c) => c !== id);
+      showToast(faTrashCan, `"${chore.name}" removed`, {
+        label: 'Undo',
+        onClick: () => setState(() => snapshot),
+      });
       return next;
     });
-  }, []);
+  }, [showToast]);
 
   const addReward = useCallback((reward: Omit<Reward, 'id'>) => {
     setState((prev) => {
@@ -295,12 +334,19 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
 
   const removeReward = useCallback((id: number) => {
     setState((prev) => {
+      const reward = prev.rewards.find((r) => r.id === id);
+      if (!reward) return prev;
+      const snapshot = clone(prev);
       const next = clone(prev);
       next.rewards = next.rewards.filter((r) => r.id !== id);
       next.pendingRewards = next.pendingRewards.filter((pr) => pr.rewardId !== id);
+      showToast(faTrashCan, `"${reward.name}" removed`, {
+        label: 'Undo',
+        onClick: () => setState(() => snapshot),
+      });
       return next;
     });
-  }, []);
+  }, [showToast]);
 
   const saveSetting = useCallback((key: keyof Settings, val: string) => {
     setState((prev) => {
@@ -406,6 +452,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     toasts,
     celebration,
     confettiTrigger,
+    showToast,
     dismissToast,
     hideCelebration,
     logFood,
