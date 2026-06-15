@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faUserGroup, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faUserGroup, faCloudArrowUp, faTrophy } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../state/GrubClubContext';
 
 interface TopBarProps {
@@ -22,13 +22,18 @@ export function TopBar({ title, highlightLast, onEnterParent }: TopBarProps) {
       ) : (
         <span className="topbar-title">{title}</span>
       )}
-      <div className="points-pill">
-        <FontAwesomeIcon icon={faStar} /> <span>{state.points}</span>
-        {syncError && (
-          <span className="sync-warning-icon" title="Sync issue — your progress is saved here and will sync once connection is back">
-            <FontAwesomeIcon icon={faCloudArrowUp} />
-          </span>
-        )}
+      <div className="topbar-pills">
+        <div className="points-pill">
+          <FontAwesomeIcon icon={faStar} /> <span>{state.points}</span>
+          {syncError && (
+            <span className="sync-warning-icon" title="Sync issue — your progress is saved here and will sync once connection is back">
+              <FontAwesomeIcon icon={faCloudArrowUp} />
+            </span>
+          )}
+        </div>
+        <div className="trophy-pill">
+          <FontAwesomeIcon icon={faTrophy} /> <span>{state.earnedBadges.length}</span>
+        </div>
       </div>
       <button className="topbar-icon-btn" onClick={onEnterParent} aria-label="Grown-ups">
         <FontAwesomeIcon icon={faUserGroup} />

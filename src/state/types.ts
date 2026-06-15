@@ -1,8 +1,9 @@
-export interface Chore {
+export interface Goal {
   id: number;
   emoji: string;
   name: string;
   pts: number;
+  isDaily?: boolean; // true when undefined (default behavior: daily)
 }
 
 export interface Reward {
@@ -20,8 +21,8 @@ export interface PendingReward {
 export interface Counters {
   foodLogs: Record<string, number>;
   fullTrayDays: number;
-  totalChores: number;
-  allChoresDays: number;
+  totalGoals: number;
+  allGoalsDays: number;
   comboDays: number;
   totalRewards: number;
   maxDayPoints: number;
@@ -42,7 +43,7 @@ export interface Settings {
 
 export interface DayLog {
   foodCounts: Record<string, number>;
-  choreIds: number[];
+  goalIds: number[];
   points: number;
 }
 
@@ -53,13 +54,13 @@ export interface GrubClubState {
   lastActiveDate: string | null;
   todayPoints: number;
   todayFoodCounts: Record<string, number>;
-  todayChores: number[];
+  todayGoals: number[];
   dayLogs: Record<string, DayLog>;
   pendingRewards: PendingReward[];
   earnedBadges: string[];
   counters: Counters;
   badgeConfig: Record<string, BadgeOverride>;
-  chores: Chore[];
+  goals: Goal[];
   rewards: Reward[];
   settings: Settings;
 }
