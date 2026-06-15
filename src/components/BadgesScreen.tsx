@@ -40,12 +40,17 @@ export function BadgesScreen({ onShowBadge }: BadgesScreenProps) {
                   <span className="badge-icon">{display.emoji}</span>
                   <div className="badge-name">{display.name}</div>
                   {progress && !earned && (
-                    <div className="badge-progress">
-                      <div
-                        className="badge-progress-fill"
-                        style={{ width: `${Math.min(100, (progress.current / progress.target) * 100)}%` }}
-                      />
-                    </div>
+                    <>
+                      <div className="badge-progress">
+                        <div
+                          className="badge-progress-fill"
+                          style={{ width: `${Math.min(100, (progress.current / progress.target) * 100)}%` }}
+                        />
+                      </div>
+                      <div className="badge-progress-label">
+                        {Math.min(progress.current, progress.target)}/{progress.target}
+                      </div>
+                    </>
                   )}
                 </div>
               );

@@ -414,6 +414,12 @@ body {
   background: var(--sage);
   border-radius: 2px;
 }
+.badge-progress-label {
+  margin-top: 3px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--muted);
+}
 .badge-tile.unlocked::after {
   content: '★';
   position: absolute;
