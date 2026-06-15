@@ -49,9 +49,9 @@ export function getBadgeProgress(state: GrubClubState, badge: BadgeDef): BadgePr
     case 'full_tray':
       return { current: c.fullTrayDays, target: thresh };
     case 'chore_count':
-      return { current: c.totalChores, target: thresh };
+      return { current: c.totalGoals, target: thresh };
     case 'all_chores':
-      return { current: c.allChoresDays, target: thresh };
+      return { current: c.allGoalsDays, target: thresh };
     case 'pts':
       return { current: state.totalPoints, target: thresh };
     case 'pts_day':
@@ -88,7 +88,7 @@ export function findNewlyEarnedBadges(state: GrubClubState): string[] {
         earned = Object.values(c.foodLogs).some((v) => v > 0);
         break;
       case 'first_chore':
-        earned = c.totalChores >= 1;
+        earned = c.totalGoals >= 1;
         break;
       case 'first_reward':
         earned = c.totalRewards >= 1;
@@ -117,10 +117,10 @@ export function findNewlyEarnedBadges(state: GrubClubState): string[] {
         earned = c.fullTrayDays >= thresh;
         break;
       case 'chore_count':
-        earned = c.totalChores >= thresh;
+        earned = c.totalGoals >= thresh;
         break;
       case 'all_chores':
-        earned = c.allChoresDays >= thresh;
+        earned = c.allGoalsDays >= thresh;
         break;
       case 'pts':
         earned = state.totalPoints >= thresh;

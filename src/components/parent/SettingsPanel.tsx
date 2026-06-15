@@ -177,7 +177,7 @@ export function SettingsPanel() {
         open={confirmStep === 'resetToday'}
         icon={faRotate}
         title="Reset today's progress?"
-        message="This will clear today's food and chore checkmarks. Points already earned today will be removed."
+        message="This will clear today's food and goal checkmarks. Points already earned today will be removed."
         confirmLabel="Reset"
         danger
         onConfirm={() => {
@@ -190,7 +190,7 @@ export function SettingsPanel() {
         open={confirmStep === 'resetAll1'}
         icon={faTriangleExclamation}
         title="Reset everything?"
-        message="This will delete ALL progress — points, badges, history, chores, and rewards. This can't be undone."
+        message="This will delete ALL progress — points, badges, history, goals, and rewards. This can't be undone."
         confirmLabel="Continue"
         danger
         onConfirm={() => setConfirmStep('resetAll2')}

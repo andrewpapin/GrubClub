@@ -11,8 +11,8 @@ import {
   faUtensils,
   faTrashCan,
 } from '@fortawesome/free-solid-svg-icons';
-import type { Chore, GrubClubState, Reward, Settings } from './types';
-import { applyDayRollover, loadState, saveState, cloneDefaultState } from './defaultState';
+import type { Goal, GrubClubState, Reward, Settings } from './types';
+import { applyDayRollover, loadState, saveState, cloneDefaultState, migrateLegacyState } from './defaultState';
 import { FOODS } from '../data/foods';
 import { findNewlyEarnedBadges, getBadgeDisplay } from './badges';
 import {
@@ -54,12 +54,13 @@ interface GrubClubContextValue {
   dismissToast: (id: number) => void;
   hideCelebration: () => void;
   logFood: (id: string) => void;
-  toggleChore: (id: number) => void;
+  toggleGoal: (id: number) => void;
   requestReward: (id: number) => void;
   approveReward: (prId: string) => void;
   declineReward: (prId: string) => void;
-  addChore: (chore: Omit<Chore, 'id'>) => void;
-  removeChore: (id: number) => void;
+  addGoal: (goal: Omit<Goal, 'id'>) => void;
+  removeGoal: (id: number) => void;
+  updateGoal: (id: number, patch: Partial<Omit<Goal, 'id'>>) => void;
   addReward: (reward: Omit<Reward, 'id'>) => void;
   removeReward: (id: number) => void;
   saveSetting: (key: keyof Settings, val: string) => void;
@@ -121,7 +122,9 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
       const json = JSON.stringify(remoteState);
       if (json === lastSyncedRef.current) return;
       lastSyncedRef.current = json;
-      setState(applyDayRollover(clone(remoteState)));
+      const migrated = clone(remoteState);
+      migrateLegacyState(migrated as unknown as Record<string, unknown>);
+      setState(applyDayRollover(migrated));
     });
   }, [householdCode]);
 
@@ -220,8 +223,10 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
           // Silent — the celebration overlay already announces the bonus.
           awardPoints(next, next.settings.bonusPts, '🎉 Full Tray Bonus!', { silent: true });
         }
-        const allChoresDone = next.chores.length > 0 && next.chores.every((c) => next.todayChores.includes(c.id));
-        if (allChoresDone) next.counters.comboDays++;
+        // Only daily goals count toward combo badge
+        const dailyGoals = next.goals.filter((g) => g.isDaily !== false);
+        const allDailyGoalsDone = dailyGoals.length > 0 && dailyGoals.every((g) => next.todayGoals.includes(g.id));
+        if (allDailyGoalsDone) next.counters.comboDays++;
         showCelebration(faUtensils, 'Full Tray!', `All 5 food groups eaten! +${next.settings.bonusPts} bonus!`);
       }
       // Defer badge toasts so they don't pile up on top of the celebration overlay.
@@ -230,24 +235,26 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     });
   }, [awardPoints, checkBadges, showCelebration]);
 
-  const toggleChore = useCallback((id: number) => {
+  const toggleGoal = useCallback((id: number) => {
     setState((prev) => {
-      const chore = prev.chores.find((c) => c.id === id);
-      if (!chore) return prev;
+      const goal = prev.goals.find((g) => g.id === id);
+      if (!goal) return prev;
       const next = clone(prev);
-      if (next.todayChores.includes(id)) {
-        next.todayChores = next.todayChores.filter((c) => c !== id);
-        next.points = Math.max(0, next.points - chore.pts);
-        next.totalPoints = Math.max(0, next.totalPoints - chore.pts);
-        next.todayPoints = Math.max(0, next.todayPoints - chore.pts);
-        next.counters.totalChores = Math.max(0, next.counters.totalChores - 1);
+      if (next.todayGoals.includes(id)) {
+        next.todayGoals = next.todayGoals.filter((g) => g !== id);
+        next.points = Math.max(0, next.points - goal.pts);
+        next.totalPoints = Math.max(0, next.totalPoints - goal.pts);
+        next.todayPoints = Math.max(0, next.todayPoints - goal.pts);
+        next.counters.totalGoals = Math.max(0, next.counters.totalGoals - 1);
         return next;
       }
-      next.todayChores.push(id);
-      next.counters.totalChores++;
-      awardPoints(next, chore.pts, `${chore.name} done!`);
-      if (next.chores.length > 0 && next.chores.every((c) => next.todayChores.includes(c.id))) {
-        next.counters.allChoresDays++;
+      next.todayGoals.push(id);
+      next.counters.totalGoals++;
+      awardPoints(next, goal.pts, `${goal.name} done!`);
+      // Only daily goals count toward "all goals done" badges
+      const dailyGoals = next.goals.filter((g) => g.isDaily !== false);
+      if (dailyGoals.length > 0 && dailyGoals.every((g) => next.todayGoals.includes(g.id))) {
+        next.counters.allGoalsDays++;
         const fullTray = FOODS.every((f) => (next.todayFoodCounts[f.id] || 0) > 0);
         if (fullTray) next.counters.comboDays++;
       }
@@ -298,30 +305,40 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     });
   }, [showToast]);
 
-  const addChore = useCallback((chore: Omit<Chore, 'id'>) => {
+  const addGoal = useCallback((goal: Omit<Goal, 'id'>) => {
     setState((prev) => {
       const next = clone(prev);
-      next.chores.push({ id: Date.now(), ...chore });
-      showToast(faCircleCheck, `"${chore.name}" added!`);
+      next.goals.push({ id: Date.now(), ...goal });
+      showToast(faCircleCheck, `"${goal.name}" added!`);
       return next;
     });
   }, [showToast]);
 
-  const removeChore = useCallback((id: number) => {
+  const removeGoal = useCallback((id: number) => {
     setState((prev) => {
-      const chore = prev.chores.find((c) => c.id === id);
-      if (!chore) return prev;
+      const goal = prev.goals.find((g) => g.id === id);
+      if (!goal) return prev;
       const snapshot = clone(prev);
       const next = clone(prev);
-      next.chores = next.chores.filter((c) => c.id !== id);
-      next.todayChores = next.todayChores.filter((c) => c !== id);
-      showToast(faTrashCan, `"${chore.name}" removed`, {
+      next.goals = next.goals.filter((g) => g.id !== id);
+      next.todayGoals = next.todayGoals.filter((g) => g !== id);
+      showToast(faTrashCan, `"${goal.name}" removed`, {
         label: 'Undo',
         onClick: () => setState(() => snapshot),
       });
       return next;
     });
   }, [showToast]);
+
+  const updateGoal = useCallback((id: number, patch: Partial<Omit<Goal, 'id'>>) => {
+    setState((prev) => {
+      const next = clone(prev);
+      const goal = next.goals.find((g) => g.id === id);
+      if (!goal) return prev;
+      Object.assign(goal, patch);
+      return next;
+    });
+  }, []);
 
   const addReward = useCallback((reward: Omit<Reward, 'id'>) => {
     setState((prev) => {
@@ -370,7 +387,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
       next.totalPoints = Math.max(0, next.totalPoints - next.todayPoints);
       next.todayPoints = 0;
       next.todayFoodCounts = {};
-      next.todayChores = [];
+      next.todayGoals = [];
       showToast(faRotate, "Today reset!");
       return next;
     });
@@ -425,8 +442,10 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
         showToast(faCircleXmark, 'Household code not found');
         return false;
       }
-      lastSyncedRef.current = JSON.stringify(remoteState);
-      setState(applyDayRollover(clone(remoteState)));
+      const migrated = clone(remoteState);
+      migrateLegacyState(migrated as unknown as Record<string, unknown>);
+      lastSyncedRef.current = JSON.stringify(migrated);
+      setState(applyDayRollover(migrated));
       localStorage.setItem(HOUSEHOLD_CODE_KEY, normalized);
       setHouseholdCode(normalized);
       setSyncStatus('idle');
@@ -456,12 +475,13 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     dismissToast,
     hideCelebration,
     logFood,
-    toggleChore,
+    toggleGoal,
     requestReward,
     approveReward,
     declineReward,
-    addChore,
-    removeChore,
+    addGoal,
+    removeGoal,
+    updateGoal,
     addReward,
     removeReward,
     saveSetting,
