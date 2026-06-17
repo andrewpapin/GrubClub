@@ -1,43 +1,18 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faCloudArrowUp, faCartShopping } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faCloudArrowUp, faGift } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../state/GrubClubContext';
 
 interface TopBarProps {
   title: string;
   highlightLast?: boolean;
-  onTapPoints?: () => void;
+  onOpenStore?: () => void;
 }
 
-export function TopBar({ title, highlightLast, onTapPoints }: TopBarProps) {
+export function TopBar({ title, highlightLast, onOpenStore }: TopBarProps) {
   const { state, householdCode, syncStatus } = useGrubClub();
   const splitIndex = title.lastIndexOf(' ');
   const syncError = !!householdCode && syncStatus === 'error';
   const pendingCount = state.pendingRewards.length;
-
-  const pillContent = (
-    <>
-      <FontAwesomeIcon icon={faStar} /> <span>{state.points}</span>
-      {onTapPoints && (
-        <span
-          className="nav-icon nav-badge points-pill-cart"
-          data-count={pendingCount}
-          title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
-        >
-          <FontAwesomeIcon icon={faCartShopping} />
-        </span>
-      )}
-      {syncError && (
-        <span
-          className="sync-warning-icon"
-          title="Sync issue — your progress is saved here and will sync once connection is back"
-          aria-label="Sync issue — progress saved locally"
-          role="img"
-        >
-          <FontAwesomeIcon icon={faCloudArrowUp} aria-hidden="true" />
-        </span>
-      )}
-    </>
-  );
 
   return (
     <div className="topbar">
@@ -50,14 +25,29 @@ export function TopBar({ title, highlightLast, onTapPoints }: TopBarProps) {
         <span className="topbar-title">{title}</span>
       )}
       <div className="topbar-pills">
-        {onTapPoints ? (
-          <button type="button" className="points-pill" onClick={onTapPoints} aria-label={`${state.points} points, tap to open the store`}>
-            {pillContent}
+        <div className="points-pill" aria-label={`${state.points} points`}>
+          <FontAwesomeIcon icon={faStar} /> <span>{state.points}</span>
+          {syncError && (
+            <span
+              className="sync-warning-icon"
+              title="Sync issue — your progress is saved here and will sync once connection is back"
+              aria-label="Sync issue — progress saved locally"
+              role="img"
+            >
+              <FontAwesomeIcon icon={faCloudArrowUp} aria-hidden="true" />
+            </span>
+          )}
+        </div>
+        {onOpenStore && (
+          <button type="button" className="topbar-icon-btn" onClick={onOpenStore} aria-label="Open the Reward Store">
+            <span
+              className="nav-badge"
+              data-count={pendingCount}
+              title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
+            >
+              <FontAwesomeIcon icon={faGift} />
+            </span>
           </button>
-        ) : (
-          <div className="points-pill" aria-label={`${state.points} points`}>
-            {pillContent}
-          </div>
         )}
       </div>
     </div>

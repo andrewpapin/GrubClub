@@ -16,7 +16,7 @@ export function BadgesScreen({ onShowBadge, onEnterParent: _onEnterParent, onOpe
 
   return (
     <div className="screen active">
-      <TopBar title="My Badges" onTapPoints={onOpenStore} />
+      <TopBar title="My Badges" onOpenStore={onOpenStore} />
       <div className="scroll-area">
         {visible.length === 0 ? (
           <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
