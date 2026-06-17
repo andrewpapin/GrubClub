@@ -24,7 +24,7 @@ export function HomeScreen({ onEnterParent: _onEnterParent, onOpenCalendar, onOp
 
   return (
     <div className="screen active">
-      <TopBar title="Grub Club" highlightLast onTapPoints={onOpenStore} />
+      <TopBar title="Grub Club" highlightLast onOpenStore={onOpenStore} />
       <div className="scroll-area">
         <WeekStrip selectedDate={selectedDate} onSelectDate={onSelectDate} onOpenCalendar={onOpenCalendar} />
         <StatsCard />
