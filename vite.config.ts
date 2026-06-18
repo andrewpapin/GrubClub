@@ -14,7 +14,7 @@ export default defineConfig(({ command }) => ({
         name: 'Grub Club',
         short_name: 'Grub Club',
         description: 'A family chore & reward tracker',
-        theme_color: '#FFFFFF',
+        theme_color: '#F7EDE2',
         background_color: '#F7EDE2',
         display: 'standalone',
         icons: [
