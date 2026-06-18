@@ -10,6 +10,7 @@ import {
   faCloud,
   faUtensils,
   faTrashCan,
+  faStar,
 } from '@fortawesome/free-solid-svg-icons';
 import type { Goal, GrubClubState, Reward, Settings } from './types';
 import { applyDayRollover, loadState, saveState, cloneDefaultState, migrateLegacyState } from './defaultState';
@@ -174,7 +175,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
         next.counters.maxDayPoints = next.todayPoints;
       }
       if (!opts?.silent) {
-        showToast(`+${pts} ⭐`, reason || '', opts?.action);
+        showToast(faStar, `+${pts} ${reason}`.trim(), opts?.action);
       }
     },
     [showToast],
@@ -620,7 +621,10 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
       return code;
     } catch {
       setSyncStatus('error');
-      showToast(faCircleXmark, 'Failed to enable cloud sync');
+      showToast(
+        faCircleXmark,
+        navigator.onLine ? 'Server error — please try again' : 'No internet connection — try again when back online',
+      );
       return null;
     }
   }, [state, showToast]);
@@ -646,7 +650,10 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
       return true;
     } catch {
       setSyncStatus('error');
-      showToast(faCircleXmark, 'Failed to join household');
+      showToast(
+        faCircleXmark,
+        navigator.onLine ? 'Server error — please try again' : 'No internet connection — try again when back online',
+      );
       return false;
     }
   }, [showToast]);

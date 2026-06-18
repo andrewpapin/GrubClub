@@ -62,6 +62,9 @@ export function GoalsPanel() {
           Add
         </button>
       </form>
+      <div style={{ fontSize: '0.68rem', color: 'var(--muted)', fontWeight: 700, marginTop: -8, marginBottom: 'var(--space-md)' }}>
+        The × field sets how many times a goal must be done per day (e.g. "Drink water" ×3)
+      </div>
       <div className="flex-between" style={{ marginBottom: 'var(--space-md)' }}>
         <div>
           <div className="settings-label">Daily Goal</div>

@@ -1,4 +1,6 @@
 import { useState, useRef } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { BADGE_MASTER } from '../../data/badges';
 import { getEnabledBadgeCount } from '../../state/badges';
 import { useGrubClub } from '../../state/GrubClubContext';
@@ -7,6 +9,14 @@ export function BadgesPanel() {
   const { state, updateBadgeConfig } = useGrubClub();
   const [activeGroup, setActiveGroup] = useState('All');
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const [savedKey, setSavedKey] = useState<string | null>(null);
+  const savedTimerRef = useRef<number | null>(null);
+
+  const flashSaved = (key: string) => {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    setSavedKey(key);
+    savedTimerRef.current = window.setTimeout(() => setSavedKey(null), 1400);
+  };
 
   const debouncedUpdate = (badgeId: string, key: 'enabled' | 'name' | 'emoji', value: string | boolean) => {
     if (key === 'enabled') {
@@ -17,6 +27,7 @@ export function BadgesPanel() {
     clearTimeout(debounceTimers.current[timerKey]);
     debounceTimers.current[timerKey] = setTimeout(() => {
       updateBadgeConfig(badgeId, key, value);
+      flashSaved(timerKey);
     }, 300);
   };
 
@@ -56,15 +67,18 @@ export function BadgesPanel() {
                 className={earned ? 'pbadge-earned-dot' : 'pbadge-earned-dot unearned'}
                 title={earned ? 'Earned!' : 'Not yet earned'}
               />
-              <input
-                className="pbadge-emoji-input"
-                type="text"
-                maxLength={2}
-                defaultValue={emoji}
-                key={`${b.id}-emoji-${emoji}`}
-                onChange={(e) => debouncedUpdate(b.id, 'emoji', e.target.value)}
-                onClick={(e) => (e.target as HTMLInputElement).select()}
-              />
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <input
+                  className="pbadge-emoji-input"
+                  type="text"
+                  maxLength={2}
+                  defaultValue={emoji}
+                  key={`${b.id}-emoji-${emoji}`}
+                  onChange={(e) => debouncedUpdate(b.id, 'emoji', e.target.value)}
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                />
+                {savedKey === `${b.id}-emoji` && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <input
                   className="pbadge-name-input"
@@ -73,6 +87,7 @@ export function BadgesPanel() {
                   key={`${b.id}-name-${name}`}
                   onChange={(e) => debouncedUpdate(b.id, 'name', e.target.value)}
                 />
+                {savedKey === `${b.id}-name` && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
                 <div className="pbadge-desc">{b.desc}</div>
               </div>
               <label className="pbadge-toggle">

@@ -46,13 +46,17 @@ export function SettingsPanel() {
       {householdCode ? (
         <div className="settings-row settings-row--col">
           <div>
-            <div className="settings-label">
-              Household code: <strong>{householdCode}</strong>
-            </div>
+            <div className="settings-label">Household code</div>
+            <div className="household-code-display">{householdCode}</div>
             <div className="settings-sub">
               {syncStatus === 'syncing' && 'Syncing…'}
               {syncStatus === 'idle' && <><FontAwesomeIcon icon={faCheck} /> Synced — enter this code on other phones to sync them</>}
-              {syncStatus === 'error' && <><FontAwesomeIcon icon={faTriangleExclamation} /> Sync error — will retry</>}
+              {syncStatus === 'error' && (
+                <>
+                  <FontAwesomeIcon icon={faTriangleExclamation} />{' '}
+                  {navigator.onLine ? 'Sync error — will retry' : 'Offline — will sync when back online'}
+                </>
+              )}
             </div>
           </div>
           <button className="btn btn-primary btn-ghost" onClick={() => setConfirmStep('leaveSync')}>

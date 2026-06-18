@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../../state/GrubClubContext';
 
 export function StorePanel() {
@@ -57,7 +59,7 @@ export function StorePanel() {
             <div className="parent-item-emoji">{r.emoji}</div>
             <div className="parent-item-info">
               <div className="parent-item-name">{r.name}</div>
-              <div className="parent-item-pts">⭐ {r.cost} pts</div>
+              <div className="parent-item-pts"><FontAwesomeIcon icon={faStar} /> {r.cost} pts</div>
             </div>
             <button className="btn btn-sm btn-pink" onClick={() => removeReward(r.id)}>
               Remove
