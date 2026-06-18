@@ -10,11 +10,13 @@ import {
   faCloud,
   faUtensils,
   faTrashCan,
+  faStar,
 } from '@fortawesome/free-solid-svg-icons';
 import type { Goal, GrubClubState, Reward, Settings } from './types';
 import { applyDayRollover, loadState, saveState, cloneDefaultState, migrateLegacyState } from './defaultState';
 import { FOODS } from '../data/foods';
 import { findNewlyEarnedBadges, getBadgeDisplay } from './badges';
+import { getRank, RANKS } from '../data/ranks';
 import {
   createHousehold as createHouseholdRow,
   fetchHousehold,
@@ -69,6 +71,7 @@ interface GrubClubContextValue {
   updateGoal: (id: number, patch: Partial<Omit<Goal, 'id'>>) => void;
   addReward: (reward: Omit<Reward, 'id'>) => void;
   removeReward: (id: number) => void;
+  updateReward: (id: number, patch: Partial<Omit<Reward, 'id'>>) => void;
   saveSetting: (key: keyof Settings, val: string) => void;
   resetToday: () => void;
   resetAll: () => void;
@@ -164,6 +167,8 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
 
   const hideCelebration = useCallback(() => setCelebration(null), []);
 
+  const fireConfetti = useCallback(() => setConfettiTrigger((n) => n + 1), []);
+
   // Awards points and mutates the given draft state in place
   const awardPoints = useCallback(
     (next: GrubClubState, pts: number, reason: string, opts?: { silent?: boolean; action?: ToastAction }) => {
@@ -174,15 +179,35 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
         next.counters.maxDayPoints = next.todayPoints;
       }
       if (!opts?.silent) {
-        showToast(`+${pts} ⭐`, reason || '', opts?.action);
+        showToast(faStar, `+${pts} ${reason}`.trim(), opts?.action);
       }
     },
     [showToast],
   );
 
-  // Checks for newly-earned badges and announces them. When delayMs is set,
-  // the announcement is deferred so it doesn't pile up on top of a
-  // celebration overlay shown for the same action.
+  // Shows a full-screen celebration when totalPoints crosses into a new rank.
+  // When delayMs is set, the announcement is deferred so it doesn't collide
+  // with a celebration overlay already shown for the same action.
+  const maybeCelebrateRankUp = useCallback(
+    (prevTotalPoints: number, next: GrubClubState, delayMs = 0) => {
+      const prevIndex = getRank(prevTotalPoints).index;
+      const newIndex = getRank(next.totalPoints).index;
+      if (newIndex <= prevIndex) return;
+      const newRank = RANKS[newIndex];
+      const announce = () => showCelebration(newRank.emoji, 'Rank Up!', `You're now a ${newRank.name}!`);
+      if (delayMs > 0) {
+        const timer = window.setTimeout(announce, delayMs);
+        pendingTimersRef.current.push(timer);
+      } else {
+        announce();
+      }
+    },
+    [showCelebration],
+  );
+
+  // Checks for newly-earned badges and announces them with a confetti burst.
+  // When delayMs is set, the announcement is deferred so it doesn't pile up
+  // on top of a celebration overlay shown for the same action.
   const checkBadges = useCallback(
     (next: GrubClubState, delayMs = 0) => {
       const newlyEarned = findNewlyEarnedBadges(next);
@@ -190,18 +215,20 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
         next.earnedBadges.push(id);
         const display = getBadgeDisplay(next, id);
         if (display && display.enabled !== false) {
+          const announce = () => {
+            showToast(display.emoji, `Badge unlocked: ${display.name}!`);
+            fireConfetti();
+          };
           if (delayMs > 0) {
-            const timer = window.setTimeout(() => {
-              showToast(display.emoji, `Badge unlocked: ${display.name}!`);
-            }, delayMs);
+            const timer = window.setTimeout(announce, delayMs);
             pendingTimersRef.current.push(timer);
           } else {
-            showToast(display.emoji, `Badge unlocked: ${display.name}!`);
+            announce();
           }
         }
       });
     },
-    [showToast],
+    [showToast, fireConfetti],
   );
 
   const logFood = useCallback((id: string) => {
@@ -236,11 +263,13 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
         if (allDailyGoalsDone) next.counters.comboDays++;
         showCelebration(faUtensils, 'Full Tray!', `All 5 food groups eaten! +${next.settings.bonusPts} bonus!`);
       }
-      // Defer badge toasts so they don't pile up on top of the celebration overlay.
-      checkBadges(next, !wasFull && isFull ? 1400 : 0);
+      // Defer badge/rank-up announcements so they don't pile up on top of the celebration overlay.
+      const delay = !wasFull && isFull ? 1400 : 0;
+      maybeCelebrateRankUp(prev.totalPoints, next, delay);
+      checkBadges(next, delay);
       return next;
     });
-  }, [awardPoints, checkBadges, showCelebration]);
+  }, [awardPoints, checkBadges, maybeCelebrateRankUp, showCelebration]);
 
   const removeFood = useCallback((id: string) => {
     setState((prev) => {
@@ -288,11 +317,12 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
           const fullTray = FOODS.every((f) => (next.todayFoodCounts[f.id] || 0) > 0);
           if (fullTray) next.counters.comboDays++;
         }
+        maybeCelebrateRankUp(prev.totalPoints, next);
         checkBadges(next);
       }
       return next;
     });
-  }, [awardPoints, checkBadges]);
+  }, [awardPoints, checkBadges, maybeCelebrateRankUp]);
 
   const decrementGoal = useCallback((id: number) => {
     setState((prev) => {
@@ -355,10 +385,11 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
 
       const food = FOODS.find((f) => f.id === foodId);
       showToast(food?.emoji ?? faUtensils, `${food?.label ?? ''} added!`);
+      maybeCelebrateRankUp(prev.totalPoints, next);
       checkBadges(next);
       return next;
     });
-  }, [showToast, checkBadges]);
+  }, [showToast, checkBadges, maybeCelebrateRankUp]);
 
   const removeFoodForDay = useCallback((dateStr: string, foodId: string) => {
     setState((prev) => {
@@ -436,12 +467,13 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
           if (fullTray) next.counters.comboDays++;
         }
         showToast(goal.emoji, `${goal.name} logged!`);
+        maybeCelebrateRankUp(prev.totalPoints, next);
         checkBadges(next);
       }
 
       return next;
     });
-  }, [showToast, checkBadges]);
+  }, [showToast, checkBadges, maybeCelebrateRankUp]);
 
   const requestReward = useCallback((id: number) => {
     setState((prev) => {
@@ -530,6 +562,16 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     });
   }, [showToast]);
 
+  const updateReward = useCallback((id: number, patch: Partial<Omit<Reward, 'id'>>) => {
+    setState((prev) => {
+      const next = clone(prev);
+      const reward = next.rewards.find((r) => r.id === id);
+      if (!reward) return prev;
+      Object.assign(reward, patch);
+      return next;
+    });
+  }, []);
+
   const removeReward = useCallback((id: number) => {
     setState((prev) => {
       const reward = prev.rewards.find((r) => r.id === id);
@@ -558,6 +600,8 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
         next.settings.foodPts = Math.max(1, parseInt(val) || 1);
       } else if (key === 'bonusPts') {
         next.settings.bonusPts = Math.max(0, parseInt(val) || 0);
+      } else if (key === 'recoveryQuestion' || key === 'recoveryAnswer') {
+        next.settings[key] = val.trim();
       } else {
         (next.settings[key] as number) = Math.max(0, parseInt(val) || 0);
       }
@@ -589,9 +633,13 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     setSyncStatus('idle');
     setState((prev) => {
       const pin = prev.settings.pin;
+      const recoveryQuestion = prev.settings.recoveryQuestion;
+      const recoveryAnswer = prev.settings.recoveryAnswer;
       const badgeConfig = prev.badgeConfig;
       const next = cloneDefaultState();
       next.settings.pin = pin;
+      next.settings.recoveryQuestion = recoveryQuestion;
+      next.settings.recoveryAnswer = recoveryAnswer;
       next.badgeConfig = badgeConfig;
       showToast(faTriangleExclamation, 'Everything reset');
       return applyDayRollover(next);
@@ -620,7 +668,10 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
       return code;
     } catch {
       setSyncStatus('error');
-      showToast(faCircleXmark, 'Failed to enable cloud sync');
+      showToast(
+        faCircleXmark,
+        navigator.onLine ? 'Server error — please try again' : 'No internet connection — try again when back online',
+      );
       return null;
     }
   }, [state, showToast]);
@@ -646,7 +697,10 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
       return true;
     } catch {
       setSyncStatus('error');
-      showToast(faCircleXmark, 'Failed to join household');
+      showToast(
+        faCircleXmark,
+        navigator.onLine ? 'Server error — please try again' : 'No internet connection — try again when back online',
+      );
       return false;
     }
   }, [showToast]);
@@ -682,6 +736,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     updateGoal,
     addReward,
     removeReward,
+    updateReward,
     saveSetting,
     resetToday,
     resetAll,

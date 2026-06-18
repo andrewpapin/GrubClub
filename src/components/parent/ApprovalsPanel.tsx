@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../ConfirmDialog';
 export function ApprovalsPanel() {
   const { state, approveReward, declineReward } = useGrubClub();
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [declineId, setDeclineId] = useState<string | null>(null);
 
   const handleApprove = (prId: string, insufficient: boolean) => {
     if (insufficient) {
@@ -51,7 +52,7 @@ export function ApprovalsPanel() {
               <button className="btn btn-sm btn-green" onClick={() => handleApprove(pr.id, insufficient)} aria-label={`Approve ${reward.name}`}>
                 <FontAwesomeIcon icon={faCheck} />
               </button>
-              <button className="btn btn-sm btn-pink" onClick={() => declineReward(pr.id)} aria-label={`Decline ${reward.name}`}>
+              <button className="btn btn-sm btn-pink" onClick={() => setDeclineId(pr.id)} aria-label={`Decline ${reward.name}`}>
                 <FontAwesomeIcon icon={faXmark} />
               </button>
             </div>
@@ -67,6 +68,16 @@ export function ApprovalsPanel() {
         danger
         onConfirm={() => { if (confirmId) { approveReward(confirmId); } setConfirmId(null); }}
         onCancel={() => setConfirmId(null)}
+      />
+      <ConfirmDialog
+        open={declineId !== null}
+        icon={faXmark}
+        title="Decline this request?"
+        message="The request will be removed. Your child can ask for it again later."
+        confirmLabel="Decline"
+        danger
+        onConfirm={() => { if (declineId) { declineReward(declineId); } setDeclineId(null); }}
+        onCancel={() => setDeclineId(null)}
       />
     </div>
   );

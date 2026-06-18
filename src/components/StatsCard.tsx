@@ -1,9 +1,14 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFire } from '@fortawesome/free-solid-svg-icons';
 import { getRank, RANKS } from '../data/ranks';
 import { useGrubClub } from '../state/GrubClubContext';
 
 export function StatsCard() {
   const { state } = useGrubClub();
   const { rank, index } = getRank(state.totalPoints);
+  const hasLoggedToday =
+    Object.keys(state.todayFoodCounts).length > 0 || state.todayGoals.length > 0 || state.todayPoints > 0;
+  const streakAtRisk = state.streak > 0 && !hasLoggedToday;
 
   let xpText: string;
   let pct: number;
@@ -24,11 +29,24 @@ export function StatsCard() {
         <div className="stats-rank-top">
           <span className="stats-rank-emoji">{rank.emoji}</span>
           <span className="stats-rank-name">{rank.name}</span>
+          {state.streak > 0 && (
+            <span
+              className={`streak-badge${streakAtRisk ? ' streak-badge--risk' : ''}`}
+              title={streakAtRisk ? `Log something today to keep your ${state.streak}-day streak!` : `${state.streak} day streak`}
+            >
+              <FontAwesomeIcon icon={faFire} /> {state.streak}
+            </span>
+          )}
         </div>
         <div className="stats-rank-xp">{xpText}</div>
         <div className="xp-bar-track">
           <div className="xp-bar-fill" style={{ width: `${pct}%` }} />
         </div>
+        {streakAtRisk && (
+          <div className="streak-risk-nudge">
+            <FontAwesomeIcon icon={faFire} /> Log something today to keep your streak going!
+          </div>
+        )}
       </div>
     </div>
   );

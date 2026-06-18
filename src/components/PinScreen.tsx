@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLock, faDeleteLeft } from '@fortawesome/free-solid-svg-icons';
+import { faLock, faDeleteLeft, faKey } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../state/GrubClubContext';
 
 interface PinScreenProps {
@@ -8,11 +8,39 @@ interface PinScreenProps {
   onBack: () => void;
 }
 
+type RecoverStep = 'none' | 'question' | 'newPin';
+
 export function PinScreen({ onSuccess, onBack }: PinScreenProps) {
-  const { state } = useGrubClub();
+  const { state, saveSetting, showToast } = useGrubClub();
   const [pin, setPin] = useState('');
   const [showError, setShowError] = useState(false);
   const [shake, setShake] = useState(false);
+  const [recoverStep, setRecoverStep] = useState<RecoverStep>('none');
+  const [recoverAnswer, setRecoverAnswer] = useState('');
+  const [recoverError, setRecoverError] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [newPinConfirm, setNewPinConfirm] = useState('');
+  const canRecover = state.settings.recoveryQuestion.trim() !== '' && state.settings.recoveryAnswer.trim() !== '';
+
+  const submitRecoverAnswer = () => {
+    if (recoverAnswer.trim().toLowerCase() === state.settings.recoveryAnswer.trim().toLowerCase()) {
+      setRecoverError(false);
+      setRecoverStep('newPin');
+    } else {
+      setRecoverError(true);
+    }
+  };
+
+  const submitNewPin = () => {
+    if (newPin.length !== 4 || newPin !== newPinConfirm) return;
+    saveSetting('pin', newPin);
+    showToast(faKey, 'PIN updated!');
+    setRecoverStep('none');
+    setRecoverAnswer('');
+    setNewPin('');
+    setNewPinConfirm('');
+    onSuccess();
+  };
 
   const pinKey = (digit: string) => {
     if (pin.length >= 4) return;
@@ -66,6 +94,88 @@ export function PinScreen({ onSuccess, onBack }: PinScreenProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.settings.pin]);
 
+  if (recoverStep === 'question') {
+    return (
+      <div className="pin-screen">
+        <div style={{ fontSize: '3rem' }}><FontAwesomeIcon icon={faKey} /></div>
+        <div className="pin-title">Forgot PIN?</div>
+        <div className="pin-sub">{state.settings.recoveryQuestion}</div>
+        <form
+          className="input-row"
+          style={{ width: '100%', maxWidth: 280 }}
+          onSubmit={(e) => { e.preventDefault(); submitRecoverAnswer(); }}
+        >
+          <input
+            type="text"
+            autoFocus
+            placeholder="Your answer"
+            value={recoverAnswer}
+            onChange={(e) => { setRecoverAnswer(e.target.value); setRecoverError(false); }}
+          />
+          <button type="submit" className="btn btn-sm btn-purple">
+            Check
+          </button>
+        </form>
+        <div className={`pin-error ${recoverError ? 'show' : ''}`}>That's not it — try again!</div>
+        <button
+          className="btn btn-sm btn-ghost"
+          onClick={() => { setRecoverStep('none'); setRecoverAnswer(''); setRecoverError(false); }}
+          style={{ marginTop: 8 }}
+        >
+          ← Back
+        </button>
+      </div>
+    );
+  }
+
+  if (recoverStep === 'newPin') {
+    return (
+      <div className="pin-screen">
+        <div style={{ fontSize: '3rem' }}><FontAwesomeIcon icon={faKey} /></div>
+        <div className="pin-title">Set a New PIN</div>
+        <div className="pin-sub">Choose a new 4-digit PIN</div>
+        <form
+          className="input-row"
+          style={{ width: '100%', maxWidth: 280, flexDirection: 'column' }}
+          onSubmit={(e) => { e.preventDefault(); submitNewPin(); }}
+        >
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
+            autoFocus
+            placeholder="New PIN"
+            value={newPin}
+            onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          />
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
+            placeholder="Confirm PIN"
+            value={newPinConfirm}
+            onChange={(e) => setNewPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          />
+          <button type="submit" className="btn btn-sm btn-purple" disabled={newPin.length !== 4 || newPin !== newPinConfirm}>
+            Save New PIN
+          </button>
+        </form>
+        {newPin.length === 4 && newPinConfirm.length === 4 && newPin !== newPinConfirm && (
+          <div className="pin-error show">PINs don't match</div>
+        )}
+        <button
+          className="btn btn-sm btn-ghost"
+          onClick={() => { setRecoverStep('none'); setNewPin(''); setNewPinConfirm(''); }}
+          style={{ marginTop: 8 }}
+        >
+          ← Back
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="pin-screen">
       <div style={{ fontSize: '3rem' }}><FontAwesomeIcon icon={faLock} /></div>
@@ -91,6 +201,15 @@ export function PinScreen({ onSuccess, onBack }: PinScreenProps) {
           <FontAwesomeIcon icon={faDeleteLeft} />
         </button>
       </div>
+      {canRecover && (
+        <button
+          className="btn btn-sm btn-ghost"
+          onClick={() => setRecoverStep('question')}
+          style={{ marginTop: 4 }}
+        >
+          Forgot PIN?
+        </button>
+      )}
       <button
         className="btn btn-sm btn-ghost"
         onClick={onBack}
