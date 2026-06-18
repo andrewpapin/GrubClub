@@ -1,5 +1,8 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPen, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useGrubClub } from '../../state/GrubClubContext';
+import type { Goal } from '../../state/types';
 
 export function GoalsPanel() {
   const { state, addGoal, removeGoal, updateGoal } = useGrubClub();
@@ -8,6 +11,25 @@ export function GoalsPanel() {
   const [pts, setPts] = useState('');
   const [target, setTarget] = useState('1');
   const [isDaily, setIsDaily] = useState(true);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editGoal, setEditGoal] = useState({ emoji: '', name: '', pts: '', target: '1' });
+
+  const startEdit = (g: Goal) => {
+    setEditingId(g.id);
+    setEditGoal({ emoji: g.emoji, name: g.name, pts: String(g.pts), target: String(g.target || 1) });
+  };
+
+  const saveEdit = (id: number) => {
+    const trimmedName = editGoal.name.trim();
+    if (!trimmedName) return;
+    updateGoal(id, {
+      emoji: editGoal.emoji.trim() || '✅',
+      name: trimmedName,
+      pts: parseInt(editGoal.pts) || 10,
+      target: Math.max(1, parseInt(editGoal.target) || 1),
+    });
+    setEditingId(null);
+  };
 
   const handleAdd = () => {
     const trimmedName = name.trim();
@@ -82,29 +104,75 @@ export function GoalsPanel() {
           No goals added yet
         </div>
       ) : (
-        state.goals.map((g) => (
-          <div className="parent-item" key={g.id}>
-            <div className="parent-item-emoji">{g.emoji}</div>
-            <div className="parent-item-info">
-              <div className="parent-item-name">{g.name}</div>
-              <div className="parent-item-pts">
-                +{g.pts} pts · {g.isDaily !== false ? 'Daily' : 'One-time'}
-                {(g.target || 1) > 1 ? ` · ×${g.target}` : ''}
-              </div>
-            </div>
-            <label className="pbadge-toggle" title="Toggle daily / one-time">
+        state.goals.map((g) =>
+          editingId === g.id ? (
+            <form
+              className="input-row"
+              key={g.id}
+              onSubmit={(e) => { e.preventDefault(); saveEdit(g.id); }}
+            >
               <input
-                type="checkbox"
-                checked={g.isDaily !== false}
-                onChange={(e) => updateGoal(g.id, { isDaily: e.target.checked })}
+                type="text"
+                className="emoji-input"
+                maxLength={2}
+                value={editGoal.emoji}
+                onChange={(e) => setEditGoal({ ...editGoal, emoji: e.target.value })}
               />
-              <span className="pbadge-toggle-track" />
-            </label>
-            <button className="btn btn-sm btn-pink" onClick={() => removeGoal(g.id)}>
-              Remove
-            </button>
-          </div>
-        ))
+              <input
+                type="text"
+                value={editGoal.name}
+                onChange={(e) => setEditGoal({ ...editGoal, name: e.target.value })}
+              />
+              <input
+                type="number"
+                className="pts-input"
+                min={1}
+                max={999}
+                value={editGoal.pts}
+                onChange={(e) => setEditGoal({ ...editGoal, pts: e.target.value })}
+              />
+              <input
+                type="number"
+                className="pts-input"
+                min={1}
+                max={99}
+                value={editGoal.target}
+                onChange={(e) => setEditGoal({ ...editGoal, target: e.target.value })}
+              />
+              <button type="submit" className="btn btn-sm btn-purple" title="Save">
+                <FontAwesomeIcon icon={faCheck} />
+              </button>
+              <button type="button" className="btn btn-sm btn-pink" title="Cancel" onClick={() => setEditingId(null)}>
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </form>
+          ) : (
+            <div className="parent-item" key={g.id}>
+              <div className="parent-item-emoji">{g.emoji}</div>
+              <div className="parent-item-info">
+                <div className="parent-item-name">{g.name}</div>
+                <div className="parent-item-pts">
+                  +{g.pts} pts · {g.isDaily !== false ? 'Daily' : 'One-time'}
+                  {(g.target || 1) > 1 ? ` · ×${g.target}` : ''}
+                </div>
+              </div>
+              <label className="pbadge-toggle" title="Toggle daily / one-time">
+                <input
+                  type="checkbox"
+                  checked={g.isDaily !== false}
+                  onChange={(e) => updateGoal(g.id, { isDaily: e.target.checked })}
+                />
+                <span className="pbadge-toggle-track" />
+              </label>
+              <button className="btn btn-sm btn-purple" title="Edit" onClick={() => startEdit(g)}>
+                <FontAwesomeIcon icon={faPen} />
+              </button>
+              <button className="btn btn-sm btn-pink" onClick={() => removeGoal(g.id)}>
+                Remove
+              </button>
+            </div>
+          )
+        )
       )}
     </div>
   );

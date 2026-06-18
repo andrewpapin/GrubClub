@@ -71,6 +71,7 @@ interface GrubClubContextValue {
   updateGoal: (id: number, patch: Partial<Omit<Goal, 'id'>>) => void;
   addReward: (reward: Omit<Reward, 'id'>) => void;
   removeReward: (id: number) => void;
+  updateReward: (id: number, patch: Partial<Omit<Reward, 'id'>>) => void;
   saveSetting: (key: keyof Settings, val: string) => void;
   resetToday: () => void;
   resetAll: () => void;
@@ -561,6 +562,16 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     });
   }, [showToast]);
 
+  const updateReward = useCallback((id: number, patch: Partial<Omit<Reward, 'id'>>) => {
+    setState((prev) => {
+      const next = clone(prev);
+      const reward = next.rewards.find((r) => r.id === id);
+      if (!reward) return prev;
+      Object.assign(reward, patch);
+      return next;
+    });
+  }, []);
+
   const removeReward = useCallback((id: number) => {
     setState((prev) => {
       const reward = prev.rewards.find((r) => r.id === id);
@@ -719,6 +730,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     updateGoal,
     addReward,
     removeReward,
+    updateReward,
     saveSetting,
     resetToday,
     resetAll,
