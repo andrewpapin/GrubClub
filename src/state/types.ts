@@ -40,6 +40,8 @@ export interface Settings {
   bonusPts: number;
   pin: string;
   childName: string;
+  recoveryQuestion: string;
+  recoveryAnswer: string;
 }
 
 export interface DayLog {

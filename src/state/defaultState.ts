@@ -39,6 +39,8 @@ export const defaultState: GrubClubState = {
     bonusPts: 25,
     pin: '1234',
     childName: 'Zack',
+    recoveryQuestion: '',
+    recoveryAnswer: '',
   },
 };
 

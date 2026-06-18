@@ -22,6 +22,8 @@ export function SettingsPanel() {
   const [bonusPts, setBonusPts] = useState(String(state.settings.bonusPts));
   const [pin, setPin] = useState(String(state.settings.pin));
   const [childName, setChildName] = useState(state.settings.childName);
+  const [recoveryQuestion, setRecoveryQuestion] = useState(state.settings.recoveryQuestion);
+  const [recoveryAnswer, setRecoveryAnswer] = useState(state.settings.recoveryAnswer);
   const [joinCode, setJoinCode] = useState('');
   const [confirmStep, setConfirmStep] = useState<ConfirmStep>('none');
   const [savedField, setSavedField] = useState<string | null>(null);
@@ -179,6 +181,46 @@ export function SettingsPanel() {
             } else {
               setPin(String(state.settings.pin));
             }
+          }}
+        />
+      </div>
+      <div className="settings-row">
+        <div>
+          <div className="settings-label">
+            Recovery question
+            {savedField === 'recoveryQuestion' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
+          </div>
+          <div className="settings-sub">Shown if "Forgot PIN?" is tapped on the PIN screen</div>
+        </div>
+        <input
+          type="text"
+          maxLength={60}
+          placeholder="What's our dog's name?"
+          value={recoveryQuestion}
+          onChange={(e) => setRecoveryQuestion(e.target.value)}
+          onBlur={(e) => {
+            saveSetting('recoveryQuestion', e.target.value);
+            flashSaved('recoveryQuestion');
+          }}
+        />
+      </div>
+      <div className="settings-row">
+        <div>
+          <div className="settings-label">
+            Recovery answer
+            {savedField === 'recoveryAnswer' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
+          </div>
+          <div className="settings-sub">Not case-sensitive. Leave blank to disable PIN recovery</div>
+        </div>
+        <input
+          type="text"
+          maxLength={60}
+          placeholder="Rex"
+          value={recoveryAnswer}
+          onChange={(e) => setRecoveryAnswer(e.target.value)}
+          onBlur={(e) => {
+            saveSetting('recoveryAnswer', e.target.value);
+            flashSaved('recoveryAnswer');
           }}
         />
       </div>

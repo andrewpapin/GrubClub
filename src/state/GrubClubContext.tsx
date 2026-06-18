@@ -600,6 +600,8 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
         next.settings.foodPts = Math.max(1, parseInt(val) || 1);
       } else if (key === 'bonusPts') {
         next.settings.bonusPts = Math.max(0, parseInt(val) || 0);
+      } else if (key === 'recoveryQuestion' || key === 'recoveryAnswer') {
+        next.settings[key] = val.trim();
       } else {
         (next.settings[key] as number) = Math.max(0, parseInt(val) || 0);
       }
@@ -631,9 +633,13 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     setSyncStatus('idle');
     setState((prev) => {
       const pin = prev.settings.pin;
+      const recoveryQuestion = prev.settings.recoveryQuestion;
+      const recoveryAnswer = prev.settings.recoveryAnswer;
       const badgeConfig = prev.badgeConfig;
       const next = cloneDefaultState();
       next.settings.pin = pin;
+      next.settings.recoveryQuestion = recoveryQuestion;
+      next.settings.recoveryAnswer = recoveryAnswer;
       next.badgeConfig = badgeConfig;
       showToast(faTriangleExclamation, 'Everything reset');
       return applyDayRollover(next);
