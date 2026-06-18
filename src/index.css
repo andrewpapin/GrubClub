@@ -70,7 +70,6 @@ body {
 
 /* ===== TOP BAR ===== */
 .topbar {
-  background: var(--card);
   color: var(--dark);
   padding: max(14px, env(safe-area-inset-top)) 16px 12px;
   display: grid;
@@ -79,7 +78,6 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 3px solid var(--dark);
 }
 .topbar-title { font-size: 1.2rem; font-weight: 900; letter-spacing: -0.5px; justify-self: start; }
 .topbar-title-accent { color: var(--coral); }
