@@ -12,7 +12,8 @@ import { Celebration } from './components/Celebration';
 import { Confetti } from './components/Confetti';
 import { BadgePopup } from './components/BadgePopup';
 import { SyncGateModal } from './components/SyncGateModal';
-import { todayStr } from './state/defaultState';
+import { Onboarding, ONBOARDING_DONE_KEY } from './components/Onboarding';
+import { todayStr, STORAGE_KEY } from './state/defaultState';
 
 type View = 'kid' | 'pin' | 'parent';
 
@@ -47,6 +48,11 @@ function AppShell() {
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayStr());
+  // Returning users who already had saved progress before this feature shipped
+  // shouldn't suddenly see the walkthrough — only brand-new installs get it.
+  const [onboarded, setOnboarded] = useState(
+    () => localStorage.getItem(ONBOARDING_DONE_KEY) === 'true' || localStorage.getItem(STORAGE_KEY) !== null,
+  );
 
   return (
     <>
@@ -85,7 +91,7 @@ function AppShell() {
       <Celebration />
       <Confetti />
       <ToastContainer />
-      <SyncGateModal />
+      {onboarded ? <SyncGateModal /> : <Onboarding onComplete={() => setOnboarded(true)} />}
     </>
   );
 }

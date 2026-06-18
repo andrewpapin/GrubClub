@@ -991,6 +991,22 @@ button.goal-tile:active { transform: scale(0.97); }
 .sync-gate-error { color: var(--coral); }
 .sync-gate-skip { width: 100%; margin-top: 14px; }
 
+/* Onboarding */
+.onboarding-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.onboarding-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--dark);
+}
+.onboarding-dot.active { background: var(--coral); }
+
 /* Badge popup */
 .badge-popup-overlay {
   position: fixed;
