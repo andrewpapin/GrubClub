@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faListCheck, faMoon } from '@fortawesome/free-solid-svg-icons';
+import { faMoon } from '@fortawesome/free-solid-svg-icons';
 import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 
@@ -13,9 +13,7 @@ export function DailyGoals() {
   return (
     <div className="card">
       <div className="flex-between" style={{ marginBottom: 12 }}>
-        <div className="goal-card-title">
-          <span className="card-title-icon icon-yellow"><FontAwesomeIcon icon={faListCheck} /></span> Daily Goals
-        </div>
+        <div className="goal-card-title">Daily Goals</div>
         {dailyGoals.length > 0 && (
           <div className={`goal-progress-badge ${allDone ? 'done' : ''}`}>{completedGoals}/{dailyGoals.length} done</div>
         )}

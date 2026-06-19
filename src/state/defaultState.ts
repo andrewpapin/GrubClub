@@ -1,4 +1,5 @@
 import type { GravyState } from './types';
+import { FOODS } from '../data/foods';
 
 export const STORAGE_KEY = 'gravy_v1';
 
@@ -6,6 +7,9 @@ export const defaultState: GravyState = {
   points: 0,
   totalPoints: 0,
   streak: 0,
+  foodStreak: 0,
+  goalStreak: 0,
+  megaStreak: 0,
   lastActiveDate: null,
   todayPoints: 0,
   todayFoodCounts: {},
@@ -114,6 +118,36 @@ export function migrateLegacyState(state: Record<string, unknown>): void {
   }
 }
 
+// Walks backward day-by-day from yesterday through `dayLogs`, replaying the same
+// full-tray/all-goals conditions `applyDayRollover` uses, to seed foodStreak/goalStreak/
+// megaStreak for saves written before these fields existed (so upgrading doesn't reset
+// an in-progress streak to 0).
+function backfillStreaksFromLogs(state: GravyState): void {
+  const dailyGoals = state.goals.filter((g) => g.isDaily !== false);
+  let foodStreak = 0;
+  let goalStreak = 0;
+  let megaStreak = 0;
+  let trackingFood = true;
+  let trackingGoal = true;
+  let trackingMega = true;
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  for (let i = 0; i < 3650 && (trackingFood || trackingGoal || trackingMega); i++) {
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const log = state.dayLogs[dateStr];
+    if (!log) break;
+    const fullTray = FOODS.every((f) => (log.foodCounts[f.id] || 0) > 0);
+    const allGoalsDone = dailyGoals.length > 0 && dailyGoals.every((g) => log.goalIds.includes(g.id));
+    if (trackingFood && fullTray) foodStreak++; else trackingFood = false;
+    if (trackingGoal && allGoalsDone) goalStreak++; else trackingGoal = false;
+    if (trackingMega && fullTray && allGoalsDone) megaStreak++; else trackingMega = false;
+    d.setDate(d.getDate() - 1);
+  }
+  state.foodStreak = foodStreak;
+  state.goalStreak = goalStreak;
+  state.megaStreak = megaStreak;
+}
+
 export function loadState(): GravyState {
   let state: GravyState;
   try {
@@ -126,11 +160,14 @@ export function loadState(): GravyState {
       state = cloneDefaultState();
     }
     const stateRecord = state as unknown as Record<string, unknown>;
+    const hadStreakFields =
+      'foodStreak' in stateRecord || 'goalStreak' in stateRecord || 'megaStreak' in stateRecord;
     for (const k of Object.keys(defaultState) as (keyof GravyState)[]) {
       if (!(k in state)) {
         stateRecord[k] = JSON.parse(JSON.stringify(defaultState[k]));
       }
     }
+    if (!hadStreakFields) backfillStreaksFromLogs(state);
     if (!state.settings) state.settings = { ...defaultState.settings };
     const settingsRecord = state.settings as unknown as Record<string, unknown>;
     for (const k of Object.keys(defaultState.settings) as (keyof GravyState['settings'])[]) {
@@ -170,6 +207,13 @@ export function applyDayRollover(state: GravyState): GravyState {
     } else {
       state.streak = 0;
     }
+    const fullTray = FOODS.every((f) => (state.todayFoodCounts[f.id] || 0) > 0);
+    const dailyGoals = state.goals.filter((g) => g.isDaily !== false);
+    const allGoalsDone = dailyGoals.length > 0 && dailyGoals.every((g) => state.todayGoals.includes(g.id));
+    const closedOutYesterday = state.lastActiveDate === yStr;
+    state.foodStreak = closedOutYesterday && fullTray ? state.foodStreak + 1 : 0;
+    state.goalStreak = closedOutYesterday && allGoalsDone ? state.goalStreak + 1 : 0;
+    state.megaStreak = closedOutYesterday && fullTray && allGoalsDone ? state.megaStreak + 1 : 0;
     if (hadActivity) {
       state.dayLogs[state.lastActiveDate] = {
         foodCounts: { ...state.todayFoodCounts },

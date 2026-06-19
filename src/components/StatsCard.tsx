@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFire, faUtensils, faListCheck } from '@fortawesome/free-solid-svg-icons';
+import { faFire, faUtensils, faListCheck, faStar } from '@fortawesome/free-solid-svg-icons';
 import { getRank, RANKS } from '../data/ranks';
 import { FOODS } from '../data/foods';
 import { AppIcon } from './AppIcon';
@@ -39,28 +39,31 @@ export function StatsCard() {
         <div className="stats-rank-top">
           <AppIcon iconKey={rank.icon} emojiFallback={rank.emoji} className="stats-rank-emoji" />
           <span className="stats-rank-name">{rank.name}</span>
-          {state.streak > 0 && (
-            <span
-              className={`streak-badge${streakAtRisk ? ' streak-badge--risk' : ''}`}
-              title={streakAtRisk ? `Log something today to keep your ${state.streak}-day streak!` : `${state.streak} day streak`}
-            >
-              <FontAwesomeIcon icon={faFire} /> {state.streak}
-            </span>
-          )}
         </div>
         <div className="stats-rank-xp">{xpText}</div>
         <div className="xp-bar-track">
           <div className="xp-bar-fill" style={{ width: `${pct}%` }} />
         </div>
-        <div className="stats-today" aria-label={`Today: ${eatenCount} of ${FOODS.length} foods, ${goalsDone} of ${dailyGoals.length} goals`}>
-          <span className={`stats-today-chip ${foodDone ? 'done' : ''}`}>
-            <FontAwesomeIcon icon={faUtensils} aria-hidden="true" /> {eatenCount}/{FOODS.length}
+        <div className="stats-today" aria-label={`Food streak ${state.foodStreak}, goal streak ${state.goalStreak}, streak ${state.streak}, mega streak ${state.megaStreak}`}>
+          <span className={`stats-today-chip ${foodDone ? 'done' : ''}`} title="Food streak">
+            <FontAwesomeIcon icon={faUtensils} aria-hidden="true" /> {state.foodStreak}
           </span>
           {dailyGoals.length > 0 && (
-            <span className={`stats-today-chip ${goalsAllDone ? 'done' : ''}`}>
-              <FontAwesomeIcon icon={faListCheck} aria-hidden="true" /> {goalsDone}/{dailyGoals.length}
+            <span className={`stats-today-chip ${goalsAllDone ? 'done' : ''}`} title="Goal streak">
+              <FontAwesomeIcon icon={faListCheck} aria-hidden="true" /> {state.goalStreak}
             </span>
           )}
+          {state.streak > 0 && (
+            <span
+              className={`stats-today-chip streak-badge${streakAtRisk ? ' streak-badge--risk' : ''}`}
+              title={streakAtRisk ? `Log something today to keep your ${state.streak}-day streak!` : `${state.streak} day streak`}
+            >
+              <FontAwesomeIcon icon={faFire} /> {state.streak}
+            </span>
+          )}
+          <span className="stats-today-chip" title="Mega streak">
+            <FontAwesomeIcon icon={faStar} aria-hidden="true" /> {state.megaStreak}
+          </span>
         </div>
         {streakAtRisk && (
           <div className="streak-risk-nudge">
