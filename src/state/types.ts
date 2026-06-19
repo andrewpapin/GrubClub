@@ -38,6 +38,8 @@ export interface BadgeOverride {
   icon?: string;       // registered icon key (see data/icons.ts)
 }
 
+export type Theme = 'light' | 'dark' | 'rainbow' | 'gold';
+
 export interface Settings {
   foodPts: number;
   bonusPts: number;
@@ -45,6 +47,7 @@ export interface Settings {
   childName: string;
   recoveryQuestion: string;
   recoveryAnswer: string;
+  theme: Theme;
 }
 
 export interface DayLog {

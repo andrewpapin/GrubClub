@@ -48,6 +48,64 @@
   --transition-slow: 0.3s ease;
 }
 
+/* ===== THEMES =====
+   Light is the default (unmarked) palette above. The other themes override
+   the same tokens, so every component repaints automatically — nothing
+   below this block needs to know which theme is active. */
+:root[data-theme="dark"] {
+  --bg: #161B1F;
+  --card: #232B33;
+  --cream: #2B343C;
+  --text: #ECF1EF;
+  --muted: #93A8A5;
+  --dark: #ECF1EF;
+  --yellow: #8A6324;
+  --coral: #A6453F;
+  --sage: #4F6B64;
+}
+/* These 4 rules use --dark as a literal fill paired with hardcoded white text;
+   since --dark flips light in dark mode, white-on-light-fill would be unreadable. */
+:root[data-theme="dark"] .btn-purple,
+:root[data-theme="dark"] .btn-dark,
+:root[data-theme="dark"] .badge-info-btn:active,
+:root[data-theme="dark"] .parent-topbar {
+  color: #161B1F;
+}
+
+:root[data-theme="gold"] {
+  --bg: #FFFFFF;
+  --card: #FFFFFF;
+  --cream: #F5EFD9;
+  --text: #1A1A1A;
+  --muted: #6B6356;
+  --dark: #1A1A1A;
+  --yellow: #D4AF37;
+  --coral: #B8860B;
+  --sage: #8C7115;
+}
+
+:root[data-theme="rainbow"] body {
+  background: linear-gradient(120deg, #F6BD60, #F28482, #84A59D, #8EC5F6, #C9A6F6, #F6BD60);
+  background-size: 400% 400%;
+  animation: rainbowPan 18s ease infinite;
+}
+@keyframes rainbowPan {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+/* Scoped to the top-level screen roots (not body/#root) so the fixed-position
+   toasts, celebration overlay, confetti, and modals — which are siblings of
+   these roots, not descendants — keep positioning against the real viewport. */
+[data-theme="rainbow"] #kidApp,
+[data-theme="rainbow"] .parent-screen-inner,
+[data-theme="rainbow"] .pin-screen {
+  animation: rainbowHue 12s linear infinite;
+}
+@keyframes rainbowHue {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(360deg); }
+}
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
@@ -1298,6 +1356,40 @@ button.goal-tile:active { transform: scale(0.97); }
 }
 .icon-picker-cell:active { transform: scale(0.92); }
 .icon-picker-cell.active { background: var(--sage); color: #fff; }
+
+.theme-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-xs);
+  width: 100%;
+}
+.theme-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--card);
+  border: 2.5px solid var(--dark);
+  border-radius: var(--radius-sm);
+  padding: 10px 4px;
+  cursor: pointer;
+  font-family: var(--font-display);
+}
+.theme-swatch:active { transform: scale(0.96); }
+.theme-swatch.active { border-color: var(--sage); box-shadow: 3px 3px 0 var(--sage); }
+.theme-swatch-label { font-size: var(--text-2xs); font-weight: 800; color: var(--text); }
+/* These preview chips are deliberately hardcoded (not var(--*)-driven) — each must
+   show what that theme looks like regardless of which theme is currently active. */
+.theme-swatch-preview {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #2F3E46;
+}
+.theme-swatch-preview--light { background: linear-gradient(135deg, #F7EDE2 50%, #F6BD60 50%); }
+.theme-swatch-preview--dark { background: linear-gradient(135deg, #161B1F 50%, #8A6324 50%); }
+.theme-swatch-preview--gold { background: linear-gradient(135deg, #FFFFFF 50%, #D4AF37 50%); }
+.theme-swatch-preview--rainbow { background: linear-gradient(135deg, #F6BD60, #F28482, #84A59D, #8EC5F6); }
 
 .settings-row {
   background: var(--card);

@@ -45,6 +45,7 @@ export const defaultState: GravyState = {
     childName: 'Zack',
     recoveryQuestion: '',
     recoveryAnswer: '',
+    theme: 'light',
   },
 };
 
