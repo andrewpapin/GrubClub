@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoon, faStar, faCheck, faXmark, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub } from '../../state/GrubClubContext';
+import { useGravy } from '../../state/GravyContext';
 import { AppIcon } from '../AppIcon';
 import { ConfirmDialog } from '../ConfirmDialog';
 
 export function ApprovalsPanel() {
-  const { state, approveReward, declineReward } = useGrubClub();
+  const { state, approveReward, declineReward } = useGravy();
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [declineId, setDeclineId] = useState<string | null>(null);
 

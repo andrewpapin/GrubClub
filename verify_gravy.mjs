@@ -356,14 +356,14 @@ log('03b-week-strip-dot', dotVisible ? 'PASS' : 'FAIL', `activity dot visible on
 // Inject: pending pizza night (kid has 1 pt, pizza costs 30 → insufficient)
 // and bump points to 100 so kid can afford a future reward request
 await page.evaluate(() => {
-  const raw = localStorage.getItem('grubclub_v2');
+  const raw = localStorage.getItem('gravy_v1');
   if (!raw) return;
   const s = JSON.parse(raw);
   const pizza = s.rewards.find((r) => r.name === 'Pizza night');
   if (pizza && !s.pendingRewards.some((p) => p.rewardId === pizza.id)) {
     s.pendingRewards.push({ id: String(Date.now()), rewardId: pizza.id });
   }
-  localStorage.setItem('grubclub_v2', JSON.stringify(s));
+  localStorage.setItem('gravy_v1', JSON.stringify(s));
 });
 await page.reload();
 await page.waitForTimeout(800);
@@ -410,7 +410,7 @@ await page.waitForTimeout(300);
 
 // Inject enough points so kid can request the reward
 const injectResult = await page.evaluate(() => {
-  const raw = localStorage.getItem('grubclub_v2');
+  const raw = localStorage.getItem('gravy_v1');
   if (!raw) return { error: 'no state' };
   const s = JSON.parse(raw);
   const before = s.points;
@@ -419,8 +419,8 @@ const injectResult = await page.evaluate(() => {
   s.todayPoints = 0; // avoid rollover issues
   // Remove pizza from pending so store shows it again
   s.pendingRewards = [];
-  localStorage.setItem('grubclub_v2', JSON.stringify(s));
-  const verify = JSON.parse(localStorage.getItem('grubclub_v2'));
+  localStorage.setItem('gravy_v1', JSON.stringify(s));
+  const verify = JSON.parse(localStorage.getItem('gravy_v1'));
   return { before, after: verify.points };
 });
 console.log('[debug] test13 state inject:', JSON.stringify(injectResult));

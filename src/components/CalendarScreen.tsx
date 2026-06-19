@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight, faCalendarDays, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { DaySummaryCard } from './DaySummaryCard';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 import { todayStr } from '../state/defaultState';
 import { getDayLog, hasAnyLog } from '../state/dayLog';
 
@@ -26,7 +26,7 @@ interface CalendarScreenProps {
 }
 
 export function CalendarScreen({ open, onClose, selectedDate, onSelectDate }: CalendarScreenProps) {
-  const { state, showToast } = useGrubClub();
+  const { state, showToast } = useGravy();
   const today = todayStr();
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());

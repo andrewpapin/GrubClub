@@ -3,7 +3,7 @@ import { faXmark, faLock, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { BADGE_MASTER } from '../data/badges';
 import { AppIcon } from './AppIcon';
 import { getBadgeDisplay } from '../state/badges';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 interface BadgePopupProps {
   badgeId: string | null;
@@ -11,7 +11,7 @@ interface BadgePopupProps {
 }
 
 export function BadgePopup({ badgeId, onClose }: BadgePopupProps) {
-  const { state } = useGrubClub();
+  const { state } = useGravy();
   const master = badgeId ? BADGE_MASTER.find((b) => b.id === badgeId) : null;
   const display = badgeId ? getBadgeDisplay(state, badgeId) : null;
   const earned = badgeId ? state.earnedBadges.includes(badgeId) : false;

@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHouse, faGift, faMedal, faGear } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 export type Tab = 'home' | 'store' | 'badges';
 
@@ -11,7 +11,7 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ active, onChange, onEnterParent }: BottomNavProps) {
-  const { state } = useGrubClub();
+  const { state } = useGravy();
   const pendingCount = state.pendingRewards.length;
 
   return (

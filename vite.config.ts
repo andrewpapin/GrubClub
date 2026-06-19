@@ -4,15 +4,15 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/GrubClub/' : '/',
+  base: command === 'build' ? '/Gravy/' : '/',
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
-        name: 'Grub Club',
-        short_name: 'Grub Club',
+        name: 'Gravy',
+        short_name: 'Gravy',
         description: 'A family chore & reward tracker',
         theme_color: '#F7EDE2',
         background_color: '#F7EDE2',

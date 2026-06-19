@@ -1,6 +1,6 @@
-import type { DayLog, GrubClubState } from './types';
+import type { DayLog, GravyState } from './types';
 
-export function getDayLog(state: GrubClubState, dateStr: string, today: string): DayLog | null {
+export function getDayLog(state: GravyState, dateStr: string, today: string): DayLog | null {
   if (dateStr === today) {
     return {
       foodCounts: state.todayFoodCounts,

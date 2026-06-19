@@ -1,8 +1,8 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 export function Celebration() {
-  const { celebration, hideCelebration } = useGrubClub();
+  const { celebration, hideCelebration } = useGravy();
   return (
     <div className={`celebration ${celebration ? 'show' : ''}`} onClick={hideCelebration}>
       {celebration && (

@@ -2,14 +2,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStore, faHourglassHalf, faStar, faLock } from '@fortawesome/free-solid-svg-icons';
 import { TopBar } from './TopBar';
 import { AppIcon } from './AppIcon';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 interface StoreScreenProps {
   onEnterParent: () => void;
 }
 
 export function StoreScreen({ onEnterParent: _onEnterParent }: StoreScreenProps) {
-  const { state, requestReward } = useGrubClub();
+  const { state, requestReward } = useGravy();
   const pendingIds = state.pendingRewards.map((r) => r.rewardId);
   const available = state.rewards.filter((r) => !pendingIds.includes(r.id));
 

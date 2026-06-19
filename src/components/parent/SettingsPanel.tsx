@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTriangleExclamation, faCheck, faCloud, faRotate } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub } from '../../state/GrubClubContext';
+import { useGravy } from '../../state/GravyContext';
 import { ConfirmDialog } from '../ConfirmDialog';
 
 type ConfirmStep = 'none' | 'resetToday' | 'resetAll1' | 'resetAll2' | 'leaveSync';
@@ -17,7 +17,7 @@ export function SettingsPanel() {
     createHousehold,
     joinHousehold,
     leaveHousehold,
-  } = useGrubClub();
+  } = useGravy();
   const [foodPts, setFoodPts] = useState(String(state.settings.foodPts));
   const [bonusPts, setBonusPts] = useState(String(state.settings.bonusPts));
   const [pin, setPin] = useState(String(state.settings.pin));
