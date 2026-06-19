@@ -1,10 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faListCheck } from '@fortawesome/free-solid-svg-icons';
 import { AppIcon } from './AppIcon';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 export function OtherGoals() {
-  const { state, incrementGoal, decrementGoal } = useGrubClub();
+  const { state, incrementGoal, decrementGoal } = useGravy();
   const otherGoals = state.goals.filter((g) => g.isDaily === false);
 
   if (otherGoals.length === 0) return null;

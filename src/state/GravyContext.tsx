@@ -13,7 +13,7 @@ import {
   faStar,
   faListCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import type { Goal, GrubClubState, Reward, Settings } from './types';
+import type { Goal, GravyState, Reward, Settings } from './types';
 import { applyDayRollover, loadState, saveState, cloneDefaultState, migrateLegacyState } from './defaultState';
 import { FOODS } from '../data/foods';
 import { resolveToastIcon } from '../data/icons';
@@ -29,8 +29,8 @@ import {
 
 export type SyncStatus = 'idle' | 'syncing' | 'error';
 
-const HOUSEHOLD_CODE_KEY = 'grubclub_household_code';
-export const SYNC_SKIPPED_KEY = 'grubclub_sync_skipped';
+const HOUSEHOLD_CODE_KEY = 'gravy_household_code';
+export const SYNC_SKIPPED_KEY = 'gravy_sync_skipped';
 
 export interface ToastAction {
   label: string;
@@ -50,8 +50,8 @@ export interface CelebrationData {
   sub: string;
 }
 
-interface GrubClubContextValue {
-  state: GrubClubState;
+interface GravyContextValue {
+  state: GravyState;
   toasts: ToastItem[];
   celebration: CelebrationData | null;
   confettiTrigger: number;
@@ -85,16 +85,16 @@ interface GrubClubContextValue {
   leaveHousehold: () => void;
 }
 
-const GrubClubContext = createContext<GrubClubContextValue | null>(null);
+const GravyContext = createContext<GravyContextValue | null>(null);
 
-function clone(state: GrubClubState): GrubClubState {
+function clone(state: GravyState): GravyState {
   return JSON.parse(JSON.stringify(state));
 }
 
 let toastIdCounter = 0;
 
-export function GrubClubProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<GrubClubState>(() => loadState());
+export function GravyProvider({ children }: { children: ReactNode }) {
+  const [state, setState] = useState<GravyState>(() => loadState());
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [celebration, setCelebration] = useState<CelebrationData | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
@@ -173,7 +173,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
 
   // Awards points and mutates the given draft state in place
   const awardPoints = useCallback(
-    (next: GrubClubState, pts: number, reason: string, opts?: { silent?: boolean; action?: ToastAction }) => {
+    (next: GravyState, pts: number, reason: string, opts?: { silent?: boolean; action?: ToastAction }) => {
       next.points += pts;
       next.totalPoints += pts;
       next.todayPoints += pts;
@@ -191,7 +191,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
   // When delayMs is set, the announcement is deferred so it doesn't collide
   // with a celebration overlay already shown for the same action.
   const maybeCelebrateRankUp = useCallback(
-    (prevTotalPoints: number, next: GrubClubState, delayMs = 0) => {
+    (prevTotalPoints: number, next: GravyState, delayMs = 0) => {
       const prevIndex = getRank(prevTotalPoints).index;
       const newIndex = getRank(next.totalPoints).index;
       if (newIndex <= prevIndex) return;
@@ -211,7 +211,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
   // When delayMs is set, the announcement is deferred so it doesn't pile up
   // on top of a celebration overlay shown for the same action.
   const checkBadges = useCallback(
-    (next: GrubClubState, delayMs = 0) => {
+    (next: GravyState, delayMs = 0) => {
       const newlyEarned = findNewlyEarnedBadges(next);
       newlyEarned.forEach((id) => {
         next.earnedBadges.push(id);
@@ -720,7 +720,7 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     showToast(faCloud, 'Cloud sync turned off');
   }, [showToast]);
 
-  const value: GrubClubContextValue = {
+  const value: GravyContextValue = {
     state,
     toasts,
     celebration,
@@ -755,12 +755,12 @@ export function GrubClubProvider({ children }: { children: ReactNode }) {
     leaveHousehold,
   };
 
-  return <GrubClubContext.Provider value={value}>{children}</GrubClubContext.Provider>;
+  return <GravyContext.Provider value={value}>{children}</GravyContext.Provider>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
-export function useGrubClub(): GrubClubContextValue {
-  const ctx = useContext(GrubClubContext);
-  if (!ctx) throw new Error('useGrubClub must be used within a GrubClubProvider');
+export function useGravy(): GravyContextValue {
+  const ctx = useContext(GravyContext);
+  if (!ctx) throw new Error('useGravy must be used within a GravyProvider');
   return ctx;
 }

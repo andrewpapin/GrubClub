@@ -53,7 +53,7 @@ export interface DayLog {
   points: number;
 }
 
-export interface GrubClubState {
+export interface GravyState {
   points: number;
   totalPoints: number;
   streak: number;

@@ -3,11 +3,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { BADGE_MASTER } from '../../data/badges';
 import { getEnabledBadgeCount } from '../../state/badges';
-import { useGrubClub } from '../../state/GrubClubContext';
+import { useGravy } from '../../state/GravyContext';
 import { IconPicker } from './IconPicker';
 
 export function BadgesPanel() {
-  const { state, updateBadgeConfig } = useGrubClub();
+  const { state, updateBadgeConfig } = useGravy();
   const [activeGroup, setActiveGroup] = useState('All');
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const [savedKey, setSavedKey] = useState<string | null>(null);

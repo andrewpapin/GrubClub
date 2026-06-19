@@ -2,10 +2,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUtensils, faStar, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FOODS } from '../data/foods';
 import { AppIcon } from './AppIcon';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 export function FoodTray() {
-  const { state, logFood, removeFood } = useGrubClub();
+  const { state, logFood, removeFood } = useGravy();
   const eatenCount = Object.values(state.todayFoodCounts).filter((v) => v > 0).length;
   const allEaten = eatenCount === FOODS.length;
 

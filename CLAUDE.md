@@ -15,7 +15,7 @@ There is **no test framework configured**. All testing is manual via the browser
 
 ## Architecture Overview
 
-GrubClub is a gamified chores + nutrition + rewards PWA for kids built with React 19, TypeScript, and Vite. It is a client-side-only SPA — no server, no API. Data persists to `localStorage` with optional cloud sync via Supabase.
+Gravy is a gamified chores + nutrition + rewards PWA for kids built with React 19, TypeScript, and Vite. It is a client-side-only SPA — no server, no API. Data persists to `localStorage` with optional cloud sync via Supabase.
 
 ### Two User Surfaces
 
@@ -24,9 +24,9 @@ GrubClub is a gamified chores + nutrition + rewards PWA for kids built with Reac
 
 ### Global State
 
-All state flows through a single React Context defined in `src/state/GrubClubContext.tsx`. Components consume it via `useGrubClub()`. The context owns:
+All state flows through a single React Context defined in `src/state/GravyContext.tsx`. Components consume it via `useGravy()`. The context owns:
 
-- The `GrubClubState` object (see `src/state/types.ts` for full shape)
+- The `GravyState` object (see `src/state/types.ts` for full shape)
 - Auto-save to `localStorage` on every state change
 - Supabase sync (`src/state/sync.ts`) — households share a 6-char code; entire state is stored as a JSON blob per code
 - Toast notifications with optional undo actions
@@ -50,11 +50,11 @@ All state flows through a single React Context defined in `src/state/GrubClubCon
 
 ### Persistence & Sync
 
-- Primary: `localStorage` key `grubclub_state`
+- Primary: `localStorage` key `gravy_v1`
 - Optional cloud: Supabase `households` table — `{ code TEXT PK, state JSONB, updated_at, created_at }`
 - Household codes use an unambiguous character set (no `0/O`, `1/I/l`)
 - Real-time sync via Supabase `postgres_changes` subscription; conflict resolution is last-write-wins
 
 ### Deployment
 
-GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages on push to `main`. The Vite `base` is `/GrubClub/`.
+GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages on push to `main`. The Vite `base` is `/Gravy/`.

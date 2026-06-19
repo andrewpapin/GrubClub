@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarDays, faMoon } from '@fortawesome/free-solid-svg-icons';
 import { FOODS } from '../data/foods';
 import { AppIcon } from './AppIcon';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 import { getDayLog } from '../state/dayLog';
 import { todayStr } from '../state/defaultState';
 
@@ -11,7 +11,7 @@ interface DaySummaryCardProps {
 }
 
 export function DaySummaryCard({ dateStr }: DaySummaryCardProps) {
-  const { state, logFoodForDay, removeFoodForDay, toggleGoalForDay } = useGrubClub();
+  const { state, logFoodForDay, removeFoodForDay, toggleGoalForDay } = useGravy();
   const today = todayStr();
   const log = getDayLog(state, dateStr, today);
   const isEditable = dateStr < today;

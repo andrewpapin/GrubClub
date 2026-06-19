@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPen, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub } from '../../state/GrubClubContext';
+import { useGravy } from '../../state/GravyContext';
 import { AppIcon } from '../AppIcon';
 import { IconPicker } from './IconPicker';
 import type { Goal } from '../../state/types';
@@ -9,7 +9,7 @@ import type { Goal } from '../../state/types';
 const DEFAULT_GOAL_ICON = 'circleCheck';
 
 export function GoalsPanel() {
-  const { state, addGoal, removeGoal, updateGoal } = useGrubClub();
+  const { state, addGoal, removeGoal, updateGoal } = useGravy();
   const [icon, setIcon] = useState(DEFAULT_GOAL_ICON);
   const [name, setName] = useState('');
   const [pts, setPts] = useState('');

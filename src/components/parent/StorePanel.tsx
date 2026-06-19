@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar, faPen, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub } from '../../state/GrubClubContext';
+import { useGravy } from '../../state/GravyContext';
 import { AppIcon } from '../AppIcon';
 import { IconPicker } from './IconPicker';
 import type { Reward } from '../../state/types';
@@ -9,7 +9,7 @@ import type { Reward } from '../../state/types';
 const DEFAULT_REWARD_ICON = 'gift';
 
 export function StorePanel() {
-  const { state, addReward, removeReward, updateReward } = useGrubClub();
+  const { state, addReward, removeReward, updateReward } = useGravy();
   const [icon, setIcon] = useState(DEFAULT_REWARD_ICON);
   const [name, setName] = useState('');
   const [cost, setCost] = useState('');

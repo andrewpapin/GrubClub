@@ -1,5 +1,5 @@
 import { useState, Component, type ReactNode } from 'react';
-import { GrubClubProvider } from './state/GrubClubContext';
+import { GravyProvider } from './state/GravyContext';
 import { HomeScreen } from './components/HomeScreen';
 import { StoreScreen } from './components/StoreScreen';
 import { BadgesScreen } from './components/BadgesScreen';
@@ -99,9 +99,9 @@ function AppShell() {
 function App() {
   return (
     <ErrorBoundary>
-      <GrubClubProvider>
+      <GravyProvider>
         <AppShell />
-      </GrubClubProvider>
+      </GravyProvider>
     </ErrorBoundary>
   );
 }

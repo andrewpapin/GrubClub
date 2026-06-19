@@ -1,8 +1,8 @@
-import type { GrubClubState } from './types';
+import type { GravyState } from './types';
 
-export const STORAGE_KEY = 'grubclub_v2';
+export const STORAGE_KEY = 'gravy_v1';
 
-export const defaultState: GrubClubState = {
+export const defaultState: GravyState = {
   points: 0,
   totalPoints: 0,
   streak: 0,
@@ -44,7 +44,7 @@ export const defaultState: GrubClubState = {
   },
 };
 
-export function cloneDefaultState(): GrubClubState {
+export function cloneDefaultState(): GravyState {
   return JSON.parse(JSON.stringify(defaultState));
 }
 
@@ -114,31 +114,31 @@ export function migrateLegacyState(state: Record<string, unknown>): void {
   }
 }
 
-export function loadState(): GrubClubState {
-  let state: GrubClubState;
+export function loadState(): GravyState {
+  let state: GravyState;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     const raw = saved ? JSON.parse(saved) : null;
     if (raw) {
       migrateLegacyState(raw as Record<string, unknown>);
-      state = raw as GrubClubState;
+      state = raw as GravyState;
     } else {
       state = cloneDefaultState();
     }
     const stateRecord = state as unknown as Record<string, unknown>;
-    for (const k of Object.keys(defaultState) as (keyof GrubClubState)[]) {
+    for (const k of Object.keys(defaultState) as (keyof GravyState)[]) {
       if (!(k in state)) {
         stateRecord[k] = JSON.parse(JSON.stringify(defaultState[k]));
       }
     }
     if (!state.settings) state.settings = { ...defaultState.settings };
     const settingsRecord = state.settings as unknown as Record<string, unknown>;
-    for (const k of Object.keys(defaultState.settings) as (keyof GrubClubState['settings'])[]) {
+    for (const k of Object.keys(defaultState.settings) as (keyof GravyState['settings'])[]) {
       if (!(k in state.settings)) settingsRecord[k] = defaultState.settings[k];
     }
     if (!state.counters) state.counters = JSON.parse(JSON.stringify(defaultState.counters));
     const countersRecord = state.counters as unknown as Record<string, unknown>;
-    for (const k of Object.keys(defaultState.counters) as (keyof GrubClubState['counters'])[]) {
+    for (const k of Object.keys(defaultState.counters) as (keyof GravyState['counters'])[]) {
       if (!(k in state.counters)) countersRecord[k] = defaultState.counters[k];
     }
     if (!state.counters.foodLogs) state.counters.foodLogs = {};
@@ -149,11 +149,11 @@ export function loadState(): GrubClubState {
   return applyDayRollover(state);
 }
 
-export function saveState(state: GrubClubState) {
+export function saveState(state: GravyState) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-export function applyDayRollover(state: GrubClubState): GrubClubState {
+export function applyDayRollover(state: GravyState): GravyState {
   const today = todayStr();
   if (state.lastActiveDate && state.lastActiveDate !== today) {
     const yesterday = new Date();

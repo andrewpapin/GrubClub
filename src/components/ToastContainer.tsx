@@ -1,8 +1,8 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 export function ToastContainer() {
-  const { toasts, dismissToast } = useGrubClub();
+  const { toasts, dismissToast } = useGravy();
   return (
     <div className="toast-container">
       {toasts.map((t) => (

@@ -1,12 +1,12 @@
 import { BADGE_MASTER, type BadgeDef } from '../data/badges';
 import type { IconKey } from '../data/icons';
-import type { GrubClubState } from './types';
+import type { GravyState } from './types';
 
 export interface BadgeDisplay extends BadgeDef {
   enabled: boolean;
 }
 
-export function getBadgeDisplay(state: GrubClubState, id: string): BadgeDisplay | null {
+export function getBadgeDisplay(state: GravyState, id: string): BadgeDisplay | null {
   const master = BADGE_MASTER.find((b) => b.id === id);
   if (!master) return null;
   const cfg = state.badgeConfig[id] || {};
@@ -19,7 +19,7 @@ export function getBadgeDisplay(state: GrubClubState, id: string): BadgeDisplay 
   };
 }
 
-export function getEnabledBadges(state: GrubClubState): BadgeDef[] {
+export function getEnabledBadges(state: GravyState): BadgeDef[] {
   return BADGE_MASTER.filter((b) => {
     const cfg = state.badgeConfig[b.id];
     return cfg ? cfg.enabled !== false : true;
@@ -33,7 +33,7 @@ export interface BadgeProgress {
 
 // Returns current/target progress towards a badge, or null if it's not a
 // progress-trackable badge (e.g. "first time" badges).
-export function getBadgeProgress(state: GrubClubState, badge: BadgeDef): BadgeProgress | null {
+export function getBadgeProgress(state: GravyState, badge: BadgeDef): BadgeProgress | null {
   const c = state.counters;
   const [type, threshStr] = badge.trigger.split(':');
   const thresh = parseInt(threshStr) || 0;
@@ -69,7 +69,7 @@ export function getBadgeProgress(state: GrubClubState, badge: BadgeDef): BadgePr
   }
 }
 
-export function getEnabledBadgeCount(state: GrubClubState): number {
+export function getEnabledBadgeCount(state: GravyState): number {
   return BADGE_MASTER.filter((b) => {
     const cfg = state.badgeConfig[b.id];
     return cfg ? cfg.enabled !== false : true;
@@ -77,7 +77,7 @@ export function getEnabledBadgeCount(state: GrubClubState): number {
 }
 
 // Returns the ids of badges that newly become earned given the current state/counters.
-export function findNewlyEarnedBadges(state: GrubClubState): string[] {
+export function findNewlyEarnedBadges(state: GravyState): string[] {
   const c = state.counters;
   const newlyEarned: string[] = [];
   BADGE_MASTER.forEach((b) => {

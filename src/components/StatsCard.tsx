@@ -3,10 +3,10 @@ import { faFire, faUtensils, faListCheck } from '@fortawesome/free-solid-svg-ico
 import { getRank, RANKS } from '../data/ranks';
 import { FOODS } from '../data/foods';
 import { AppIcon } from './AppIcon';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 export function StatsCard() {
-  const { state } = useGrubClub();
+  const { state } = useGravy();
   const { rank, index } = getRank(state.totalPoints);
   const hasLoggedToday =
     Object.keys(state.todayFoodCounts).length > 0 || state.todayGoals.length > 0 || state.todayPoints > 0;

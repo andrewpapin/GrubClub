@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarDays } from '@fortawesome/free-solid-svg-icons';
 import { todayStr } from '../state/defaultState';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 import { getDayLog, hasAnyLog } from '../state/dayLog';
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -21,7 +21,7 @@ function toDateStr(y: number, m: number, d: number): string {
 }
 
 export function WeekStrip({ selectedDate, onSelectDate, onOpenCalendar }: WeekStripProps) {
-  const { state } = useGrubClub();
+  const { state } = useGravy();
   const today = todayStr();
   const now = new Date();
 

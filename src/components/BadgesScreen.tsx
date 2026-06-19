@@ -3,7 +3,7 @@ import { faMoon } from '@fortawesome/free-solid-svg-icons';
 import { TopBar } from './TopBar';
 import { AppIcon } from './AppIcon';
 import { getBadgeDisplay, getBadgeProgress, getEnabledBadges } from '../state/badges';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 interface BadgesScreenProps {
   onShowBadge: (id: string) => void;
@@ -11,7 +11,7 @@ interface BadgesScreenProps {
 }
 
 export function BadgesScreen({ onShowBadge, onEnterParent: _onEnterParent }: BadgesScreenProps) {
-  const { state } = useGrubClub();
+  const { state } = useGravy();
   const visible = getEnabledBadges(state);
 
   return (

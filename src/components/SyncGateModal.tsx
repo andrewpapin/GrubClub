@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloud, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub, SYNC_SKIPPED_KEY } from '../state/GrubClubContext';
+import { useGravy, SYNC_SKIPPED_KEY } from '../state/GravyContext';
 
 export function SyncGateModal() {
-  const { householdCode, syncStatus, createHousehold, joinHousehold } = useGrubClub();
+  const { householdCode, syncStatus, createHousehold, joinHousehold } = useGravy();
   const [joinCode, setJoinCode] = useState('');
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(SYNC_SKIPPED_KEY) === 'true');
 

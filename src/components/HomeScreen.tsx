@@ -5,7 +5,7 @@ import { FoodTray } from './FoodTray';
 import { DailyGoals } from './DailyGoals';
 import { OtherGoals } from './OtherGoals';
 import { DaySummaryCard } from './DaySummaryCard';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 import { todayStr } from '../state/defaultState';
 
 interface HomeScreenProps {
@@ -16,14 +16,14 @@ interface HomeScreenProps {
 }
 
 export function HomeScreen({ onEnterParent: _onEnterParent, onOpenCalendar, selectedDate, onSelectDate }: HomeScreenProps) {
-  const { state } = useGrubClub();
+  const { state } = useGravy();
   const today = todayStr();
   const isToday = selectedDate === today;
   const hasOtherGoals = state.goals.some((g) => g.isDaily === false);
 
   return (
     <div className="screen active">
-      <TopBar title="Grub Club" highlightLast />
+      <TopBar title="Gravy" highlightLast />
       <div className="scroll-area">
         <StatsCard />
         <WeekStrip selectedDate={selectedDate} onSelectDate={onSelectDate} onOpenCalendar={onOpenCalendar} />

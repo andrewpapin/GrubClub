@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock, faDeleteLeft, faKey } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 interface PinScreenProps {
   onSuccess: () => void;
@@ -11,7 +11,7 @@ interface PinScreenProps {
 type RecoverStep = 'none' | 'question' | 'newPin';
 
 export function PinScreen({ onSuccess, onBack }: PinScreenProps) {
-  const { state, saveSetting, showToast } = useGrubClub();
+  const { state, saveSetting, showToast } = useGravy();
   const [pin, setPin] = useState('');
   const [showError, setShowError] = useState(false);
   const [shake, setShake] = useState(false);

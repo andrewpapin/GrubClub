@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 interface Piece {
   x: number;
@@ -15,7 +15,7 @@ interface Piece {
 const COLORS = ['#F6BD60', '#84A59D', '#F28482', '#F7EDE2', '#2F3E46'];
 
 export function Confetti() {
-  const { confettiTrigger } = useGrubClub();
+  const { confettiTrigger } = useGravy();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number>(0);
 

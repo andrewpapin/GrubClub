@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStar, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
 interface TopBarProps {
   title: string;
@@ -8,7 +8,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ title, highlightLast }: TopBarProps) {
-  const { state, householdCode, syncStatus } = useGrubClub();
+  const { state, householdCode, syncStatus } = useGravy();
   const splitIndex = title.lastIndexOf(' ');
   const syncError = !!householdCode && syncStatus === 'error';
 

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHandSparkles, faUtensils, faFire, faGift } from '@fortawesome/free-solid-svg-icons';
-import { useGrubClub } from '../state/GrubClubContext';
+import { useGravy } from '../state/GravyContext';
 
-export const ONBOARDING_DONE_KEY = 'grubclub_onboarded';
+export const ONBOARDING_DONE_KEY = 'gravy_onboarded';
 
 interface Step {
   icon: typeof faHandSparkles;
@@ -15,7 +15,7 @@ const STEPS: Step[] = [
   {
     icon: faHandSparkles,
     title: 'Welcome!',
-    desc: (childName) => `Hey ${childName}! This is your GrubClub — let's take a quick look around.`,
+    desc: (childName) => `Hey ${childName}! This is your Gravy — let's take a quick look around.`,
   },
   {
     icon: faUtensils,
@@ -35,7 +35,7 @@ const STEPS: Step[] = [
 ];
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
-  const { state } = useGrubClub();
+  const { state } = useGravy();
   const [step, setStep] = useState(0);
   const last = step === STEPS.length - 1;
   const current = STEPS[step];

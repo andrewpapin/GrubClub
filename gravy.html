@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#FF6B35">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Grub Club 🍕</title>
-<link rel="manifest" href="data:application/json,{%22name%22:%22Grub%20Club%22,%22short_name%22:%22Grub%20Club%22,%22display%22:%22standalone%22,%22background_color%22:%22%23FF6B35%22}">
+<title>Gravy 🍕</title>
+<link rel="manifest" href="data:application/json,{%22name%22:%22Gravy%22,%22short_name%22:%22Gravy%22,%22display%22:%22standalone%22,%22background_color%22:%22%23FF6B35%22}">
 <style>
   /* ===== DESIGN TOKENS ===== */
   :root {
@@ -832,7 +832,7 @@
   <div id="screen-home" class="screen active">
     <div class="topbar">
       <span class="topbar-logo">🍕</span>
-      <span class="topbar-title">Grub Club</span>
+      <span class="topbar-title">Gravy</span>
       <div class="points-pill">⭐ <span id="pointsDisplay">0</span></div>
     </div>
     <div class="scroll-area">
@@ -1157,7 +1157,7 @@ let state = {};
 
 function loadState() {
   try {
-    const saved = localStorage.getItem('grubclub_v2');
+    const saved = localStorage.getItem('gravy_v1');
     state = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(defaultState));
     for (const k in defaultState) {
       if (!(k in state)) state[k] = JSON.parse(JSON.stringify(defaultState[k]));
@@ -1179,7 +1179,7 @@ function loadState() {
 }
 
 function saveState() {
-  localStorage.setItem('grubclub_v2', JSON.stringify(state));
+  localStorage.setItem('gravy_v1', JSON.stringify(state));
 }
 
 function checkDayRollover() {

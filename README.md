@@ -1,4 +1,4 @@
-# Grub Club 🍕
+# Gravy 🍕
 
 A gamified chores, nutrition, and rewards app for kids — built with React, TypeScript, and Vite.
 
@@ -41,6 +41,6 @@ Open the printed local URL in your browser.
 ```
 src/
   data/        static data: ranks, food groups, badge definitions
-  state/       GrubClub state, localStorage persistence, badge logic, React context
+  state/       Gravy state, localStorage persistence, badge logic, React context
   components/  UI screens and widgets (Home, Store, Badges, Parent dashboard, etc.)
 ```
