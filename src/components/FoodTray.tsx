@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUtensils, faStar, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FOODS } from '../data/foods';
 import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
@@ -12,23 +12,14 @@ export function FoodTray() {
   return (
     <div className="card">
       <div className="flex-between" style={{ marginBottom: 12 }}>
-        <div className="goal-card-title">
-          <span className="card-title-icon icon-sage"><FontAwesomeIcon icon={faUtensils} /></span> Today's Food
-        </div>
-        {allEaten ? (
-          <div className="tray-progress-bonus"><FontAwesomeIcon icon={faStar} aria-hidden="true" /> Full Tray Bonus!</div>
-        ) : (
-          <div className="progress-pips" role="img" aria-label={`${eatenCount} of ${FOODS.length} foods logged`}>
-            {FOODS.map((f) => (
-              <span
-                key={f.id}
-                className={`progress-pip ${(state.todayFoodCounts[f.id] || 0) > 0 ? 'filled' : ''}`}
-                aria-hidden="true"
-              />
-            ))}
-          </div>
-        )}
+        <div className="goal-card-title">Today's Food</div>
+        <div className={`goal-progress-badge ${allEaten ? 'done' : ''}`}>{eatenCount}/{FOODS.length} done</div>
       </div>
+      {allEaten && (
+        <div className="tray-progress-bonus" style={{ marginBottom: 12 }}>
+          <FontAwesomeIcon icon={faStar} aria-hidden="true" /> Full Tray Bonus!
+        </div>
+      )}
 
       <div className="tray-grid">
         {FOODS.map((f) => {

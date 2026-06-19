@@ -57,6 +57,9 @@ export interface GravyState {
   points: number;
   totalPoints: number;
   streak: number;
+  foodStreak: number;
+  goalStreak: number;
+  megaStreak: number;
   lastActiveDate: string | null;
   todayPoints: number;
   todayFoodCounts: Record<string, number>;
