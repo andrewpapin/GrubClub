@@ -2,10 +2,13 @@ import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloud, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useGravy, SYNC_SKIPPED_KEY } from '../state/GravyContext';
+import { ConfirmDialog } from './ConfirmDialog';
 
 export function SyncGateModal() {
   const { householdCode, syncStatus, createHousehold, joinHousehold } = useGravy();
   const [joinCode, setJoinCode] = useState('');
+  const [pendingJoinCode, setPendingJoinCode] = useState('');
+  const [confirmJoinOpen, setConfirmJoinOpen] = useState(false);
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(SYNC_SKIPPED_KEY) === 'true');
 
   if (householdCode || dismissed) return null;
@@ -19,9 +22,15 @@ export function SyncGateModal() {
 
   const handleJoin = () => {
     if (!joinCode.trim()) return;
-    joinHousehold(joinCode).then((ok) => {
+    setPendingJoinCode(joinCode);
+    setConfirmJoinOpen(true);
+  };
+
+  const confirmJoin = () => {
+    joinHousehold(pendingJoinCode).then((ok) => {
       if (ok) setJoinCode('');
     });
+    setConfirmJoinOpen(false);
   };
 
   return (
@@ -37,7 +46,9 @@ export function SyncGateModal() {
           <FontAwesomeIcon icon={faCloud} /> Create New Household
         </button>
         <div className="flex-row-full sync-gate-join">
+          <label htmlFor="sync-gate-join-code" className="sr-only">Household code to join</label>
           <input
+            id="sync-gate-join-code"
             type="text"
             placeholder="Enter household code"
             value={joinCode}
@@ -57,6 +68,16 @@ export function SyncGateModal() {
           Maybe later — use this device only
         </button>
       </div>
+      <ConfirmDialog
+        open={confirmJoinOpen}
+        icon={faCloud}
+        title={`Join household ${pendingJoinCode}?`}
+        message="This replaces all progress on this device with that household's data. This can't be undone."
+        confirmLabel="Join"
+        danger
+        onConfirm={confirmJoin}
+        onCancel={() => setConfirmJoinOpen(false)}
+      />
     </div>
   );
 }

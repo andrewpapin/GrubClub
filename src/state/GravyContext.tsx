@@ -618,9 +618,11 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       } else if (key === 'childName') {
         next.settings.childName = val.trim() || 'Zack';
       } else if (key === 'foodPts') {
-        next.settings.foodPts = Math.max(1, parseInt(val) || 1);
+        // Keep in sync with the input's max attribute in SettingsPanel.tsx
+        next.settings.foodPts = Math.min(100, Math.max(1, parseInt(val) || 1));
       } else if (key === 'bonusPts') {
-        next.settings.bonusPts = Math.max(0, parseInt(val) || 0);
+        // Keep in sync with the input's max attribute in SettingsPanel.tsx
+        next.settings.bonusPts = Math.min(500, Math.max(0, parseInt(val) || 0));
       } else if (key === 'recoveryQuestion' || key === 'recoveryAnswer') {
         next.settings[key] = val.trim();
       } else if (key === 'theme') {
@@ -648,14 +650,19 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     });
   }, [showToast]);
 
-  const resetAll = useCallback(() => {
-    // Disconnect from household sync before resetting so the blank state
-    // doesn't propagate to all other family devices.
+  const disconnectSync = useCallback(() => {
     localStorage.removeItem(HOUSEHOLD_CODE_KEY);
-    localStorage.removeItem(SYNC_SKIPPED_KEY);
     setHouseholdCode(null);
     lastSyncedRef.current = null;
     setSyncStatus('idle');
+  }, []);
+
+  const resetAll = useCallback(() => {
+    // Disconnect from household sync before resetting so the blank state
+    // doesn't propagate to all other family devices. Also clear the
+    // "skipped sync setup" flag so a full reset re-prompts for it, like a fresh install.
+    disconnectSync();
+    localStorage.removeItem(SYNC_SKIPPED_KEY);
     setState((prev) => {
       const pin = prev.settings.pin;
       const recoveryQuestion = prev.settings.recoveryQuestion;
@@ -669,7 +676,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       showToast(faTriangleExclamation, 'Everything reset');
       return applyDayRollover(next);
     });
-  }, [showToast]);
+  }, [showToast, disconnectSync]);
 
   const updateBadgeConfig = useCallback((id: string, key: 'enabled' | 'name' | 'emoji' | 'icon', value: string | boolean) => {
     setState((prev) => {
@@ -731,12 +738,9 @@ export function GravyProvider({ children }: { children: ReactNode }) {
   }, [showToast]);
 
   const leaveHousehold = useCallback(() => {
-    localStorage.removeItem(HOUSEHOLD_CODE_KEY);
-    setHouseholdCode(null);
-    lastSyncedRef.current = null;
-    setSyncStatus('idle');
+    disconnectSync();
     showToast(faCloud, 'Cloud sync turned off');
-  }, [showToast]);
+  }, [showToast, disconnectSync]);
 
   const value: GravyContextValue = {
     state,

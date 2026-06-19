@@ -5,7 +5,7 @@ import { useGravy } from '../../state/GravyContext';
 import { ConfirmDialog } from '../ConfirmDialog';
 import type { Theme } from '../../state/types';
 
-type ConfirmStep = 'none' | 'resetToday' | 'resetAll1' | 'resetAll2' | 'leaveSync';
+type ConfirmStep = 'none' | 'resetToday' | 'resetAll1' | 'resetAll2' | 'leaveSync' | 'joinHousehold';
 
 const THEME_OPTIONS: { id: Theme; label: string }[] = [
   { id: 'light', label: 'Light' },
@@ -33,6 +33,7 @@ export function SettingsPanel() {
   const [recoveryQuestion, setRecoveryQuestion] = useState(state.settings.recoveryQuestion);
   const [recoveryAnswer, setRecoveryAnswer] = useState(state.settings.recoveryAnswer);
   const [joinCode, setJoinCode] = useState('');
+  const [pendingJoinCode, setPendingJoinCode] = useState('');
   const [confirmStep, setConfirmStep] = useState<ConfirmStep>('none');
   const [savedField, setSavedField] = useState<string | null>(null);
   const savedTimerRef = useRef<number | null>(null);
@@ -45,9 +46,15 @@ export function SettingsPanel() {
 
   const handleJoin = () => {
     if (!joinCode.trim()) return;
-    joinHousehold(joinCode).then((ok) => {
+    setPendingJoinCode(joinCode);
+    setConfirmStep('joinHousehold');
+  };
+
+  const confirmJoin = () => {
+    joinHousehold(pendingJoinCode).then((ok) => {
       if (ok) setJoinCode('');
     });
+    setConfirmStep('none');
   };
 
   return (
@@ -83,7 +90,9 @@ export function SettingsPanel() {
             <FontAwesomeIcon icon={faCloud} /> Enable cloud sync
           </button>
           <div className="flex-row-full">
+            <label htmlFor="settings-join-code" className="sr-only">Household code to join</label>
             <input
+              id="settings-join-code"
               type="text"
               placeholder="Enter household code"
               value={joinCode}
@@ -126,13 +135,14 @@ export function SettingsPanel() {
       <div className="section-label">Profile</div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">
+          <label className="settings-label" htmlFor="settings-child-name">
             Child's name
             {savedField === 'childName' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
-          </div>
+          </label>
           <div className="settings-sub">Shown throughout the app</div>
         </div>
         <input
+          id="settings-child-name"
           type="text"
           maxLength={20}
           placeholder="Zack"
@@ -147,44 +157,46 @@ export function SettingsPanel() {
       <div className="section-label">Points</div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">
+          <label className="settings-label" htmlFor="settings-food-pts">
             Points per food group
             {savedField === 'foodPts' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
-          </div>
+          </label>
           <div className="settings-sub">Awarded when {state.settings.childName} taps each food group</div>
         </div>
         <input
+          id="settings-food-pts"
           type="number"
           min={1}
           max={100}
           value={foodPts}
           onChange={(e) => setFoodPts(e.target.value)}
           onBlur={(e) => {
-            const clamped = Math.max(1, parseInt(e.target.value) || 1);
+            const clamped = Math.min(100, Math.max(1, parseInt(e.target.value) || 1));
             setFoodPts(String(clamped));
-            saveSetting('foodPts', e.target.value);
+            saveSetting('foodPts', String(clamped));
             flashSaved('foodPts');
           }}
         />
       </div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">
+          <label className="settings-label" htmlFor="settings-bonus-pts">
             Full tray bonus
             {savedField === 'bonusPts' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
-          </div>
+          </label>
           <div className="settings-sub">Bonus for eating all 5 food groups</div>
         </div>
         <input
+          id="settings-bonus-pts"
           type="number"
           min={0}
           max={500}
           value={bonusPts}
           onChange={(e) => setBonusPts(e.target.value)}
           onBlur={(e) => {
-            const clamped = Math.max(0, parseInt(e.target.value) || 0);
+            const clamped = Math.min(500, Math.max(0, parseInt(e.target.value) || 0));
             setBonusPts(String(clamped));
-            saveSetting('bonusPts', e.target.value);
+            saveSetting('bonusPts', String(clamped));
             flashSaved('bonusPts');
           }}
         />
@@ -192,13 +204,14 @@ export function SettingsPanel() {
       <div className="section-label">PIN</div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">
+          <label className="settings-label" htmlFor="settings-pin">
             Change PIN
             {savedField === 'pin' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
-          </div>
+          </label>
           <div className="settings-sub">Enter a new 4-digit PIN</div>
         </div>
         <input
+          id="settings-pin"
           type="text"
           inputMode="numeric"
           pattern="[0-9]*"
@@ -221,13 +234,14 @@ export function SettingsPanel() {
       </div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">
+          <label className="settings-label" htmlFor="settings-recovery-question">
             Recovery question
             {savedField === 'recoveryQuestion' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
-          </div>
+          </label>
           <div className="settings-sub">Shown if "Forgot PIN?" is tapped on the PIN screen</div>
         </div>
         <input
+          id="settings-recovery-question"
           type="text"
           maxLength={60}
           placeholder="What's our dog's name?"
@@ -241,13 +255,14 @@ export function SettingsPanel() {
       </div>
       <div className="settings-row">
         <div>
-          <div className="settings-label">
+          <label className="settings-label" htmlFor="settings-recovery-answer">
             Recovery answer
             {savedField === 'recoveryAnswer' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
-          </div>
+          </label>
           <div className="settings-sub">Not case-sensitive. Leave blank to disable PIN recovery</div>
         </div>
         <input
+          id="settings-recovery-answer"
           type="text"
           maxLength={60}
           placeholder="Rex"
@@ -259,6 +274,9 @@ export function SettingsPanel() {
           }}
         />
       </div>
+      {(recoveryQuestion.trim() !== '') !== (recoveryAnswer.trim() !== '') && (
+        <div className="settings-sub">Fill in both fields to enable PIN recovery</div>
+      )}
       <div className="section-label">Reset</div>
       <button className="btn btn-primary btn-pink mt-8" onClick={() => setConfirmStep('resetToday')}>
         <FontAwesomeIcon icon={faRotate} /> Reset Today's Progress
@@ -314,6 +332,16 @@ export function SettingsPanel() {
           leaveHousehold();
           setConfirmStep('none');
         }}
+        onCancel={() => setConfirmStep('none')}
+      />
+      <ConfirmDialog
+        open={confirmStep === 'joinHousehold'}
+        icon={faCloud}
+        title={`Join household ${pendingJoinCode}?`}
+        message="This replaces all progress on this device — points, badges, history, goals, and rewards — with that household's data. This can't be undone."
+        confirmLabel="Join"
+        danger
+        onConfirm={confirmJoin}
         onCancel={() => setConfirmStep('none')}
       />
     </div>
