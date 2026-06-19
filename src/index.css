@@ -997,6 +997,21 @@ button.goal-tile:active { transform: scale(0.97); }
   border: 2px solid var(--dark);
 }
 .onboarding-dot.active { background: var(--coral); }
+.onboarding-name-input {
+  display: block;
+  width: 100%;
+  border: 2.5px solid var(--dark);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-family: var(--font-display);
+  font-size: var(--text-base); /* 16px — prevents iOS viewport zoom on focus */
+  font-weight: 800;
+  text-align: center;
+  color: var(--text);
+  background: var(--card);
+  margin-bottom: 16px;
+}
+.onboarding-name-input:focus { border-color: var(--coral); outline: none; }
 
 /* Badge popup */
 .badge-popup-overlay {

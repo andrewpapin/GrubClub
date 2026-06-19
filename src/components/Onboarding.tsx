@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHandSparkles, faUtensils, faFire, faGift } from '@fortawesome/free-solid-svg-icons';
+import { faHandSparkles, faUtensils, faFire, faGift, faChild } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 
 export const ONBOARDING_DONE_KEY = 'gravy_onboarded';
@@ -35,31 +35,57 @@ const STEPS: Step[] = [
 ];
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
-  const { state } = useGravy();
+  const { state, saveSetting } = useGravy();
   const [step, setStep] = useState(0);
-  const last = step === STEPS.length - 1;
-  const current = STEPS[step];
+  const [name, setName] = useState('');
+  const totalSteps = STEPS.length + 1;
+  const onNameStep = step === 0;
+  const last = step === totalSteps - 1;
+  const current = onNameStep ? null : STEPS[step - 1];
 
   const finish = () => {
     localStorage.setItem(ONBOARDING_DONE_KEY, 'true');
     onComplete();
   };
 
+  const handleNext = () => {
+    if (onNameStep) saveSetting('childName', name);
+    if (last) finish();
+    else setStep((s) => s + 1);
+  };
+
   return (
     <div className="sync-gate-overlay">
       <div className="badge-popup sync-gate-card">
-        <span className="badge-popup-icon"><FontAwesomeIcon icon={current.icon} /></span>
-        <div className="badge-popup-name">{current.title}</div>
-        <div className="badge-popup-desc">{current.desc(state.settings.childName)}</div>
+        {onNameStep ? (
+          <>
+            <span className="badge-popup-icon"><FontAwesomeIcon icon={faChild} /></span>
+            <div className="badge-popup-name">What's Your Name?</div>
+            <div className="badge-popup-desc">We'll use it to say hi and cheer you on.</div>
+            <input
+              type="text"
+              className="onboarding-name-input"
+              maxLength={20}
+              placeholder="Zack"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleNext(); }}
+              autoFocus
+            />
+          </>
+        ) : (
+          <>
+            <span className="badge-popup-icon"><FontAwesomeIcon icon={current!.icon} /></span>
+            <div className="badge-popup-name">{current!.title}</div>
+            <div className="badge-popup-desc">{current!.desc(state.settings.childName)}</div>
+          </>
+        )}
         <div className="onboarding-dots">
-          {STEPS.map((_, i) => (
+          {Array.from({ length: totalSteps }).map((_, i) => (
             <span key={i} className={`onboarding-dot ${i === step ? 'active' : ''}`} />
           ))}
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => (last ? finish() : setStep((s) => s + 1))}
-        >
+        <button className="btn btn-primary" onClick={handleNext}>
           {last ? "Let's go!" : 'Next'}
         </button>
         {!last && (
