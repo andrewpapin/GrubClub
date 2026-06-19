@@ -1,13 +1,14 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faCloudArrowUp, faCalendarDays } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 
 interface TopBarProps {
   title: string;
   highlightLast?: boolean;
+  onOpenCalendar?: () => void;
 }
 
-export function TopBar({ title, highlightLast }: TopBarProps) {
+export function TopBar({ title, highlightLast, onOpenCalendar }: TopBarProps) {
   const { state, householdCode, syncStatus } = useGravy();
   const splitIndex = title.lastIndexOf(' ');
   const syncError = !!householdCode && syncStatus === 'error';
@@ -23,6 +24,11 @@ export function TopBar({ title, highlightLast }: TopBarProps) {
         <span className="topbar-title">{title}</span>
       )}
       <div className="topbar-pills">
+        {onOpenCalendar && (
+          <button className="topbar-icon-btn" onClick={onOpenCalendar} aria-label="Open calendar" type="button">
+            <FontAwesomeIcon icon={faCalendarDays} />
+          </button>
+        )}
         <div className="points-pill" aria-label={`${state.points} points`}>
           <FontAwesomeIcon icon={faStar} /> <span>{state.points}</span>
           {syncError && (

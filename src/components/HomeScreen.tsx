@@ -1,6 +1,6 @@
 import { TopBar } from './TopBar';
 import { StatsCard } from './StatsCard';
-import { WeekStrip } from './WeekStrip';
+import { DateNav } from './DateNav';
 import { FoodTray } from './FoodTray';
 import { DailyGoals } from './DailyGoals';
 import { OtherGoals } from './OtherGoals';
@@ -23,10 +23,10 @@ export function HomeScreen({ onEnterParent: _onEnterParent, onOpenCalendar, sele
 
   return (
     <div className="screen active">
-      <TopBar title="Gravy" highlightLast />
+      <TopBar title="Gravy" highlightLast onOpenCalendar={onOpenCalendar} />
       <div className="scroll-area">
         <StatsCard />
-        <WeekStrip selectedDate={selectedDate} onSelectDate={onSelectDate} onOpenCalendar={onOpenCalendar} />
+        <DateNav selectedDate={selectedDate} onSelectDate={onSelectDate} />
         {isToday ? (
           <>
             <FoodTray />
