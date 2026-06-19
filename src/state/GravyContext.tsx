@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import {
   faCircleXmark,
@@ -13,7 +13,7 @@ import {
   faStar,
   faListCheck,
 } from '@fortawesome/free-solid-svg-icons';
-import type { Goal, GravyState, Reward, Settings } from './types';
+import type { Goal, GravyState, Reward, Settings, Theme } from './types';
 import { applyDayRollover, loadState, saveState, cloneDefaultState, migrateLegacyState } from './defaultState';
 import { FOODS } from '../data/foods';
 import { resolveToastIcon } from '../data/icons';
@@ -31,6 +31,13 @@ export type SyncStatus = 'idle' | 'syncing' | 'error';
 
 const HOUSEHOLD_CODE_KEY = 'gravy_household_code';
 export const SYNC_SKIPPED_KEY = 'gravy_sync_skipped';
+
+const THEME_COLORS: Record<Theme, string> = {
+  light: '#F7EDE2',
+  dark: '#161B1F',
+  rainbow: '#F6BD60',
+  gold: '#FFFFFF',
+};
 
 export interface ToastAction {
   label: string;
@@ -108,6 +115,13 @@ export function GravyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     saveState(state);
   }, [state]);
+
+  // Applies the parent-selected theme to the whole app. useLayoutEffect (rather than
+  // useEffect) so the attribute is set before paint, avoiding a flash of the light theme.
+  useLayoutEffect(() => {
+    document.documentElement.dataset.theme = state.settings.theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', THEME_COLORS[state.settings.theme]);
+  }, [state.settings.theme]);
 
   // Push local changes to Supabase when in a synced household
   useEffect(() => {
@@ -609,6 +623,10 @@ export function GravyProvider({ children }: { children: ReactNode }) {
         next.settings.bonusPts = Math.max(0, parseInt(val) || 0);
       } else if (key === 'recoveryQuestion' || key === 'recoveryAnswer') {
         next.settings[key] = val.trim();
+      } else if (key === 'theme') {
+        if (val === 'light' || val === 'dark' || val === 'rainbow' || val === 'gold') {
+          next.settings.theme = val;
+        }
       } else {
         (next.settings[key] as number) = Math.max(0, parseInt(val) || 0);
       }
