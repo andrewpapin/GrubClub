@@ -1,18 +1,20 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faCloudArrowUp, faCalendarDays, faFaceSmile } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faCloudArrowUp, faCalendarDays, faFaceSmile, faGift } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 
 interface TopBarProps {
   title: string;
   highlightLast?: boolean;
   onOpenCalendar?: () => void;
+  onOpenStore?: () => void;
   onOpenAvatarMenu?: () => void;
 }
 
-export function TopBar({ title, highlightLast, onOpenCalendar, onOpenAvatarMenu }: TopBarProps) {
+export function TopBar({ title, highlightLast, onOpenCalendar, onOpenStore, onOpenAvatarMenu }: TopBarProps) {
   const { state, householdCode, syncStatus } = useGravy();
   const splitIndex = title.lastIndexOf(' ');
   const syncError = !!householdCode && syncStatus === 'error';
+  const pendingCount = state.pendingRewards.length;
 
   return (
     <div className="topbar">
@@ -28,6 +30,17 @@ export function TopBar({ title, highlightLast, onOpenCalendar, onOpenAvatarMenu 
         {onOpenCalendar && (
           <button className="topbar-icon-btn" onClick={onOpenCalendar} aria-label="Open calendar" type="button">
             <FontAwesomeIcon icon={faCalendarDays} />
+          </button>
+        )}
+        {onOpenStore && (
+          <button className="topbar-icon-btn" onClick={onOpenStore} aria-label="Open store" type="button">
+            <span
+              className="nav-badge"
+              data-count={pendingCount}
+              title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
+            >
+              <FontAwesomeIcon icon={faGift} />
+            </span>
           </button>
         )}
         <div className="points-pill" aria-label={`${state.points} points`}>

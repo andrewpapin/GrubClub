@@ -4,7 +4,6 @@ import { HomeScreen } from './components/HomeScreen';
 import { StoreScreen } from './components/StoreScreen';
 import { BadgesScreen } from './components/BadgesScreen';
 import { CalendarScreen } from './components/CalendarScreen';
-import { BottomNav, type Tab } from './components/BottomNav';
 import { GrownUpsDrawer } from './components/parent/GrownUpsDrawer';
 import { AccountMenu } from './components/AccountMenu';
 import { SettingsScreen } from './components/SettingsScreen';
@@ -42,9 +41,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 function AppShell() {
-  const [tab, setTab] = useState<Tab>('home');
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [storeOpen, setStoreOpen] = useState(false);
   const [badgesOpen, setBadgesOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -59,23 +58,21 @@ function AppShell() {
   return (
     <>
       <div id="kidApp">
-        {tab === 'home' && (
-          <HomeScreen
-            onOpenAvatarMenu={() => setAccountMenuOpen(true)}
-            onOpenCalendar={() => setCalendarOpen(true)}
-            onOpenBadges={() => setBadgesOpen(true)}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-          />
-        )}
-        {tab === 'store' && <StoreScreen onOpenAvatarMenu={() => setAccountMenuOpen(true)} />}
-        <BottomNav active={tab} onChange={setTab} />
+        <HomeScreen
+          onOpenAvatarMenu={() => setAccountMenuOpen(true)}
+          onOpenCalendar={() => setCalendarOpen(true)}
+          onOpenStore={() => setStoreOpen(true)}
+          onOpenBadges={() => setBadgesOpen(true)}
+          selectedDate={selectedDate}
+          onSelectDate={setSelectedDate}
+        />
         <CalendarScreen
           open={calendarOpen}
           onClose={() => setCalendarOpen(false)}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
         />
+        <StoreScreen open={storeOpen} onClose={() => setStoreOpen(false)} />
         <BadgesScreen
           open={badgesOpen}
           onClose={() => setBadgesOpen(false)}
