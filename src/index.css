@@ -332,12 +332,30 @@ button.calendar-day {
 .stats-badges-bar-label { display: inline-flex; align-items: center; gap: 8px; }
 .stats-badges-bar:active { background: var(--cream); }
 
-.stats-rank-top {
+.stats-rank-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
-.stats-rank-emoji { font-size: 1.7rem; line-height: 1; flex-shrink: 0; color: #fff; width: 1.7rem; text-align: center; }
+.stats-rank-icon-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stats-rank-emoji { font-size: 1.4rem; line-height: 1; color: #fff; }
+.stats-rank-info { flex: 1; min-width: 0; }
+.stats-rank-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+}
 .stats-rank-name { font-size: 1.1rem; font-weight: 900; min-width: 0; overflow-wrap: break-word; }
 .streak-badge {
   color: var(--yellow);
@@ -363,10 +381,12 @@ button.calendar-day {
   gap: 6px;
 }
 .stats-rank-xp {
-  margin-top: 8px;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   opacity: 0.9;
   font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 .xp-bar-track {
   background: rgba(255,255,255,0.25);
@@ -384,13 +404,14 @@ button.calendar-day {
 /* "Today" at-a-glance chips inside the rank card */
 .stats-today {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
 }
 .stats-today-chip {
   display: inline-flex;
+  flex: 1;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   background: rgba(255, 255, 255, 0.2);
   color: #fff;
