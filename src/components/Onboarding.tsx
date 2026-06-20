@@ -80,7 +80,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
               type="text"
               className="onboarding-name-input"
               maxLength={20}
-              placeholder="e.g. Maya"
+              placeholder="e.g. Zack"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleNext(); }}
