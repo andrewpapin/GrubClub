@@ -37,7 +37,7 @@ export function StatsCard({ onOpenBadges }: StatsCardProps) {
     const progress = state.totalPoints - rank.min;
     const needed = next.min - rank.min;
     pct = Math.min(100, Math.round((progress / needed) * 100));
-    xpText = `${state.totalPoints - rank.min} / ${needed} pts to next rank`;
+    xpText = `${state.totalPoints - rank.min}/${needed} pts`;
   } else {
     pct = 100;
     xpText = 'MAX RANK! 👑';
@@ -46,13 +46,19 @@ export function StatsCard({ onOpenBadges }: StatsCardProps) {
   return (
     <div className="stats-card">
       <div className="stats-rank">
-        <div className="stats-rank-top">
-          <AppIcon iconKey={rank.icon} emojiFallback={rank.emoji} className="stats-rank-emoji" />
-          <span className="stats-rank-name">{rank.name}</span>
-        </div>
-        <div className="stats-rank-xp">{xpText}</div>
-        <div className="xp-bar-track">
-          <div className="xp-bar-fill" style={{ width: `${pct}%` }} />
+        <div className="stats-rank-header">
+          <div className="stats-rank-icon-circle">
+            <AppIcon iconKey={rank.icon} emojiFallback={rank.emoji} className="stats-rank-emoji" />
+          </div>
+          <div className="stats-rank-info">
+            <div className="stats-rank-name-row">
+              <span className="stats-rank-name">{rank.name}</span>
+              <span className="stats-rank-xp">{xpText}</span>
+            </div>
+            <div className="xp-bar-track">
+              <div className="xp-bar-fill" style={{ width: `${pct}%` }} />
+            </div>
+          </div>
         </div>
         <div className="stats-today" aria-label={`Food streak ${state.foodStreak}, goal streak ${state.goalStreak}, streak ${state.streak}, mega streak ${state.megaStreak}`}>
           <span className={`stats-today-chip ${foodDone ? 'done' : ''}`} title="Food streak">
