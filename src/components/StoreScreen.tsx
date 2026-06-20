@@ -5,17 +5,17 @@ import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 
 interface StoreScreenProps {
-  onEnterParent: () => void;
+  onOpenAvatarMenu: () => void;
 }
 
-export function StoreScreen({ onEnterParent: _onEnterParent }: StoreScreenProps) {
+export function StoreScreen({ onOpenAvatarMenu }: StoreScreenProps) {
   const { state, requestReward } = useGravy();
   const pendingIds = state.pendingRewards.map((r) => r.rewardId);
   const available = state.rewards.filter((r) => !pendingIds.includes(r.id));
 
   return (
     <div className="screen active">
-      <TopBar title="Reward Store" />
+      <TopBar title="Reward Store" onOpenAvatarMenu={onOpenAvatarMenu} />
       <div className="scroll-area">
         <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--muted)', marginBottom: 14, textAlign: 'center' }}>
           Tap a reward to ask for it — a grown-up will need to say yes!
