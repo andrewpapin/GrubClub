@@ -1,9 +1,8 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFire, faUtensils, faListCheck, faStar, faMedal, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { getRank, RANKS } from '../data/ranks';
-import { FOODS } from '../data/foods';
 import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
+import { useTodaySnapshot } from '../state/useTodaySnapshot';
 import { getEnabledBadgeCount } from '../state/badges';
 
 interface StatsCardProps {
@@ -12,36 +11,9 @@ interface StatsCardProps {
 
 export function StatsCard({ onOpenBadges }: StatsCardProps) {
   const { state } = useGravy();
-  const { rank, index } = getRank(state.totalPoints);
+  const { rank, xpText, pct, foodDone, dailyGoals, goalsAllDone, streakAtRisk } = useTodaySnapshot();
   const earnedCount = state.earnedBadges.length;
   const totalBadgeCount = getEnabledBadgeCount(state);
-  const hasLoggedToday =
-    Object.keys(state.todayFoodCounts).length > 0 ||
-    state.todayGoals.length > 0 ||
-    state.todayPoints > 0 ||
-    Object.values(state.todayGoalCounts || {}).some((c) => c > 0);
-  const streakAtRisk = state.streak > 0 && !hasLoggedToday;
-
-  // At-a-glance "today" snapshot, tying the food + goal cards back into the rank banner.
-  const eatenCount = Object.values(state.todayFoodCounts).filter((v) => v > 0).length;
-  const dailyGoals = state.goals.filter((g) => g.isDaily !== false);
-  const goalCounts = state.todayGoalCounts || {};
-  const goalsDone = dailyGoals.filter((g) => (goalCounts[g.id] || 0) >= (g.target || 1)).length;
-  const foodDone = eatenCount === FOODS.length;
-  const goalsAllDone = dailyGoals.length > 0 && goalsDone === dailyGoals.length;
-
-  let xpText: string;
-  let pct: number;
-  if (index < RANKS.length - 1) {
-    const next = RANKS[index + 1];
-    const progress = state.totalPoints - rank.min;
-    const needed = next.min - rank.min;
-    pct = Math.min(100, Math.round((progress / needed) * 100));
-    xpText = `${state.totalPoints - rank.min}/${needed} pts`;
-  } else {
-    pct = 100;
-    xpText = 'MAX RANK! 👑';
-  }
 
   return (
     <div className="stats-card">
