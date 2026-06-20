@@ -32,7 +32,7 @@ export function RootMenu({ pendingCount, onNavigate }: RootMenuProps) {
         <span className="menu-card-icon"><FontAwesomeIcon icon={faListCheck} /></span>
         <div className="menu-card-body">
           <div className="menu-card-title">Goals</div>
-          <div className="menu-card-sub">Daily goals and bonus points</div>
+          <div className="menu-card-sub">Daily goals, bonus items, and food points</div>
         </div>
         <FontAwesomeIcon icon={faChevronRight} className="menu-card-chevron" />
       </button>
@@ -56,7 +56,7 @@ export function RootMenu({ pendingCount, onNavigate }: RootMenuProps) {
         <span className="menu-card-icon"><FontAwesomeIcon icon={faGear} /></span>
         <div className="menu-card-body">
           <div className="menu-card-title">Settings</div>
-          <div className="menu-card-sub">Points, PIN, sync, and reset</div>
+          <div className="menu-card-sub">PIN, cloud sync, and reset</div>
         </div>
         <FontAwesomeIcon icon={faChevronRight} className="menu-card-chevron" />
       </button>

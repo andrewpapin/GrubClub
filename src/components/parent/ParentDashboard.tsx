@@ -6,7 +6,7 @@ import { ApprovalsPanel } from './ApprovalsPanel';
 import { GoalsPanel } from './GoalsPanel';
 import { StorePanel } from './StorePanel';
 import { BadgesPanel } from './BadgesPanel';
-import { SettingsPanel, type SettingsSub } from './SettingsPanel';
+import { SettingsPanel } from './SettingsPanel';
 
 type Root = 'menu' | RootDest;
 
@@ -18,14 +18,6 @@ const ROOT_TITLES: Record<Exclude<Root, 'menu'>, string> = {
   settings: 'Settings',
 };
 
-const SETTINGS_TITLES: Record<SettingsSub, string> = {
-  menu: 'Settings',
-  points: 'Points & Rules',
-  security: 'Security & PIN',
-  sync: 'Cloud Sync',
-  danger: 'Danger Zone',
-};
-
 interface ParentDashboardProps {
   onHeaderChange: (header: { title: string; onBack?: () => void }) => void;
 }
@@ -33,23 +25,17 @@ interface ParentDashboardProps {
 export function ParentDashboard({ onHeaderChange }: ParentDashboardProps) {
   const { state } = useGravy();
   const [root, setRoot] = useState<Root>('menu');
-  const [settingsSub, setSettingsSub] = useState<SettingsSub>('menu');
   const pendingCount = state.pendingRewards.length;
 
-  const goToRoot = () => {
-    setRoot('menu');
-    setSettingsSub('menu');
-  };
+  const goToRoot = () => setRoot('menu');
 
   useEffect(() => {
     if (root === 'menu') {
       onHeaderChange({ title: 'Grown-Up Mode' });
-    } else if (root === 'settings' && settingsSub !== 'menu') {
-      onHeaderChange({ title: SETTINGS_TITLES[settingsSub], onBack: () => setSettingsSub('menu') });
     } else {
       onHeaderChange({ title: ROOT_TITLES[root], onBack: goToRoot });
     }
-  }, [root, settingsSub, onHeaderChange]);
+  }, [root, onHeaderChange]);
 
   if (root === 'menu') {
     return <RootMenu pendingCount={pendingCount} onNavigate={setRoot} />;
@@ -58,5 +44,5 @@ export function ParentDashboard({ onHeaderChange }: ParentDashboardProps) {
   if (root === 'goals') return <GoalsPanel />;
   if (root === 'store') return <StorePanel />;
   if (root === 'badges') return <BadgesPanel />;
-  return <SettingsPanel sub={settingsSub} onNavigate={setSettingsSub} />;
+  return <SettingsPanel />;
 }
