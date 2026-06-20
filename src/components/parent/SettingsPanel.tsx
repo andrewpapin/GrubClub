@@ -3,16 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTriangleExclamation, faCheck, faCloud, faRotate } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../../state/GravyContext';
 import { ConfirmDialog } from '../ConfirmDialog';
-import type { Theme } from '../../state/types';
 
 type ConfirmStep = 'none' | 'resetToday' | 'resetAll1' | 'resetAll2' | 'leaveSync';
-
-const THEME_OPTIONS: { id: Theme; label: string }[] = [
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
-  { id: 'rainbow', label: 'Rainbow' },
-  { id: 'gold', label: 'Gold' },
-];
 
 export function SettingsPanel() {
   const {
@@ -29,7 +21,6 @@ export function SettingsPanel() {
   const [foodPts, setFoodPts] = useState(String(state.settings.foodPts));
   const [bonusPts, setBonusPts] = useState(String(state.settings.bonusPts));
   const [pin, setPin] = useState(String(state.settings.pin));
-  const [childName, setChildName] = useState(state.settings.childName);
   const [recoveryQuestion, setRecoveryQuestion] = useState(state.settings.recoveryQuestion);
   const [recoveryAnswer, setRecoveryAnswer] = useState(state.settings.recoveryAnswer);
   const [joinCode, setJoinCode] = useState('');
@@ -96,54 +87,6 @@ export function SettingsPanel() {
           </div>
         </div>
       )}
-      <div className="section-label">Appearance</div>
-      <div className="settings-row settings-row--col">
-        <div>
-          <div className="settings-label">
-            Theme
-            {savedField === 'theme' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
-          </div>
-          <div className="settings-sub">Changes the look of the app for everyone</div>
-        </div>
-        <div className="theme-swatch-grid">
-          {THEME_OPTIONS.map((opt) => (
-            <button
-              type="button"
-              key={opt.id}
-              className={`theme-swatch ${state.settings.theme === opt.id ? 'active' : ''}`}
-              onClick={() => {
-                saveSetting('theme', opt.id);
-                flashSaved('theme');
-              }}
-              aria-pressed={state.settings.theme === opt.id}
-            >
-              <span className={`theme-swatch-preview theme-swatch-preview--${opt.id}`} />
-              <span className="theme-swatch-label">{opt.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="section-label">Profile</div>
-      <div className="settings-row">
-        <div>
-          <div className="settings-label">
-            Child's name
-            {savedField === 'childName' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
-          </div>
-          <div className="settings-sub">Shown throughout the app</div>
-        </div>
-        <input
-          type="text"
-          maxLength={20}
-          placeholder="Zack"
-          value={childName}
-          onChange={(e) => setChildName(e.target.value)}
-          onBlur={(e) => {
-            saveSetting('childName', e.target.value);
-            flashSaved('childName');
-          }}
-        />
-      </div>
       <div className="section-label">Points</div>
       <div className="settings-row">
         <div>

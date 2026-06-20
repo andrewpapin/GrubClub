@@ -1158,6 +1158,40 @@ button.goal-tile:active { transform: scale(0.97); }
   font-weight: 900;
   display: flex; align-items: center; justify-content: center;
 }
+.account-menu { text-align: left; }
+.account-menu-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: var(--card);
+  border: 2.5px solid var(--dark);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 3px 3px 0 var(--dark);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-display);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.account-menu-option + .account-menu-option { margin-top: 10px; }
+.account-menu-option:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--dark); }
+.account-menu-option-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 2px solid var(--dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--dark);
+}
+.account-menu-option-text { display: flex; flex-direction: column; gap: 2px; }
+.account-menu-option-title { font-size: 1rem; font-weight: 900; color: var(--dark); }
+.account-menu-option-sub { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
 
 /* ===== PARENT MODE ===== */
 .pin-screen {

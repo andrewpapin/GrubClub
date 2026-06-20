@@ -7,6 +7,8 @@ import { CalendarScreen } from './components/CalendarScreen';
 import { BottomNav, type Tab } from './components/BottomNav';
 import { PinScreen } from './components/PinScreen';
 import { ParentDashboard } from './components/parent/ParentDashboard';
+import { AccountMenu } from './components/AccountMenu';
+import { SettingsScreen } from './components/SettingsScreen';
 import { ToastContainer } from './components/ToastContainer';
 import { Celebration } from './components/Celebration';
 import { Confetti } from './components/Confetti';
@@ -15,7 +17,7 @@ import { SyncGateModal } from './components/SyncGateModal';
 import { Onboarding, ONBOARDING_DONE_KEY } from './components/Onboarding';
 import { todayStr, STORAGE_KEY } from './state/defaultState';
 
-type View = 'kid' | 'pin' | 'parent';
+type View = 'kid' | 'pin' | 'parent' | 'settings';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -48,6 +50,7 @@ function AppShell() {
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [badgesOpen, setBadgesOpen] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayStr());
   // Returning users who already had saved progress before this feature shipped
   // shouldn't suddenly see the walkthrough — only brand-new installs get it.
@@ -61,15 +64,15 @@ function AppShell() {
         <div id="kidApp">
           {tab === 'home' && (
             <HomeScreen
-              onEnterParent={() => setView('pin')}
+              onOpenAvatarMenu={() => setAccountMenuOpen(true)}
               onOpenCalendar={() => setCalendarOpen(true)}
               onOpenBadges={() => setBadgesOpen(true)}
               selectedDate={selectedDate}
               onSelectDate={setSelectedDate}
             />
           )}
-          {tab === 'store' && <StoreScreen onEnterParent={() => setView('pin')} />}
-          <BottomNav active={tab} onChange={setTab} onEnterParent={() => setView('pin')} />
+          {tab === 'store' && <StoreScreen onOpenAvatarMenu={() => setAccountMenuOpen(true)} />}
+          <BottomNav active={tab} onChange={setTab} />
           <CalendarScreen
             open={calendarOpen}
             onClose={() => setCalendarOpen(false)}
@@ -81,12 +84,20 @@ function AppShell() {
             onClose={() => setBadgesOpen(false)}
             onShowBadge={setActiveBadge}
           />
+          <AccountMenu
+            open={accountMenuOpen}
+            onClose={() => setAccountMenuOpen(false)}
+            onOpenSettings={() => { setAccountMenuOpen(false); setView('settings'); }}
+            onOpenGrownUps={() => { setAccountMenuOpen(false); setView('pin'); }}
+          />
         </div>
       )}
 
       {view === 'pin' && <PinScreen onSuccess={() => setView('parent')} onBack={() => setView('kid')} />}
 
       {view === 'parent' && <ParentDashboard onExit={() => setView('kid')} />}
+
+      {view === 'settings' && <SettingsScreen onExit={() => setView('kid')} />}
 
       <BadgePopup badgeId={activeBadge} onClose={() => setActiveBadge(null)} />
       <Celebration />
