@@ -61,7 +61,6 @@ function AppShell() {
         <HomeScreen
           onOpenAvatarMenu={() => setAccountMenuOpen(true)}
           onOpenCalendar={() => setCalendarOpen(true)}
-          onOpenStore={() => setStoreOpen(true)}
           onOpenBadges={() => setBadgesOpen(true)}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
@@ -81,6 +80,7 @@ function AppShell() {
         <AccountMenu
           open={accountMenuOpen}
           onClose={() => setAccountMenuOpen(false)}
+          onOpenStore={() => { setAccountMenuOpen(false); setStoreOpen(true); }}
           onOpenSettings={() => { setAccountMenuOpen(false); setSettingsOpen(true); }}
           onOpenGrownUps={() => { setAccountMenuOpen(false); setGrownUpsOpen(true); }}
         />

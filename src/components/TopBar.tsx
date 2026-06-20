@@ -1,16 +1,15 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faCloudArrowUp, faGift } from '@fortawesome/free-solid-svg-icons';
+import { faStar, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 import { AppIcon } from './AppIcon';
 
 interface TopBarProps {
   title: string;
   highlightLast?: boolean;
-  onOpenStore?: () => void;
   onOpenAvatarMenu?: () => void;
 }
 
-export function TopBar({ title, highlightLast, onOpenStore, onOpenAvatarMenu }: TopBarProps) {
+export function TopBar({ title, highlightLast, onOpenAvatarMenu }: TopBarProps) {
   const { state, householdCode, syncStatus } = useGravy();
   const splitIndex = title.lastIndexOf(' ');
   const syncError = !!householdCode && syncStatus === 'error';
@@ -27,17 +26,6 @@ export function TopBar({ title, highlightLast, onOpenStore, onOpenAvatarMenu }: 
         <span className="topbar-title">{title}</span>
       )}
       <div className="topbar-pills">
-        {onOpenStore && (
-          <button className="topbar-icon-btn" onClick={onOpenStore} aria-label="Open store" type="button">
-            <span
-              className="nav-badge"
-              data-count={pendingCount}
-              title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
-            >
-              <FontAwesomeIcon icon={faGift} />
-            </span>
-          </button>
-        )}
         <div className="points-pill" aria-label={`${state.points} points`}>
           <FontAwesomeIcon icon={faStar} /> <span>{state.points}</span>
           {syncError && (
@@ -59,7 +47,13 @@ export function TopBar({ title, highlightLast, onOpenStore, onOpenAvatarMenu }: 
             type="button"
             style={{ background: state.settings.avatarBgColor, color: state.settings.avatarIconColor }}
           >
-            <AppIcon iconKey={state.settings.avatarIcon} emojiFallback="😊" />
+            <span
+              className="nav-badge"
+              data-count={pendingCount}
+              title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
+            >
+              <AppIcon iconKey={state.settings.avatarIcon} emojiFallback="😊" />
+            </span>
           </button>
         )}
       </div>
