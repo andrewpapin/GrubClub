@@ -2,16 +2,16 @@
 
 /* ===== DESIGN TOKENS ===== */
 :root {
-  /* Colors */
-  --yellow: #F6BD60;
-  --cream: #F7EDE2;
-  --sage: #84A59D;
-  --coral: #F28482;
-  --dark: #2F3E46;
-  --card: #FFFFFF;
-  --bg: #F7EDE2;
-  --text: #2F3E46;
-  --muted: #486966;      /* darkened from #8FA3A8 → ≥4.5:1 on white & cream */
+  /* Colors — classic (default) */
+  --yellow: #f1cb75;
+  --cream: #eaddcd;
+  --sage: #749d8f;
+  --coral: #df7a73;
+  --dark: #303336;
+  --card: #fdfbf7;
+  --bg: #f4ece4;
+  --text: #303336;
+  --muted: #6e747a;
   --orange: var(--yellow); /* alias — fixes undefined var() references */
   --border: var(--dark);
 
@@ -52,57 +52,138 @@
    Light is the default (unmarked) palette above. The other themes override
    the same tokens, so every component repaints automatically — nothing
    below this block needs to know which theme is active. */
-:root[data-theme="dark"] {
-  --bg: #161B1F;
-  --card: #232B33;
-  --cream: #2B343C;
-  --text: #ECF1EF;
-  --muted: #93A8A5;
-  --dark: #ECF1EF;
-  --yellow: #8A6324;
-  --coral: #A6453F;
-  --sage: #4F6B64;
+:root[data-theme="midnight"] {
+  --bg: #1e1e24;
+  --card: #2b2b36;
+  --cream: #3a3a4a;
+  --text: #f5f6fa;
+  --muted: #a4b0be;
+  --dark: #f5f6fa;
+  --yellow: #00d4ff;
+  --coral: #635bff;
+  --sage: #9d4edd;
 }
-/* These 3 rules use --dark as a literal fill paired with hardcoded white text;
-   since --dark flips light in dark mode, white-on-light-fill would be unreadable. */
-:root[data-theme="dark"] .btn-purple,
-:root[data-theme="dark"] .btn-dark,
-:root[data-theme="dark"] .badge-info-btn:active {
-  color: #161B1F;
+:root[data-theme="ocean"] {
+  --bg: #e0f7fa;
+  --card: #ffffff;
+  --cream: #b2ebf2;
+  --text: #023e8a;
+  --muted: #48cae4;
+  --dark: #03045e;
+  --yellow: #ffb703;
+  --coral: #0077b6;
+  --sage: #0096c7;
+}
+:root[data-theme="bubblegum"] {
+  --bg: #ffe5ec;
+  --card: #ffffff;
+  --cream: #ffc2d1;
+  --text: #590d22;
+  --muted: #800f2f;
+  --dark: #590d22;
+  --yellow: #ffb703;
+  --coral: #ff0a54;
+  --sage: #fb6f92;
+}
+:root[data-theme="cyberpunk"] {
+  --bg: #fcee0a;
+  --card: #120458;
+  --cream: #ffe600;
+  --text: #ffffff;
+  --muted: #a1a1aa;
+  --dark: #ffffff;
+  --yellow: #00f0ff;
+  --coral: #ff003c;
+  --sage: #b300ff;
+}
+/* midnight and cyberpunk pair a dark --card with --dark flipped light (above) so
+   on-card text/icons stay legible. That flip breaks the few spots where --dark is
+   used as a literal background fill paired with hardcoded white text — restore a
+   dark ink there, same fix the old "dark" theme needed for the same reason. */
+:root[data-theme="midnight"] .btn-purple,
+:root[data-theme="midnight"] .btn-dark,
+:root[data-theme="midnight"] .badge-info-btn:active {
+  color: #0f0f13;
+}
+:root[data-theme="cyberpunk"] .btn-purple,
+:root[data-theme="cyberpunk"] .btn-dark,
+:root[data-theme="cyberpunk"] .badge-info-btn:active {
+  color: #000000;
+}
+/* cyberpunk uniquely pairs a light --bg with a dark --card (every other theme
+   keeps both consistently light or dark), so the --dark flip above also breaks
+   the few spots that paint ink directly on the raw page --bg instead of a card. */
+:root[data-theme="cyberpunk"] .topbar,
+:root[data-theme="cyberpunk"] .home-greeting-name,
+:root[data-theme="cyberpunk"] .calendar-modal-title,
+:root[data-theme="cyberpunk"] .pin-title {
+  color: #000000;
+}
+:root[data-theme="cyberpunk"] .pbadge-toggle-track::after {
+  background: #000000;
 }
 
-:root[data-theme="gold"] {
-  --bg: #FFFFFF;
-  --card: #FFFFFF;
-  --cream: #F5EFD9;
-  --text: #1A1A1A;
-  --muted: #6B6356;
-  --dark: #1A1A1A;
-  --yellow: #D4AF37;
-  --coral: #B8860B;
-  --sage: #8C7115;
+/* --yellow stays a bright accent in midnight/cyberpunk (the other themes keep it
+   muted enough for --dark to still read on it), so the same ink fix applies anywhere
+   --yellow is used as a background fill with --dark text/icons on top. */
+:root[data-theme="midnight"] .points-pill,
+:root[data-theme="midnight"] .card-title-icon.icon-yellow,
+:root[data-theme="midnight"] .btn-primary,
+:root[data-theme="midnight"] .btn-yellow,
+:root[data-theme="midnight"] .stats-today-chip.done,
+:root[data-theme="midnight"] .food-count-badge,
+:root[data-theme="midnight"] .food-check-badge,
+:root[data-theme="midnight"] .pts-badge:not(.negative),
+:root[data-theme="midnight"] .store-cost:not(.unaffordable),
+:root[data-theme="midnight"] .badge-tile.unlocked .badge-info-btn,
+:root[data-theme="midnight"] .account-menu-option-icon,
+:root[data-theme="midnight"] .pin-key.delete,
+:root[data-theme="midnight"] .household-code-display,
+:root[data-theme="midnight"] .group-pill.active,
+:root[data-theme="midnight"] .calendar-day.selected {
+  color: #0f0f13;
+}
+:root[data-theme="cyberpunk"] .points-pill,
+:root[data-theme="cyberpunk"] .card-title-icon.icon-yellow,
+:root[data-theme="cyberpunk"] .btn-primary,
+:root[data-theme="cyberpunk"] .btn-yellow,
+:root[data-theme="cyberpunk"] .stats-today-chip.done,
+:root[data-theme="cyberpunk"] .food-count-badge,
+:root[data-theme="cyberpunk"] .food-check-badge,
+:root[data-theme="cyberpunk"] .pts-badge:not(.negative),
+:root[data-theme="cyberpunk"] .store-cost:not(.unaffordable),
+:root[data-theme="cyberpunk"] .badge-tile.unlocked .badge-info-btn,
+:root[data-theme="cyberpunk"] .account-menu-option-icon,
+:root[data-theme="cyberpunk"] .pin-key.delete,
+:root[data-theme="cyberpunk"] .household-code-display,
+:root[data-theme="cyberpunk"] .group-pill.active,
+:root[data-theme="cyberpunk"] .calendar-day.selected {
+  color: #000000;
 }
 
-:root[data-theme="rainbow"] body {
-  background: linear-gradient(120deg, #F6BD60, #F28482, #84A59D, #8EC5F6, #C9A6F6, #F6BD60);
-  background-size: 400% 400%;
-  animation: rainbowPan 18s ease infinite;
-}
-@keyframes rainbowPan {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-/* Scoped to the top-level screen roots (not body/#root) so the fixed-position
-   toasts, celebration overlay, confetti, and modals — which are siblings of
-   these roots, not descendants — keep positioning against the real viewport. */
-[data-theme="rainbow"] #kidApp,
-[data-theme="rainbow"] .pin-screen {
-  animation: rainbowHue 12s linear infinite;
-}
-@keyframes rainbowHue {
-  from { filter: hue-rotate(0deg); }
-  to   { filter: hue-rotate(360deg); }
+/* cyberpunk's --cream is a bright accent too (midnight's stays dark, consistent with
+   its own flipped --dark/--text), so the same ink fix applies again here, scoped to
+   cyberpunk only, anywhere --cream is used as a background fill under --dark/--text ink. */
+:root[data-theme="cyberpunk"] .stats-badges-bar:active,
+:root[data-theme="cyberpunk"] .food-emoji,
+:root[data-theme="cyberpunk"] .food-label,
+:root[data-theme="cyberpunk"] .stepper-btn,
+:root[data-theme="cyberpunk"] .stepper-count,
+:root[data-theme="cyberpunk"] .goal-progress-badge:not(.done),
+:root[data-theme="cyberpunk"] .goal-tile-emoji,
+:root[data-theme="cyberpunk"] .goal-tile-name,
+:root[data-theme="cyberpunk"] .trophy-pill,
+:root[data-theme="cyberpunk"] .pending-item-emoji,
+:root[data-theme="cyberpunk"] .pending-item-name,
+:root[data-theme="cyberpunk"] .badge-info-btn,
+:root[data-theme="cyberpunk"] .onboarding-arrow,
+:root[data-theme="cyberpunk"] .badge-popup-name,
+:root[data-theme="cyberpunk"] .menu-card-icon,
+:root[data-theme="cyberpunk"] .icon-picker-trigger,
+:root[data-theme="cyberpunk"] .icon-picker-cell:not(.active),
+:root[data-theme="cyberpunk"] .settings-row input,
+:root[data-theme="cyberpunk"] .pbadge-name-input {
+  color: #000000;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -257,6 +338,11 @@ button.calendar-day {
   font-family: var(--font-display);
   /* Don't set text-align here — let each class rule handle alignment */
   color: inherit;
+}
+/* .calendar-day wants a transparent fill; .store-item does not — it's excluded here
+   because "button.store-item" (element+class) outranks the later ".store-item"
+   background rule by specificity, which would otherwise always win and hide it. */
+button.calendar-day {
   background: none;
 }
 
@@ -1512,10 +1598,11 @@ button.goal-tile:active { transform: scale(0.97); }
   border-radius: 50%;
   border: 2px solid #2F3E46;
 }
-.theme-swatch-preview--light { background: linear-gradient(135deg, #F7EDE2 50%, #F6BD60 50%); }
-.theme-swatch-preview--dark { background: linear-gradient(135deg, #161B1F 50%, #8A6324 50%); }
-.theme-swatch-preview--gold { background: linear-gradient(135deg, #FFFFFF 50%, #D4AF37 50%); }
-.theme-swatch-preview--rainbow { background: linear-gradient(135deg, #F6BD60, #F28482, #84A59D, #8EC5F6); }
+.theme-swatch-preview--classic { background: linear-gradient(135deg, #f4ece4 50%, #f1cb75 50%); }
+.theme-swatch-preview--midnight { background: linear-gradient(135deg, #1e1e24 50%, #00d4ff 50%); }
+.theme-swatch-preview--ocean { background: linear-gradient(135deg, #e0f7fa 50%, #ffb703 50%); }
+.theme-swatch-preview--bubblegum { background: linear-gradient(135deg, #ffe5ec 50%, #ffb703 50%); }
+.theme-swatch-preview--cyberpunk { background: linear-gradient(135deg, #fcee0a 50%, #00f0ff 50%); }
 
 .settings-row {
   background: var(--card);

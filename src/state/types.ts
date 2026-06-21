@@ -41,7 +41,7 @@ export interface BadgeOverride {
   icon?: string;       // registered icon key (see data/icons.ts)
 }
 
-export type Theme = 'light' | 'dark' | 'rainbow' | 'gold';
+export type Theme = 'classic' | 'midnight' | 'ocean' | 'bubblegum' | 'cyberpunk';
 
 export interface Settings {
   foodPts: number;
