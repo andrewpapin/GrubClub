@@ -9,10 +9,11 @@ import { ColorPicker, type ColorOption } from './ColorPicker';
 import { AVATAR_ICONS } from '../data/icons';
 
 const THEME_OPTIONS: { id: Theme; label: string }[] = [
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
-  { id: 'rainbow', label: 'Rainbow' },
-  { id: 'gold', label: 'Gold' },
+  { id: 'classic', label: 'Classic' },
+  { id: 'midnight', label: 'Midnight' },
+  { id: 'ocean', label: 'Ocean' },
+  { id: 'bubblegum', label: 'Bubblegum' },
+  { id: 'cyberpunk', label: 'Cyberpunk' },
 ];
 
 const AVATAR_COLORS: ColorOption[] = [

@@ -55,7 +55,7 @@ export const defaultState: GravyState = {
     childName: 'Zack',
     recoveryQuestion: '',
     recoveryAnswer: '',
-    theme: 'light',
+    theme: 'classic',
     avatarIcon: 'faceSmile',
     avatarIconColor: '#2F3E46',
     avatarBgColor: '#FFFFFF',
@@ -128,6 +128,16 @@ export function migrateLegacyState(state: Record<string, unknown>): void {
         log.goalIds = log.choreIds;
         delete log.choreIds;
       }
+    }
+  }
+
+  // Theme ids were replaced (light/dark/rainbow/gold -> classic/midnight/ocean/
+  // bubblegum/cyberpunk); fall back to the new default for any unrecognized value.
+  const settings = state.settings as Record<string, unknown> | undefined;
+  if (settings) {
+    const validThemes = ['classic', 'midnight', 'ocean', 'bubblegum', 'cyberpunk'];
+    if (!validThemes.includes(settings.theme as string)) {
+      settings.theme = 'classic';
     }
   }
 }

@@ -33,10 +33,11 @@ const HOUSEHOLD_CODE_KEY = 'gravy_household_code';
 export const SYNC_SKIPPED_KEY = 'gravy_sync_skipped';
 
 const THEME_COLORS: Record<Theme, string> = {
-  light: '#F7EDE2',
-  dark: '#161B1F',
-  rainbow: '#F6BD60',
-  gold: '#FFFFFF',
+  classic: '#f4ece4',
+  midnight: '#1e1e24',
+  ocean: '#e0f7fa',
+  bubblegum: '#ffe5ec',
+  cyberpunk: '#fcee0a',
 };
 
 export interface ToastAction {
@@ -750,7 +751,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       } else if (key === 'recoveryQuestion' || key === 'recoveryAnswer') {
         next.settings[key] = val.trim();
       } else if (key === 'theme') {
-        if (val === 'light' || val === 'dark' || val === 'rainbow' || val === 'gold') {
+        if (val === 'classic' || val === 'midnight' || val === 'ocean' || val === 'bubblegum' || val === 'cyberpunk') {
           next.settings.theme = val;
         }
       } else if (key === 'avatarIcon') {
