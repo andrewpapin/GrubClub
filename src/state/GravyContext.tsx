@@ -196,12 +196,13 @@ export function GravyProvider({ children }: { children: ReactNode }) {
 
   const fireConfetti = useCallback(() => setConfettiTrigger((n) => n + 1), []);
 
-  // Awards (or deducts, for negative pts) points and mutates the given draft state in place.
-  // Balances are NOT floored at zero here: doing so used to make a deduction saturate (lose
-  // less than `pts`) while its paired undo always added back the full `pts`, letting a kid
-  // mint points by deducting at a zero balance and immediately undoing. Keeping the running
-  // balance exact makes every award/undo an exact inverse. Negative balances are floored only
-  // where they're displayed (TopBar / rank) and where they're spent (approveReward).
+  // Awards points and mutates the given draft state in place. Used for the positive flows
+  // (food, daily goals, full-tray bonus) and their exact-inverse removals; the running
+  // balance is intentionally NOT floored here so an award and its later removal cancel out
+  // precisely (flooring would let a kid re-log an item they'd already spent to mint points).
+  // Bonus-item penalties are handled separately in logBonusItem, where they're forgiven once
+  // the balance hits zero. Negative balances are floored only where they're displayed
+  // (TopBar / rank) and where they're spent (approveReward).
   const awardPoints = useCallback(
     (next: GravyState, pts: number, reason: string, opts?: { silent?: boolean; action?: ToastAction }) => {
       next.points = next.points + pts;
@@ -394,12 +395,27 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       if (!goal) return prev;
       const next = clone(prev);
       if (!next.todayGoalCounts) next.todayGoalCounts = {};
+      if (!next.todayBonusApplied) next.todayBonusApplied = {};
       next.todayGoalCounts[id] = (next.todayGoalCounts[id] || 0) + 1;
-      awardPoints(next, goal.pts, goal.name);
+
+      // A penalty (negative pts) is forgiven once the kid is broke: never deduct more than
+      // the current balance. Record what was actually applied so the matching undo gives
+      // back exactly that — handing back the full nominal amount would mint points.
+      const applied = goal.pts >= 0 ? goal.pts : -Math.min(-goal.pts, Math.max(0, next.points));
+      next.points += applied;
+      next.totalPoints += applied;
+      next.todayPoints += applied;
+      next.todayBonusApplied[id] = (next.todayBonusApplied[id] || 0) + applied;
+      if (next.todayPoints > (next.counters.maxDayPoints || 0)) {
+        next.counters.maxDayPoints = next.todayPoints;
+      }
+
+      const sign = goal.pts < 0 ? '−' : '+';
+      showToast(faStar, `${sign}${Math.abs(goal.pts)} ${goal.name}`);
       maybeCelebrateRankUp(prev.totalPoints, next);
       return next;
     });
-  }, [awardPoints, maybeCelebrateRankUp]);
+  }, [showToast, maybeCelebrateRankUp]);
 
   const undoBonusItem = useCallback((id: number) => {
     setState((prev) => {
@@ -409,11 +425,22 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       if (currentCount <= 0) return prev;
       const next = clone(prev);
       if (!next.todayGoalCounts) next.todayGoalCounts = {};
+      if (!next.todayBonusApplied) next.todayBonusApplied = {};
       next.todayGoalCounts[id] = currentCount - 1;
-      awardPoints(next, -goal.pts, '', { silent: true });
+
+      // Reverse only what this item actually applied (tracked in logBonusItem), bounded by
+      // a single tap's nominal value — so undoing a forgiven penalty returns nothing extra.
+      const net = next.todayBonusApplied[id] || 0;
+      const reverse = goal.pts >= 0
+        ? -Math.min(goal.pts, Math.max(0, net))
+        : Math.min(-goal.pts, Math.max(0, -net));
+      next.points += reverse;
+      next.totalPoints += reverse;
+      next.todayPoints += reverse;
+      next.todayBonusApplied[id] = net + reverse;
       return next;
     });
-  }, [awardPoints]);
+  }, []);
 
   const logFoodForDay = useCallback((dateStr: string, foodId: string) => {
     setState((prev) => {
@@ -746,6 +773,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       next.todayFoodCounts = {};
       next.todayGoals = [];
       next.todayGoalCounts = {};
+      next.todayBonusApplied = {};
       showToast(faRotate, "Today reset!");
       return next;
     });

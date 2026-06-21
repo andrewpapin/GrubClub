@@ -75,6 +75,10 @@ export interface GravyState {
   todayFoodCounts: Record<string, number>;
   todayGoals: number[];
   todayGoalCounts: Record<number, number>;
+  // Points actually applied per Bonus item today (signed). Penalties are forgiven when the
+  // kid is broke (capped at the current balance), so this records what was really deducted/
+  // added so an undo reverses exactly that — never handing back points that were forgiven.
+  todayBonusApplied: Record<number, number>;
   dayLogs: Record<string, DayLog>;
   pendingRewards: PendingReward[];
   earnedBadges: string[];
