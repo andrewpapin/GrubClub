@@ -15,6 +15,7 @@ export const defaultState: GravyState = {
   todayFoodCounts: {},
   todayGoals: [],
   todayGoalCounts: {},
+  todayBonusApplied: {},
   dayLogs: {},
   pendingRewards: [],
   earnedBadges: [],
@@ -135,7 +136,7 @@ export function migrateLegacyState(state: Record<string, unknown>): void {
 // full-tray/all-goals conditions `applyDayRollover` uses, to seed foodStreak/goalStreak/
 // megaStreak for saves written before these fields existed (so upgrading doesn't reset
 // an in-progress streak to 0).
-function backfillStreaksFromLogs(state: GravyState): void {
+export function backfillStreaksFromLogs(state: GravyState): void {
   const dailyGoals = state.goals.filter((g) => g.isDaily !== false);
   let foodStreak = 0;
   let goalStreak = 0;
@@ -252,6 +253,8 @@ export function applyDayRollover(state: GravyState): GravyState {
     );
     state.todayGoals = (state.todayGoals || []).filter((id) => dailyIds.has(id));
     state.todayGoalCounts = {};
+    // Bonus penalties settle at the end of the day — start the new day with a clean ledger.
+    state.todayBonusApplied = {};
   }
   state.lastActiveDate = today;
   return state;
