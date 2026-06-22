@@ -42,14 +42,14 @@ export function HangmanGame({ onExit }: HangmanGameProps) {
 
   return (
     <div className="hangman-game">
-      <div className="hangman-category">Category: {game.category}</div>
-      <div className="hangman-hearts">
+      <div className="game-clue-label">Category: {game.category}</div>
+      <div className="lives-row">
         {Array.from({ length: MAX_WRONG_GUESSES }).map((_, i) => (
           <AppIcon
             key={i}
             iconKey={i < wrongCount ? 'heartCrack' : 'heart'}
             emojiFallback={i < wrongCount ? '💔' : '❤️'}
-            className={`hangman-heart ${i < wrongCount ? 'cracked' : ''}`}
+            className={`life-icon ${i < wrongCount ? 'cracked' : ''}`}
           />
         ))}
       </div>
@@ -62,23 +62,23 @@ export function HangmanGame({ onExit }: HangmanGameProps) {
       </div>
 
       {gameOver ? (
-        <div className={`hangman-result ${won ? 'win' : 'lose'}`}>
+        <div className={`game-result ${won ? 'win' : 'lose'}`}>
           {won ? (
             <>
-              <div className="hangman-result-title">🎉 You got it!</div>
-              <div className="hangman-result-sub">+{state.settings.gamePts} pts!</div>
+              <div className="game-result-title">🎉 You got it!</div>
+              <div className="game-result-sub">+{state.settings.gamePts} pts!</div>
             </>
           ) : (
             <>
-              <div className="hangman-result-title">Aww, out of hearts!</div>
-              <div className="hangman-result-sub">The word was {game.word}.</div>
+              <div className="game-result-title">Aww, out of hearts!</div>
+              <div className="game-result-sub">The word was {game.word}.</div>
             </>
           )}
-          <div className="hangman-result-actions">
-            <button className="hangman-result-btn primary" onClick={handlePlayAgain} type="button">
+          <div className="game-result-actions">
+            <button className="game-result-btn primary" onClick={handlePlayAgain} type="button">
               Play Again
             </button>
-            <button className="hangman-result-btn" onClick={onExit} type="button">
+            <button className="game-result-btn" onClick={onExit} type="button">
               Back to Games
             </button>
           </div>
