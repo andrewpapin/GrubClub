@@ -1,12 +1,24 @@
 import type { IconKey } from './icons';
 
+// Fire on first occurrence, no threshold.
+type SimpleBadgeTrigger = 'first_food' | 'first_chore' | 'first_reward';
+
+// Take a numeric `:N` threshold — see comment below for what each counts.
+type ThresholdBadgeTriggerType =
+  | 'food_count' | 'full_tray' | 'chore_count' | 'all_chores' | 'pts' | 'pts_day'
+  | 'streak' | 'reward_count' | 'combo' | 'fruit' | 'veggie' | 'protein' | 'dairy' | 'grain';
+
+// Constrains `BadgeDef.trigger` to a known type so a typo (e.g. `'friut:5'`) is a
+// compile error instead of a silently dead/zero-threshold badge at runtime.
+export type BadgeTrigger = SimpleBadgeTrigger | `${ThresholdBadgeTriggerType}:${number}`;
+
 export interface BadgeDef {
   id: string;
   emoji: string;   // legacy fallback
   icon: IconKey;   // registered icon key (see data/icons.ts)
   name: string;
   desc: string;
-  trigger: string;
+  trigger: BadgeTrigger;
   group: string;
 }
 
