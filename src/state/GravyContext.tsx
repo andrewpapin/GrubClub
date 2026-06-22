@@ -13,6 +13,7 @@ import {
   faStar,
   faListCheck,
   faUserPlus,
+  faGamepad,
 } from '@fortawesome/free-solid-svg-icons';
 import type { DayLog, Goal, GravyRoot, GravyState, ProfileEntry, Reward, Settings, Theme } from './types';
 import {
@@ -29,6 +30,7 @@ import { FOODS } from '../data/foods';
 import { resolveToastIcon } from '../data/icons';
 import { findNewlyEarnedBadges, getBadgeDisplay } from './badges';
 import { getRank, RANKS } from '../data/ranks';
+import { GAMES } from '../data/games';
 import {
   createHousehold as createHouseholdRow,
   fetchHousehold,
@@ -43,6 +45,9 @@ export type SyncStatus = 'idle' | 'syncing' | 'error';
 
 const HOUSEHOLD_CODE_KEY = 'gravy_household_code';
 export const SYNC_SKIPPED_KEY = 'gravy_sync_skipped';
+// Caps how many game wins count toward points per day, so a kid can't farm an easy
+// round on repeat — beyond this, wins still feel celebratory but stop paying out.
+const DAILY_GAME_WIN_CAP = 3;
 
 const THEME_COLORS: Record<Theme, string> = {
   classic: '#f4ece4',
@@ -105,6 +110,7 @@ interface GravyContextValue {
   decrementGoal: (id: number) => void;
   logBonusItem: (id: number) => void;
   undoBonusItem: (id: number) => void;
+  completeGameRound: (gameId: string, won: boolean) => void;
   logFoodForDay: (dateStr: string, foodId: string) => void;
   removeFoodForDay: (dateStr: string, foodId: string) => void;
   toggleGoalForDay: (dateStr: string, goalId: number) => void;
@@ -487,6 +493,26 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       return next;
     });
   }, []);
+
+  const completeGameRound = useCallback((gameId: string, won: boolean) => {
+    setState((prev) => {
+      const next = clone(prev);
+      next.counters.gamesPlayed++;
+      if (won) {
+        next.counters.gamesWon++;
+        const game = GAMES.find((g) => g.id === gameId);
+        if (next.todayGameWins < DAILY_GAME_WIN_CAP) {
+          next.todayGameWins++;
+          awardPoints(next, next.settings.gamePts, `🎉 ${game?.name ?? 'Game'} win!`);
+        } else {
+          showToast(faGamepad, "Nice win! Today's game points are maxed — keep playing for fun!");
+        }
+        maybeCelebrateRankUp(prev.totalPoints, next);
+        checkBadges(next);
+      }
+      return next;
+    });
+  }, [awardPoints, checkBadges, maybeCelebrateRankUp, showToast]);
 
   const logBonusItem = useCallback((id: number) => {
     setState((prev) => {
@@ -1178,6 +1204,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     decrementGoal,
     logBonusItem,
     undoBonusItem,
+    completeGameRound,
     logFoodForDay,
     removeFoodForDay,
     toggleGoalForDay,

@@ -11,13 +11,13 @@ import {
   // Play / sport
   faSoccerBall, faDumbbell, faBicycle, faPersonRunning,
   // Learning / fun
-  faBookOpen, faMusic, faPalette, faPuzzlePiece, faGamepad, faGuitar,
+  faBookOpen, faMusic, faPalette, faPuzzlePiece, faGamepad, faGuitar, faFont,
   // Pets / nature
   faDog, faCat, faPaw, faTree, faSun, faMoon,
   // Rewards / status
   faGift, faStar, faTrophy, faMedal, faAward, faCrown, faGem, faHeart,
-  faThumbsUp, faCircleCheck, faMoneyBill, faMoneyBillWave, faSackDollar,
-  faBagShopping, faCartShopping,
+  faHeartCrack, faThumbsUp, faCircleCheck, faMoneyBill, faMoneyBillWave,
+  faSackDollar, faBagShopping, faCartShopping,
   // Effects / streaks / combos
   faFire, faBolt, faBomb, faBurst, faRainbow, faRocket, faMeteor,
   faSatellite, faBrain, faWandMagicSparkles, faHandPeace, faVolcano,
@@ -83,6 +83,7 @@ export const ICONS = {
   puzzlePiece: faPuzzlePiece,
   gamepad: faGamepad,
   guitar: faGuitar,
+  font: faFont,
   // Pets / nature
   dog: faDog,
   cat: faCat,
@@ -99,6 +100,7 @@ export const ICONS = {
   crown: faCrown,
   gem: faGem,
   heart: faHeart,
+  heartCrack: faHeartCrack,
   thumbsUp: faThumbsUp,
   circleCheck: faCircleCheck,
   moneyBill: faMoneyBill,

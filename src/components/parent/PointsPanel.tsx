@@ -7,6 +7,7 @@ export function PointsPanel() {
   const { state, saveSetting } = useGravy();
   const [foodPts, setFoodPts] = useState(String(state.settings.foodPts));
   const [bonusPts, setBonusPts] = useState(String(state.settings.bonusPts));
+  const [gamePts, setGamePts] = useState(String(state.settings.gamePts));
   const [savedField, setSavedField] = useState<string | null>(null);
   const savedTimerRef = useRef<number | null>(null);
 
@@ -60,6 +61,30 @@ export function PointsPanel() {
             setBonusPts(String(clamped));
             saveSetting('bonusPts', e.target.value);
             flashSaved('bonusPts');
+          }}
+        />
+      </div>
+
+      <div className="section-label">Games</div>
+      <div className="settings-row">
+        <div>
+          <div className="settings-label">
+            Points per game win
+            {savedField === 'gamePts' && <FontAwesomeIcon icon={faCheck} className="saved-flash" />}
+          </div>
+          <div className="settings-sub">Awarded when {state.settings.childName} wins a game (up to 3 wins/day)</div>
+        </div>
+        <input
+          type="number"
+          min={0}
+          max={500}
+          value={gamePts}
+          onChange={(e) => setGamePts(e.target.value)}
+          onBlur={(e) => {
+            const clamped = Math.max(0, parseInt(e.target.value) || 0);
+            setGamePts(String(clamped));
+            saveSetting('gamePts', e.target.value);
+            flashSaved('gamePts');
           }}
         />
       </div>

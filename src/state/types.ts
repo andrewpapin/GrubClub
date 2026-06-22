@@ -32,6 +32,8 @@ export interface Counters {
   comboDays: number;
   totalRewards: number;
   maxDayPoints: number;
+  gamesPlayed: number;
+  gamesWon: number;
 }
 
 export interface BadgeOverride {
@@ -46,6 +48,7 @@ export type Theme = 'classic' | 'midnight' | 'ocean' | 'bubblegum' | 'cyberpunk'
 export interface Settings {
   foodPts: number;
   bonusPts: number;
+  gamePts: number;
   pin: string;
   childName: string;
   recoveryQuestion: string;
@@ -80,6 +83,7 @@ export interface GravyState {
   // kid is broke (capped at the current balance), so this records what was really deducted/
   // added so an undo reverses exactly that — never handing back points that were forgiven.
   todayBonusApplied: Record<number, number>;
+  todayGameWins: number;
   dayLogs: Record<string, DayLog>;
   pendingRewards: PendingReward[];
   earnedBadges: string[];
