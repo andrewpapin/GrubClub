@@ -37,6 +37,7 @@ export function MemoryMatchGame({ onExit }: MemoryMatchGameProps) {
   const won = matchedIds.size === cards.length;
   const lost = !won && mismatchCount >= MAX_MISMATCHES;
   const gameOver = won || lost;
+  const triesLeft = MAX_MISMATCHES - mismatchCount;
 
   useEffect(() => {
     if (gameOver && !roundCompleteRef.current) {
@@ -85,7 +86,10 @@ export function MemoryMatchGame({ onExit }: MemoryMatchGameProps) {
 
   return (
     <div className="memory-game">
-      <div className="game-clue-label">Pairs: {matchedIds.size / 2} / {ICON_SET.length}</div>
+      <div className="memory-status-row">
+        <div className="game-clue-label">Pairs: {matchedIds.size / 2} / {ICON_SET.length}</div>
+        <div className={`game-clue-label ${triesLeft <= 2 ? 'low' : ''}`}>Tries left: {triesLeft}</div>
+      </div>
       <div className="memory-grid">
         {cards.map((card) => {
           const faceUp = matchedIds.has(card.id) || flippedIds.includes(card.id) || lost;
