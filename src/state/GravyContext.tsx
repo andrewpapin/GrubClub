@@ -944,6 +944,10 @@ export function GravyProvider({ children }: { children: ReactNode }) {
   }, [showToast]);
 
   const resetAll = useCallback(() => {
+    // Cancel any deferred celebration/badge toasts queued by an action just before the
+    // reset — otherwise one could still fire afterward, announcing progress that no longer exists.
+    pendingTimersRef.current.forEach((t) => clearTimeout(t));
+    pendingTimersRef.current = [];
     // Disconnect from household sync before resetting so the blank state
     // doesn't propagate to all other family devices.
     localStorage.removeItem(HOUSEHOLD_CODE_KEY);
@@ -1158,6 +1162,10 @@ export function GravyProvider({ children }: { children: ReactNode }) {
   }, [showToast]);
 
   const leaveHousehold = useCallback(() => {
+    // Cancel any deferred celebration/badge toasts queued just before disconnecting — they'd
+    // otherwise still fire afterward, referencing a state snapshot from the now-disconnected sync.
+    pendingTimersRef.current.forEach((t) => clearTimeout(t));
+    pendingTimersRef.current = [];
     localStorage.removeItem(HOUSEHOLD_CODE_KEY);
     setHouseholdCode(null);
     lastSyncedRef.current = null;
