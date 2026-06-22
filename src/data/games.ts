@@ -17,4 +17,25 @@ export const GAMES: GameDef[] = [
     name: 'Hangman',
     description: 'Guess the word before you run out of tries!',
   },
+  {
+    id: 'mathfacts',
+    emoji: '🧮',
+    icon: 'calculator',
+    name: 'Math Facts',
+    description: 'Answer fast and get 7 right before 3 strikes!',
+  },
+  {
+    id: 'scramble',
+    emoji: '🔀',
+    icon: 'shuffle',
+    name: 'Word Scramble',
+    description: 'Unscramble the letters to spell the word!',
+  },
+  {
+    id: 'memory',
+    emoji: '🧩',
+    icon: 'clone',
+    name: 'Memory Match',
+    description: 'Flip cards and find all the matching pairs!',
+  },
 ];

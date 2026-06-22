@@ -4,6 +4,9 @@ import { faXmark, faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 import { AppIcon } from './AppIcon';
 import { GAMES } from '../data/games';
 import { HangmanGame } from './games/HangmanGame';
+import { MathFactsGame } from './games/MathFactsGame';
+import { WordScrambleGame } from './games/WordScrambleGame';
+import { MemoryMatchGame } from './games/MemoryMatchGame';
 
 interface GamesScreenProps {
   open: boolean;
@@ -42,6 +45,12 @@ export function GamesScreen({ open, onClose }: GamesScreenProps) {
         <div className="calendar-modal-body">
           {activeGame === 'hangman' ? (
             <HangmanGame onExit={() => setActiveGame(null)} />
+          ) : activeGame === 'mathfacts' ? (
+            <MathFactsGame onExit={() => setActiveGame(null)} />
+          ) : activeGame === 'scramble' ? (
+            <WordScrambleGame onExit={() => setActiveGame(null)} />
+          ) : activeGame === 'memory' ? (
+            <MemoryMatchGame onExit={() => setActiveGame(null)} />
           ) : (
             <div className="games-grid">
               {GAMES.map((g) => (

@@ -12,6 +12,7 @@ import {
   faSoccerBall, faDumbbell, faBicycle, faPersonRunning,
   // Learning / fun
   faBookOpen, faMusic, faPalette, faPuzzlePiece, faGamepad, faGuitar, faFont,
+  faCalculator, faShuffle, faClone,
   // Pets / nature
   faDog, faCat, faPaw, faTree, faSun, faMoon,
   // Rewards / status
@@ -84,6 +85,9 @@ export const ICONS = {
   gamepad: faGamepad,
   guitar: faGuitar,
   font: faFont,
+  calculator: faCalculator,
+  shuffle: faShuffle,
+  clone: faClone,
   // Pets / nature
   dog: faDog,
   cat: faCat,

@@ -72,3 +72,5 @@ export function pickHangmanWord(exclude?: string): HangmanWord {
   }
   return pool[Math.floor(Math.random() * pool.length)];
 }
+
+export const pickWord = pickHangmanWord;

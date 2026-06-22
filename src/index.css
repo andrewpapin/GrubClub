@@ -1171,14 +1171,8 @@ button.goal-tile:active { transform: scale(0.97); }
 .game-tile-name { font-size: 0.85rem; font-weight: 800; color: var(--text); margin-bottom: 4px; }
 .game-tile-desc { font-size: var(--text-xs); font-weight: 600; color: var(--muted); }
 
-/* ===== HANGMAN ===== */
-.hangman-game {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-}
-.hangman-category {
+/* ===== GAME SHARED (lives, clue label, result panel) ===== */
+.game-clue-label {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 0.85rem;
@@ -1186,13 +1180,51 @@ button.goal-tile:active { transform: scale(0.97); }
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.hangman-hearts {
+.lives-row {
   display: flex;
   gap: 6px;
   font-size: 1.4rem;
   color: var(--coral);
 }
-.hangman-heart.cracked { color: var(--muted); opacity: 0.6; }
+.life-icon.cracked { color: var(--muted); opacity: 0.6; }
+.game-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 12px;
+}
+.game-result-title { font-family: var(--font-display); font-weight: 900; font-size: 1.1rem; color: var(--dark); }
+.game-result-sub { font-size: 0.85rem; font-weight: 700; color: var(--muted); }
+.game-result.win .game-result-sub { color: var(--sage); }
+.game-result-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.game-result-btn {
+  background: var(--card);
+  border: var(--border-width-lg) solid var(--dark);
+  border-radius: var(--radius-sm);
+  box-shadow: 3px 3px 0 var(--dark);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--dark);
+  padding: 10px 16px;
+  cursor: pointer;
+}
+.game-result-btn:active { transform: translate(3px,3px); box-shadow: 0 0 0 var(--dark); }
+.game-result-btn.primary { background: var(--yellow); }
+
+/* ===== HANGMAN ===== */
+.hangman-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
 .hangman-word {
   display: flex;
   flex-wrap: wrap;
@@ -1233,36 +1265,137 @@ button.goal-tile:active { transform: scale(0.97); }
 .hangman-key:disabled { cursor: default; }
 .hangman-key.correct { background: var(--sage); color: white; }
 .hangman-key.wrong { background: var(--muted); color: white; opacity: 0.6; }
-.hangman-result {
+
+/* ===== MATH FACTS ===== */
+.mathfacts-game {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  text-align: center;
-  padding: 12px;
+  gap: 16px;
+  width: 100%;
 }
-.hangman-result-title { font-family: var(--font-display); font-weight: 900; font-size: 1.1rem; color: var(--dark); }
-.hangman-result-sub { font-size: 0.85rem; font-weight: 700; color: var(--muted); }
-.hangman-result.win .hangman-result-sub { color: var(--sage); }
-.hangman-result-actions {
-  display: flex;
+.mathfacts-prompt {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 2rem;
+  color: var(--dark);
+}
+.mathfacts-choices {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  margin-top: 8px;
+  width: 100%;
 }
-.hangman-result-btn {
+.mathfacts-choice {
   background: var(--card);
-  border: var(--border-width-lg) solid var(--dark);
+  border: var(--border-width-md) solid var(--dark);
   border-radius: var(--radius-sm);
   box-shadow: 3px 3px 0 var(--dark);
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 0.85rem;
+  font-size: 1.3rem;
   color: var(--dark);
-  padding: 10px 16px;
+  padding: 18px 0;
   cursor: pointer;
 }
-.hangman-result-btn:active { transform: translate(3px,3px); box-shadow: 0 0 0 var(--dark); }
-.hangman-result-btn.primary { background: var(--yellow); }
+.mathfacts-choice:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--dark); }
+.mathfacts-choice:disabled { cursor: default; }
+.mathfacts-choice.correct { background: var(--sage); color: white; }
+.mathfacts-choice.wrong { background: var(--muted); color: white; opacity: 0.6; }
+
+/* ===== WORD SCRAMBLE ===== */
+.scramble-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+.scramble-answer-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.scramble-answer-slot {
+  width: 34px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream);
+  border-bottom: var(--border-width-xl) solid var(--dark);
+  border-radius: 4px 4px 0 0;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.2rem;
+  color: var(--dark);
+  cursor: pointer;
+}
+.scramble-answer-slot:disabled { cursor: default; }
+.scramble-answer-slot.filled { background: var(--card); }
+.scramble-tray {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.scramble-tray-letter {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  border: var(--border-width-md) solid var(--dark);
+  border-radius: var(--radius-sm);
+  box-shadow: 2px 2px 0 var(--dark);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--dark);
+  cursor: pointer;
+}
+.scramble-tray-letter:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--dark); }
+.scramble-tray-letter.placed { visibility: hidden; }
+.scramble-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+/* ===== MEMORY MATCH ===== */
+.memory-game {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.memory-card {
+  aspect-ratio: 1;
+  background: var(--card);
+  border: var(--border-width-md) solid var(--dark);
+  border-radius: var(--radius-sm);
+  box-shadow: 2px 2px 0 var(--dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: var(--coral);
+  cursor: pointer;
+}
+.memory-card.face-down { background: var(--muted); }
+.memory-card:disabled { cursor: default; }
+.memory-card.matched { background: var(--sage); border-color: var(--dark); }
+.memory-card.matched .memory-card-icon { animation: icon-pop 0.4s ease; color: white; }
+.memory-card-icon { font-size: 1.3rem; }
 
 /* Sync gate */
 .sync-gate-overlay {
