@@ -77,7 +77,7 @@ export function ProfilesManager({ open, onClose }: ProfilesManagerProps) {
       <div className="calendar-modal-sheet">
         <div className="calendar-modal-header">
           <span className="calendar-modal-title">Profiles</span>
-          <button className="calendar-modal-close" onClick={onClose} aria-label="Close" type="button">
+          <button className="calendar-modal-close" onClick={onClose} aria-label="Close profiles" type="button">
             <FontAwesomeIcon icon={faXmark} />
           </button>
         </div>

@@ -42,7 +42,7 @@ export function ProfileSwitcher({ open, onClose }: ProfileSwitcherProps) {
       <div className="calendar-modal-sheet">
         <div className="calendar-modal-header">
           <span className="calendar-modal-title">Switch Profile</span>
-          <button className="calendar-modal-close" onClick={onClose} aria-label="Close" type="button">
+          <button className="calendar-modal-close" onClick={onClose} aria-label="Close switch profile" type="button">
             <FontAwesomeIcon icon={faXmark} />
           </button>
         </div>
