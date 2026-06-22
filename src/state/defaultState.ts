@@ -1,4 +1,4 @@
-import type { GravyState, GravyRoot, ProfileEntry, Settings, Theme } from './types';
+import type { GravyState, GravyRoot, ProfileEntry, Settings, Theme, Goal, Reward, PendingReward } from './types';
 import { FOODS } from '../data/foods';
 import { hashWithSalt, randomSaltHex } from './hash';
 
@@ -216,9 +216,111 @@ export function backfillStreaksFromLogs(state: GravyState): void {
   state.megaStreak = megaStreak;
 }
 
+function asFiniteNumber(v: unknown, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+}
+
+function asString(v: unknown, fallback: string): string {
+  return typeof v === 'string' ? v : fallback;
+}
+
+function asPlainObject(v: unknown): Record<string, unknown> {
+  return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+
+function asStringArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+}
+
+function asNumberArray(v: unknown): number[] {
+  return Array.isArray(v) ? v.filter((x): x is number => typeof x === 'number') : [];
+}
+
+function sanitizeGoals(v: unknown): Goal[] {
+  const cleaned = Array.isArray(v)
+    ? v.filter(
+        (g): g is Goal =>
+          !!g && typeof g === 'object' && typeof (g as Goal).id === 'number' &&
+          typeof (g as Goal).name === 'string' && typeof (g as Goal).pts === 'number',
+      )
+    : [];
+  return cleaned.length > 0 ? cleaned : JSON.parse(JSON.stringify(defaultState.goals));
+}
+
+function sanitizeRewards(v: unknown): Reward[] {
+  const cleaned = Array.isArray(v)
+    ? v.filter(
+        (r): r is Reward =>
+          !!r && typeof r === 'object' && typeof (r as Reward).id === 'number' &&
+          typeof (r as Reward).name === 'string' && typeof (r as Reward).cost === 'number',
+      )
+    : [];
+  return cleaned.length > 0 ? cleaned : JSON.parse(JSON.stringify(defaultState.rewards));
+}
+
+function sanitizePendingRewards(v: unknown): PendingReward[] {
+  return Array.isArray(v)
+    ? v.filter(
+        (p): p is PendingReward =>
+          !!p && typeof p === 'object' && typeof (p as PendingReward).id === 'string' &&
+          typeof (p as PendingReward).rewardId === 'number',
+      )
+    : [];
+}
+
+// Coerces fields that are present but have the wrong runtime type/shape back to a safe
+// default, rather than letting a malformed payload — a buggy peer client, hand-edited
+// localStorage, or (if Supabase RLS is ever misconfigured) a third party writing directly to
+// a household row — propagate NaNs/non-arrays into arithmetic and iteration deeper in the app.
+function sanitizeState(state: GravyState): void {
+  state.points = asFiniteNumber(state.points, 0);
+  state.totalPoints = asFiniteNumber(state.totalPoints, 0);
+  state.streak = asFiniteNumber(state.streak, 0);
+  state.foodStreak = asFiniteNumber(state.foodStreak, 0);
+  state.goalStreak = asFiniteNumber(state.goalStreak, 0);
+  state.megaStreak = asFiniteNumber(state.megaStreak, 0);
+  state.todayPoints = asFiniteNumber(state.todayPoints, 0);
+  state.lastActiveDate = typeof state.lastActiveDate === 'string' ? state.lastActiveDate : null;
+
+  state.todayFoodCounts = asPlainObject(state.todayFoodCounts) as Record<string, number>;
+  state.todayGoalCounts = asPlainObject(state.todayGoalCounts) as Record<number, number>;
+  state.todayBonusApplied = asPlainObject(state.todayBonusApplied) as Record<number, number>;
+  state.dayLogs = asPlainObject(state.dayLogs) as GravyState['dayLogs'];
+  state.badgeConfig = asPlainObject(state.badgeConfig) as GravyState['badgeConfig'];
+
+  state.todayGoals = asNumberArray(state.todayGoals);
+  state.earnedBadges = asStringArray(state.earnedBadges);
+  state.pendingRewards = sanitizePendingRewards(state.pendingRewards);
+  state.goals = sanitizeGoals(state.goals);
+  state.rewards = sanitizeRewards(state.rewards);
+
+  const counters = state.counters as unknown as Record<string, unknown>;
+  counters.fullTrayDays = asFiniteNumber(counters.fullTrayDays, 0);
+  counters.totalGoals = asFiniteNumber(counters.totalGoals, 0);
+  counters.allGoalsDays = asFiniteNumber(counters.allGoalsDays, 0);
+  counters.comboDays = asFiniteNumber(counters.comboDays, 0);
+  counters.totalRewards = asFiniteNumber(counters.totalRewards, 0);
+  counters.maxDayPoints = asFiniteNumber(counters.maxDayPoints, 0);
+  counters.foodLogs = asPlainObject(counters.foodLogs);
+
+  const settings = state.settings as unknown as Record<string, unknown>;
+  settings.pinHash = asString(settings.pinHash, defaultState.settings.pinHash);
+  settings.pinSalt = asString(settings.pinSalt, defaultState.settings.pinSalt);
+  settings.recoveryAnswerHash = asString(settings.recoveryAnswerHash, '');
+  settings.recoveryAnswerSalt = asString(settings.recoveryAnswerSalt, '');
+  settings.recoveryQuestion = asString(settings.recoveryQuestion, '');
+  settings.childName = asString(settings.childName, defaultState.settings.childName);
+  settings.avatarIcon = asString(settings.avatarIcon, defaultState.settings.avatarIcon);
+  settings.avatarIconColor = asString(settings.avatarIconColor, defaultState.settings.avatarIconColor);
+  settings.avatarBgColor = asString(settings.avatarBgColor, defaultState.settings.avatarBgColor);
+  settings.foodPts = asFiniteNumber(settings.foodPts, defaultState.settings.foodPts);
+  settings.bonusPts = asFiniteNumber(settings.bonusPts, defaultState.settings.bonusPts);
+}
+
 // Takes a raw parsed flat GravyState (or null/garbage), runs the legacy migration, backfills any
-// missing top-level/settings/counter fields and streaks, then applies the day rollover. Shared by
-// every code path that hydrates a single profile's state (initial load + incoming Supabase rows).
+// missing top-level/settings/counter fields and streaks, then validates field types/shapes
+// before applying the day rollover. Shared by every code path that hydrates a single profile's
+// state (initial load + incoming Supabase rows).
 export function hydrateState(raw: unknown): GravyState {
   let state: GravyState;
   if (raw && typeof raw === 'object') {
@@ -248,6 +350,7 @@ export function hydrateState(raw: unknown): GravyState {
   }
   if (!state.counters.foodLogs) state.counters.foodLogs = {};
   if (!state.badgeConfig) state.badgeConfig = {};
+  sanitizeState(state);
   return applyDayRollover(state);
 }
 
