@@ -64,6 +64,8 @@ export function getBadgeProgress(state: GravyState, badge: BadgeDef): BadgeProgr
       return { current: c.totalRewards, target: thresh };
     case 'combo':
       return { current: c.comboDays, target: thresh };
+    case 'games_won':
+      return { current: c.gamesWon, target: thresh };
     default:
       return null;
   }
@@ -138,6 +140,12 @@ export function findNewlyEarnedBadges(state: GravyState): string[] {
         break;
       case 'combo':
         earned = c.comboDays >= thresh;
+        break;
+      case 'first_game':
+        earned = c.gamesWon >= 1;
+        break;
+      case 'games_won':
+        earned = c.gamesWon >= thresh;
         break;
     }
     if (earned) newlyEarned.push(b.id);

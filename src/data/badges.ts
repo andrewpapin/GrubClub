@@ -22,6 +22,8 @@ export interface BadgeDef {
 //   reward_count:N   — total rewards requested >= N
 //   combo:N          — full tray + all chores same day, N times
 //   fruit:N, veggie:N, protein:N, dairy:N, grain:N  — specific food logged N times
+//   first_game       — fires on first game round won (no threshold)
+//   games_won:N      — total games won (cumulative) >= N
 
 export const BADGE_MASTER: BadgeDef[] = [
   // ── FOOD (12) ──────────────────────────────────────────────────────
@@ -96,4 +98,9 @@ export const BADGE_MASTER: BadgeDef[] = [
   { id: 'all5foods10',  emoji: '🥗', icon: 'leaf',           name: 'Salad Days',        desc: 'Eat all 5 food groups 10 different days', trigger: 'full_tray:10',group: 'Combos' },
   { id: 'fruit10',      emoji: '🍓', icon: 'lemon',          name: 'Fruit Fanatic',     desc: 'Log fruit 10 times',                      trigger: 'fruit:10',    group: 'Combos' },
   { id: 'veggie10',     emoji: '🥦', icon: 'carrot',         name: 'Veggie Veteran',    desc: 'Log veggies 10 times',                    trigger: 'veggie:10',   group: 'Combos' },
+
+  // ── GAMES (3) ──────────────────────────────────────────────────────
+  { id: 'first_game',   emoji: '🔤', icon: 'font',           name: 'First Win!',        desc: 'Win your first game',                     trigger: 'first_game',     group: 'Games' },
+  { id: 'games_won10',  emoji: '🧠', icon: 'brain',          name: 'Word Whiz',         desc: 'Win 10 games',                            trigger: 'games_won:10',   group: 'Games' },
+  { id: 'games_won25',  emoji: '🏅', icon: 'medal',          name: 'Word Wizard',       desc: 'Win 25 games',                            trigger: 'games_won:25',   group: 'Games' },
 ];

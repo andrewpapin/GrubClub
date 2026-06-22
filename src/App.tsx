@@ -3,6 +3,7 @@ import { GravyProvider } from './state/GravyContext';
 import { HomeScreen } from './components/HomeScreen';
 import { StoreScreen } from './components/StoreScreen';
 import { BadgesScreen } from './components/BadgesScreen';
+import { GamesScreen } from './components/GamesScreen';
 import { GrownUpsDrawer } from './components/parent/GrownUpsDrawer';
 import { AccountMenu } from './components/AccountMenu';
 import { ProfileSwitcher } from './components/ProfileSwitcher';
@@ -44,6 +45,7 @@ function AppShell() {
   const [activeBadge, setActiveBadge] = useState<string | null>(null);
   const [storeOpen, setStoreOpen] = useState(false);
   const [badgesOpen, setBadgesOpen] = useState(false);
+  const [gamesOpen, setGamesOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [grownUpsOpen, setGrownUpsOpen] = useState(false);
   const [switchProfileOpen, setSwitchProfileOpen] = useState(false);
@@ -60,6 +62,7 @@ function AppShell() {
         <HomeScreen
           onOpenAvatarMenu={() => setAccountMenuOpen(true)}
           onOpenBadges={() => setBadgesOpen(true)}
+          onOpenGames={() => setGamesOpen(true)}
         />
         <StoreScreen open={storeOpen} onClose={() => setStoreOpen(false)} />
         <BadgesScreen
@@ -67,6 +70,7 @@ function AppShell() {
           onClose={() => setBadgesOpen(false)}
           onShowBadge={setActiveBadge}
         />
+        <GamesScreen open={gamesOpen} onClose={() => setGamesOpen(false)} />
         <AccountMenu
           open={accountMenuOpen}
           onClose={() => setAccountMenuOpen(false)}

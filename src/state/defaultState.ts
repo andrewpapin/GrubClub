@@ -16,6 +16,7 @@ export const defaultState: GravyState = {
   todayGoals: [],
   todayGoalCounts: {},
   todayBonusApplied: {},
+  todayGameWins: 0,
   dayLogs: {},
   pendingRewards: [],
   earnedBadges: [],
@@ -27,6 +28,8 @@ export const defaultState: GravyState = {
     comboDays: 0,
     totalRewards: 0,
     maxDayPoints: 0,
+    gamesPlayed: 0,
+    gamesWon: 0,
   },
   badgeConfig: {},
   goals: [
@@ -51,6 +54,7 @@ export const defaultState: GravyState = {
   settings: {
     foodPts: 10,
     bonusPts: 25,
+    gamePts: 15,
     pin: '1234',
     childName: 'Zack',
     recoveryQuestion: '',
@@ -228,6 +232,7 @@ export function saveState(state: GravyState) {
 export const SHARED_SETTING_KEYS: (keyof Settings)[] = [
   'foodPts',
   'bonusPts',
+  'gamePts',
   'pin',
   'recoveryQuestion',
   'recoveryAnswer',
@@ -361,6 +366,7 @@ export function applyDayRollover(state: GravyState): GravyState {
     state.todayGoalCounts = {};
     // Bonus penalties settle at the end of the day — start the new day with a clean ledger.
     state.todayBonusApplied = {};
+    state.todayGameWins = 0;
   }
   state.lastActiveDate = today;
   return state;
