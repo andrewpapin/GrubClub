@@ -147,7 +147,7 @@ scope today is "plan for optionality," not commit.)*
 ## Do these first (top 5, in order)
 
 1. ~~Revive and merge PR #93 (PIN/recovery hashing + lockout).~~ **DONE** — merged as #97.
-2. Decide the fate of PR #92 (rank reorder) — land or close with a reason. **Still open.**
+2. ~~Decide the fate of PR #92 (rank reorder)~~ — **DECIDED**: stays closed, won't merge (see Epic 1).
 3. ~~Add the `npm run lint` CI gate to `deploy.yml`.~~ **DONE.**
 4. Stand up Vitest with tests for points/streak/badge logic. **Still open.**
 5. ~~Make an explicit access-control decision for Supabase~~ — **DONE**, see
