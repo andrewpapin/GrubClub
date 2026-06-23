@@ -160,29 +160,30 @@ export function PinScreen({ onSuccess }: PinScreenProps) {
         <div className="pin-title">Set a New PIN</div>
         <div className="pin-sub">Choose a new 4-digit PIN</div>
         <form
-          className="input-row"
-          style={{ width: '100%', maxWidth: 280, flexDirection: 'column' }}
+          style={{ width: '100%', maxWidth: 280, display: 'flex', flexDirection: 'column', gap: 10 }}
           onSubmit={(e) => { e.preventDefault(); submitNewPin(); }}
         >
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={4}
-            autoFocus
-            placeholder="New PIN"
-            value={newPin}
-            onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-          />
-          <input
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={4}
-            placeholder="Confirm PIN"
-            value={newPinConfirm}
-            onChange={(e) => setNewPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))}
-          />
+          <div className="input-row" style={{ marginBottom: 0 }}>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              autoFocus
+              placeholder="New PIN"
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            />
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={4}
+              placeholder="Confirm PIN"
+              value={newPinConfirm}
+              onChange={(e) => setNewPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            />
+          </div>
           <button type="submit" className="btn btn-sm btn-purple" disabled={newPin.length !== 4 || newPin !== newPinConfirm}>
             Save New PIN
           </button>

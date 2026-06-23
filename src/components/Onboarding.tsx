@@ -14,6 +14,7 @@ import { useGravy, SYNC_SKIPPED_KEY } from '../state/GravyContext';
 import { isValidHouseholdCode } from '../state/sync';
 import { ONBOARDING_DONE_KEY } from '../state/defaultState';
 import { safeSetItem } from '../state/storage';
+import { PinSetupStep } from './PinSetupStep';
 
 interface WalkStep {
   icon: typeof faHandSparkles;
@@ -44,7 +45,7 @@ const STEPS: WalkStep[] = [
   },
 ];
 
-type Phase = 'welcome' | 'join' | 'name' | 'walkthrough' | 'sync' | 'creating';
+type Phase = 'welcome' | 'join' | 'name' | 'walkthrough' | 'sync' | 'creating' | 'pinSetup';
 type JoinOrigin = 'welcome' | 'sync';
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
@@ -299,11 +300,12 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
         )}
         {phase === 'creating' && revealCode && (
           <div className="onb-actions">
-            <button className="btn btn-primary" onClick={finish}>
+            <button className="btn btn-primary" onClick={() => setPhase('pinSetup')}>
               Let's go!
             </button>
           </div>
         )}
+        {phase === 'pinSetup' && <PinSetupStep onDone={finish} />}
         {phase === 'creating' && revealFailed && (
           <div className="onb-actions">
             <button className="btn btn-primary" onClick={() => startCreate(pendingCode)}>
