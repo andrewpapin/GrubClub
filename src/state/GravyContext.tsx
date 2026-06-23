@@ -42,6 +42,7 @@ import {
   renameHousehold as renameHouseholdRow,
   subscribeToHousehold,
 } from './sync';
+import { safeGetItem, safeRemoveItem, safeSetItem } from './storage';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error';
 
@@ -183,15 +184,12 @@ export function GravyProvider({ children }: { children: ReactNode }) {
   const [celebration, setCelebration] = useState<CelebrationData | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
   const [householdCode, setHouseholdCode] = useState<string | null>(() =>
-    localStorage.getItem(HOUSEHOLD_CODE_KEY),
+    safeGetItem(HOUSEHOLD_CODE_KEY),
   );
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const lastSyncedRef = useRef<string | null>(null);
   const pendingTimersRef = useRef<number[]>([]);
-
-  useEffect(() => {
-    saveRoot(buildMergedRoot(root, state));
-  }, [state, root]);
+  const storageWarnedRef = useRef(false);
 
   // Applies the parent-selected theme to the whole app. useLayoutEffect (rather than
   // useEffect) so the attribute is set before paint, avoiding a flash of the light theme.
@@ -274,6 +272,19 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       setToasts((t) => t.filter((toast) => toast.id !== id));
     }, action ? 4500 : 2800);
   }, []);
+
+  // Persist on every state/root change. localStorage can throw (quota exceeded, or storage
+  // disabled in private browsing) — warn once via toast rather than silently losing the
+  // kid's progress, but don't re-show it on every subsequent failed write.
+  useEffect(() => {
+    const saved = saveRoot(buildMergedRoot(root, state));
+    if (saved) {
+      storageWarnedRef.current = false;
+    } else if (!storageWarnedRef.current) {
+      storageWarnedRef.current = true;
+      showToast(faTriangleExclamation, "Couldn't save — this device's storage is full or unavailable");
+    }
+  }, [state, root, showToast]);
 
   const dismissToast = useCallback((id: number) => {
     setToasts((t) => t.filter((toast) => toast.id !== id));
@@ -915,8 +926,8 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     pendingTimersRef.current = [];
     // Disconnect from household sync before resetting so the blank state
     // doesn't propagate to all other family devices.
-    localStorage.removeItem(HOUSEHOLD_CODE_KEY);
-    localStorage.removeItem(SYNC_SKIPPED_KEY);
+    safeRemoveItem(HOUSEHOLD_CODE_KEY);
+    safeRemoveItem(SYNC_SKIPPED_KEY);
     setHouseholdCode(null);
     lastSyncedRef.current = null;
     setSyncStatus('idle');
@@ -1036,7 +1047,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
         const merged = buildMergedRoot(rootRef.current, stateRef.current);
         await createHouseholdRow(normalized, merged);
         lastSyncedRef.current = JSON.stringify(merged);
-        localStorage.setItem(HOUSEHOLD_CODE_KEY, normalized);
+        safeSetItem(HOUSEHOLD_CODE_KEY, normalized);
         setHouseholdCode(normalized);
         setSyncStatus('idle');
         showToast(faCloud, `Cloud sync enabled! Code: ${normalized}`);
@@ -1064,7 +1075,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
         const merged = buildMergedRoot(rootRef.current, stateRef.current);
         await createHouseholdRow(code, merged);
         lastSyncedRef.current = JSON.stringify(merged);
-        localStorage.setItem(HOUSEHOLD_CODE_KEY, code);
+        safeSetItem(HOUSEHOLD_CODE_KEY, code);
         setHouseholdCode(code);
         setSyncStatus('idle');
         showToast(faCloud, `Cloud sync enabled! Code: ${code}`);
@@ -1111,7 +1122,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
       lastSyncedRef.current = JSON.stringify(finalRoot);
       setRoot(finalRoot);
       setState(activeStateOf(finalRoot));
-      localStorage.setItem(HOUSEHOLD_CODE_KEY, normalized);
+      safeSetItem(HOUSEHOLD_CODE_KEY, normalized);
       setHouseholdCode(normalized);
       setSyncStatus('idle');
       showToast(faCloud, 'Joined household sync!');
@@ -1136,7 +1147,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     // otherwise still fire afterward, referencing a state snapshot from the now-disconnected sync.
     pendingTimersRef.current.forEach((t) => clearTimeout(t));
     pendingTimersRef.current = [];
-    localStorage.removeItem(HOUSEHOLD_CODE_KEY);
+    safeRemoveItem(HOUSEHOLD_CODE_KEY);
     setHouseholdCode(null);
     lastSyncedRef.current = null;
     setSyncStatus('idle');
@@ -1153,7 +1164,7 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     setSyncStatus('syncing');
     try {
       await renameHouseholdRow(householdCode, normalized);
-      localStorage.setItem(HOUSEHOLD_CODE_KEY, normalized);
+      safeSetItem(HOUSEHOLD_CODE_KEY, normalized);
       setHouseholdCode(normalized);
       setSyncStatus('idle');
       showToast(faCloud, `Sync code changed to ${normalized}`);

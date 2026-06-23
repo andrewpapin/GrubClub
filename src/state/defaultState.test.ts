@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { applyDayRollover, backfillStreaksFromLogs, cloneDefaultState } from './defaultState';
-import type { Goal, GravyState } from './types';
+import { applyDayRollover, backfillStreaksFromLogs, cloneDefaultState, saveRoot, saveState } from './defaultState';
+import type { Goal, GravyRoot, GravyState } from './types';
 
 const FULL_TRAY = { fruit: 1, veggie: 1, protein: 1, dairy: 1, grain: 1 };
 
@@ -228,5 +228,27 @@ describe('backfillStreaksFromLogs', () => {
     expect(state.foodStreak).toBe(0);
     expect(state.goalStreak).toBe(0);
     expect(state.megaStreak).toBe(0);
+  });
+});
+
+describe('saveState/saveRoot', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns true when localStorage.setItem succeeds', () => {
+    vi.stubGlobal('localStorage', { setItem: () => {} });
+    expect(saveState(freshState())).toBe(true);
+    const root: GravyRoot = { version: 2, activeProfileId: 'p1', profiles: [{ id: 'p1', state: freshState() }] };
+    expect(saveRoot(root)).toBe(true);
+  });
+
+  it('returns false instead of throwing when storage is full or disabled', () => {
+    vi.stubGlobal('localStorage', {
+      setItem: () => { throw new DOMException('quota exceeded', 'QuotaExceededError'); },
+    });
+    expect(saveState(freshState())).toBe(false);
+    const root: GravyRoot = { version: 2, activeProfileId: 'p1', profiles: [{ id: 'p1', state: freshState() }] };
+    expect(saveRoot(root)).toBe(false);
   });
 });
