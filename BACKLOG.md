@@ -31,10 +31,16 @@ process), not missing features.
   answer are now salted-SHA-256 hashes (`src/state/hash.ts`), with a per-device
   exponential-backoff lockout after 5 failed attempts (`src/state/pinLockout.ts`).
   Plaintext fields are migrated to hashes on load and deleted.
-- **Decide the fate of PR #92** (rank-ladder reorder) — still closed-unmerged,
-  no decision recorded yet. This is a content/balance call, not a fix: either
-  land it or explicitly close it for a reason, don't leave it in limbo.
-  *(P0, S.)*
+- ~~**Decide the fate of PR #92** (rank-ladder reorder)~~ — **DECIDED: stays
+  closed, won't merge.** The diff only reshuffles rank *names* across the same
+  placeholder point thresholds from PR #90 ("exact balance will be revisited
+  later") — no stated rationale ties the new order to any difficulty curve or
+  theme, and it doesn't touch the actual flagged problem (the thresholds
+  themselves are still the placeholder quadratic curve from PR #90). Merging it
+  would just rename which animal a kid currently holds at a given point total,
+  with no game-balance benefit, and would need re-deciding anyway once the real
+  rank-curve design pass (Epic 4) happens. Re-open only as part of that design
+  pass, not as a standalone reorder.
 - ~~**Add real access control to the Supabase `households` table.**~~ —
   **DONE.** `supabase/migrations/20260623000000_scope_household_mutations.sql`
   revokes the unscoped anon INSERT/UPDATE grants and replaces them with three
@@ -69,9 +75,11 @@ process), not missing features.
   user-visible fallback for quota-exceeded or disabled storage (e.g. iOS private
   browsing), and validate the shape of incoming Supabase realtime payloads
   before trusting them. *(P1, M.)*
-- **Add an "update available" prompt** for the PWA. `registerSW({ immediate:
-  true })` with `registerType: 'autoUpdate'` means users only get fixes/features
-  on a cold relaunch, with no signal that a new version exists. *(P1, S.)*
+- ~~**Add an "update available" prompt** for the PWA.~~ — **DONE.**
+  `registerType` switched to `'prompt'` and `src/components/UpdatePrompt.tsx`
+  (using `virtual:pwa-register/react`'s `useRegisterSW()`) renders a dismissible
+  bottom banner with a "Refresh" button when a new service worker is waiting,
+  instead of silently auto-activating in the background until a cold relaunch.
 - **Refactor `GravyContext.tsx`** (~1240 lines) — extract household/sync logic
   into its own hook/module before it grows further. Pure maintainability, no
   user-facing effect. *(P2, M.)*
