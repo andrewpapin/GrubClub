@@ -9,9 +9,10 @@ npm run dev       # Start dev server at http://localhost:5173
 npm run build     # Type-check (tsc -b) then bundle to ./dist
 npm run lint      # Run ESLint
 npm run preview   # Serve ./dist locally
+npm test          # Run Vitest unit tests (src/**/*.test.ts)
 ```
 
-There is **no test framework configured** (no Jest/Vitest/`npm test`, no `npm run` script for Playwright despite it being a devDependency). `verify_gravy.mjs` at the repo root is an ad-hoc Playwright smoke-test script (not wired into `npm`) that drives the app in a headless browser against a running `npm run dev` server and screenshots each step to `/tmp`. Run it manually with `node verify_gravy.mjs` only if you need to script a UI walkthrough — otherwise testing is manual via the browser.
+Vitest covers the pure point/streak/badge logic: `src/state/points.ts` (award/forgiveness/exact-undo arithmetic, extracted from `GravyContext.tsx`'s `useCallback` closures so it's testable independent of React/toast/celebration side effects), `src/state/defaultState.ts` (`applyDayRollover`, `backfillStreaksFromLogs`), and `src/state/badges.ts` (`findNewlyEarnedBadges` and friends). Colocated `*.test.ts` files live next to the module they test. There is no component/UI test setup — `verify_gravy.mjs` at the repo root is an ad-hoc Playwright smoke-test script (not wired into `npm`) that drives the app in a headless browser against a running `npm run dev` server and screenshots each step to `/tmp`. Run it manually with `node verify_gravy.mjs` only if you need to script a UI walkthrough — otherwise UI testing is manual via the browser.
 
 See `BACKLOG.md` for a living backlog (security, infra, accessibility, process gaps) written from an audit of the codebase and PR history — check it before assuming a known gap (e.g. plaintext PIN storage) is unintentional or unreported.
 
