@@ -134,11 +134,9 @@ process), not missing features.
 
 ## Epic 3 — Accessibility
 
-- **Accessibility hardening pass** — bundle the four items below into one
-  effort instead of four separate sweeps: each one touches the same surfaces
-  (interactive tiles, modals/drawers, theme CSS), so reviewing/landing them
-  together is cheaper than reopening the same components four times.
-  *(P1, M overall.)*
+- ~~**Accessibility hardening pass**~~ — **DONE.** All four sub-items below
+  landed together (interactive tiles, modals/drawers, theme CSS, label
+  sizes), as planned. *(P1, M overall.)*
   - ~~Add aria-labels / semantic roles to interactive tiles~~ — many were
     `div`+`onClick` or unlabeled buttons across both kid and parent surfaces.
     **DONE.**
@@ -158,9 +156,15 @@ process), not missing features.
     `.muted-note` and `.empty-state--bare` classes to replace inline
     `color: 'var(--muted)'` styles and a dual-context shared class, both of
     which were otherwise unreachable by a CSS theme override.
-  - Audit/raise minimum label font sizes (some labels sit around ~10px) —
-    lowest priority of the four (P2); fold in opportunistically rather than
-    blocking the rest.
+  - ~~Audit/raise minimum label font sizes~~ — **DONE.** Raised the
+    `--text-2xs` token from 10px to 11px (the floor used by `.food-label`,
+    `.store-need-more`, `.badge-progress-label`, `.rank-row-points`,
+    `.rank-row-status`, and `.theme-swatch-label`); verified via Playwright
+    screenshots across classic/cyberpunk that none of the six clip or
+    overflow at the new size. Left three single-glyph icon-badge sizes below
+    11px untouched as out of scope — `.sync-warning-icon` (0.6rem),
+    `.nav-badge::after` (0.6rem), and `.food-check-badge` (0.55rem) are
+    decorative counts/glyphs in small fixed circles, not textual labels.
 
 ## Epic 4 — Game Balance & Content Debt
 
@@ -222,9 +226,9 @@ prioritized from what's actually still open:
    `DATA_HANDLING.md`.
 2. ~~Harden error handling~~ around `localStorage` writes and incoming
    Supabase realtime payloads (Epic 2, P1/M) — **DONE**, see Epic 2 above.
-3. ~~Run the accessibility hardening pass~~ (Epic 3, P1/M) — aria-labels,
-   focus trapping, and the contrast pass are **DONE**; only the (P2,
-   lowest-priority) font-size audit remains open, see Epic 3 above.
+3. ~~Run the accessibility hardening pass~~ (Epic 3, P1/M) — **DONE**: all
+   four sub-items (aria-labels, focus trapping, the contrast pass, and the
+   font-size audit) are complete, see Epic 3 above.
 4. **Design the points economy in one pass**: rank curve + daily point
    ceiling together (Epic 4, P1/M).
 5. **Ship PWA push notifications** (Epic 5, P1/L) — the single biggest lever
