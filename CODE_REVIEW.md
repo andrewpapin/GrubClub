@@ -6,26 +6,44 @@ Scope: full repository as of branch `claude/end-to-end-code-review-dyfzf3` (stat
 
 Gravy is a well-built, type-safe client-side PWA. TypeScript strict mode is on with no escape hatches (`any`, `@ts-ignore`) anywhere in the codebase, ESLint runs clean with no rule overrides, there's no `dangerouslySetInnerHTML`/`eval`/direct DOM injection anywhere, the GitHub Actions deploy workflow has minimal permissions, and `npm audit` reports zero known vulnerabilities. Several subsystems (`defaultState.ts`'s migration/hydration logic, the points-arithmetic "exact inverse" design in `GravyContext.tsx`, the lazy-loaded parent dashboard) are deliberately and clearly commented, which made this review easier and more confident.
 
-The real findings cluster in three places: **PIN/credential handling** (plaintext storage, no brute-force protection, weak default), a **timezone-naive day-rollover** that can misbehave for traveling/multi-device users, and a handful of **maintainability** items (one large context file, some duplicated modal/form JSX) that aren't bugs today but raise the cost of future changes.
+The real findings cluster in four places: **unscoped Supabase Row Level Security** that lets any client with the public anon key read or overwrite every household's data (not just its own), **PIN/credential handling** (plaintext storage, no brute-force protection, weak default), a **timezone-naive day-rollover** that can misbehave for traveling/multi-device users, and a handful of **maintainability** items (one large context file, some duplicated modal/form JSX) that aren't bugs today but raise the cost of future changes.
 
 ## What's already solid
 
 - Strict TypeScript (`noUnusedLocals`, `noUnusedParameters`, `noFallthroughCasesInSwitch`) with zero `any`/`@ts-ignore`/`@ts-expect-error` in the codebase.
 - ESLint (flat config, `react-hooks` + `react-refresh` recommended rules) runs with **zero errors/warnings** (verified this session, see Build & tooling results below).
 - No XSS-prone patterns (`dangerouslySetInnerHTML`, `innerHTML`, `eval`) anywhere in `src/`.
-- `src/lib/supabaseClient.ts` uses a `sb_publishable_...` key, which is meant to be public — appropriate for a client-only app, contingent on RLS (see Finding S-3).
+- `src/lib/supabaseClient.ts` uses a `sb_publishable_...` key, which is meant to be public — appropriate for a client-only app, *contingent on RLS actually scoping access*, which it currently does not (see Finding C-1).
 - `defaultState.ts`'s `migrateLegacyState()`/`hydrateState()`/`backfillStreaksFromLogs()` are careful, idempotent, and well-commented about *why* each migration step exists.
 - The points-mutation code in `GravyContext.tsx` (`awardPoints`, `logFood`/`removeFood`, `incrementGoal`/`decrementGoal`) is intentionally symmetric — each action documents that it's the "exact inverse" of its counterpart, specifically so an action followed by its own removal nets to zero without flooring artifacts. This is good, deliberate design, not duplication to clean up.
 - `GrownUpsDrawer.tsx` lazy-loads `ParentDashboard` only after the PIN succeeds, with a comment citing the React docs pattern it follows for resetting stage-on-reopen — a clean, deliberate choice, not an anti-pattern.
-- The Supabase realtime handler (`GravyContext.tsx:211-237`) already wraps incoming payloads in `try/catch` and ignores malformed updates rather than crashing — there is a real gap here (see S-4 below) but it's not the "no safety net at all" picture initial recon suggested.
+- The Supabase realtime handler (`GravyContext.tsx:211-237`) already wraps incoming payloads in `try/catch` and ignores malformed updates rather than crashing — there is a real gap here (see M-3 below) but it's not the "no safety net at all" picture initial recon suggested.
 - GitHub Actions deploy workflow (`.github/workflows/deploy.yml`) requests only `contents: read` and `pages: write`/`id-token: write` — no excess permissions, no secrets in use.
 
 ## Findings
 
+### Critical
+
+**C-1. Supabase RLS on the `households` table is enabled but unscoped — any client with the public anon key can read or overwrite every household in production, not just its own.** Verified directly against the live Supabase dashboard (Authentication → Policies, `households` table, project behind `hooadhlgxaivkgvqptcu.supabase.co`): RLS is **on** (the "Disable RLS" control is present, confirming it's currently enabled), but the only three policies defined are:
+
+| Name | Command | Applied to |
+|---|---|---|
+| anyone can insert households | INSERT | `anon` |
+| anyone can read households | SELECT | `anon` |
+| anyone can update households | UPDATE | `anon` |
+
+None of these are scoped to a specific row — there's no policy restricting access to the row matching a client-supplied household `code`. A policy literally named "anyone can read households" applied unconditionally to `anon` is, by its own name and the dashboard's policy semantics, an unrestricted grant rather than a per-row check (the exact `USING`/`WITH CHECK` SQL wasn't independently pulled via `pg_policies` — the Supabase MCP tool calls needed for that were gated by the environment this session — but the policy names and the all-`anon`, no-other-policies picture are unambiguous on their own). Practical effect: since `src/lib/supabaseClient.ts`'s anon key ships in every client bundle, **anyone** can call the Supabase REST API directly (bypassing the app's UI entirely) and:
+- `SELECT * FROM households` — dump every household's full state for every Gravy user: kid names, points, goals/rewards, settings, and the H-1 PIN/recovery fields — this row-scoping gap is what turns H-1's plaintext storage from "exposed to someone with a found/synced device" into "exposed to anyone with the public anon key."
+- `UPDATE households SET state = ...` for **any** code, not just one the attacker legitimately holds — i.e. any household's data can be overwritten/vandalized by a stranger.
+- `INSERT` arbitrary new rows (storage/data pollution). No `DELETE` policy exists, so outright row deletion via the API isn't currently possible.
+
+This is the root cause that makes H-1 worse than originally scoped ("contingent on RLS" — RLS does not provide the assumed protection) and is independently a Critical finding on its own: it's a live, unauthenticated, full-table read/write exposure on a production database, not a hypothetical. (Note: this document records findings as of the original review pass; it doesn't track which findings have since been fixed in code — see the repo's commit history / PR for current status of H-1 and others.)
+*Suggested direction:* scope the `SELECT`/`UPDATE` policies so a row is only readable/writable by a request that already knows that row's `code` (e.g. drop blanket `anon` policies and instead expose access through a `SECURITY DEFINER` Postgres function that takes `code` as a parameter and is the only way to reach the table, with direct table grants revoked from `anon`). Combined with the household code's existing unambiguous-character-set design (`sync.ts:5`), this would mean an attacker needs to already know or brute-force a specific 6-character code rather than being able to enumerate/overwrite the entire table in one unauthenticated call. This requires a production database migration — do not apply without explicit sign-off given the live `PRODUCTION` label on this project.
+
 ### High
 
 **H-1. PIN and recovery answer are stored and synced in plaintext.**
-`Settings.pin` and `Settings.recoveryAnswer` (`src/state/types.ts:49,52`) are plain strings. They're listed in `SHARED_SETTING_KEYS` (`src/state/defaultState.ts:228-234`), so they persist to `localStorage` under `gravy_v1` **and** get pushed verbatim, unencrypted, inside the `GravyRoot` JSON blob to the Supabase `households.state` column (`src/state/sync.ts:41-46`, pushed from `GravyContext.tsx:193-208`). Anyone with read access to that row (a found/synced device, or the DB itself if Supabase RLS isn't locked down — see S-3 below) gets the PIN and recovery answer as plain text.
+`Settings.pin` and `Settings.recoveryAnswer` (`src/state/types.ts:49,52`) are plain strings. They're listed in `SHARED_SETTING_KEYS` (`src/state/defaultState.ts:228-234`), so they persist to `localStorage` under `gravy_v1` **and** get pushed verbatim, unencrypted, inside the `GravyRoot` JSON blob to the Supabase `households.state` column (`src/state/sync.ts:41-46`, pushed from `GravyContext.tsx:193-208`). Anyone with read access to that row gets the PIN and recovery answer as plain text — and per C-1 above, that's no longer a narrow "found/synced device" scenario: the table's RLS doesn't restrict reads to a specific household, so this data is reachable by anyone with the (public) anon key.
 *Suggested direction:* hash the PIN (and recovery answer) at rest, comparing hashes instead of raw strings in `PinScreen.tsx`'s `checkPin`/`submitRecoverAnswer`.
 
 **H-2. No rate-limiting or lockout on PIN attempts, plus a guessable default.**
@@ -67,10 +85,6 @@ Verified by running `npm run build` this session: the main bundle is `dist/asset
 
 **L-6. Badge trigger strings are parsed with an unchecked `string.split(':')` in two places** (`src/state/badges.ts:38,85`) with no validation against `src/data/badges.ts`. A typo'd trigger (e.g. `'friut:5'`) would silently fall through to a 0-threshold/never-earned badge rather than raising a build-time or load-time error. Low risk since `data/badges.ts` is static, developer-authored content, not user input.
 
-### Unverified — flagged, not asserted
-
-**S-3. Supabase Row Level Security posture on the `households` table could not be checked from this session.** `mcp__Supabase__list_projects`/`get_advisors` calls were denied by the environment ("MCP tool call requires approval") and couldn't be retried into a working state. This matters because H-1's severity is bounded by RLS: if RLS properly restricts each row to only be readable/writable by clients that know its 6-character code (which is the apparent design intent, per the unambiguous-character-set code generation in `sync.ts:5`), exposure is limited to people who already have a household's join code. If RLS is permissive (e.g. allows scanning all rows), the plaintext PIN/recovery data in H-1 would be readable by anyone with the public anon key, not just household members. **This should be verified directly in the Supabase dashboard** (Authentication → Policies on `households`) since it materially changes H-1's real-world severity.
-
 ## Build & tooling results (this session)
 
 - `npm ci` — clean install, 444 packages, **0 vulnerabilities**.
@@ -82,8 +96,8 @@ Verified by running `npm run build` this session: the main bundle is `dist/asset
 
 ## Suggested next steps, roughly prioritized
 
-1. Hash the PIN (and ideally the recovery answer) instead of storing/syncing plaintext (H-1), and add attempt lockout (H-2) — these two compound each other.
-2. Manually confirm Supabase RLS on `households` (S-3) — quick to check, materially changes how urgent H-1 is.
+1. Scope the `households` RLS policies so reads/writes require knowing a row's `code` instead of being open to any `anon` client (C-1) — this is a live production exposure, highest priority, but requires a database migration and should not be applied without explicit sign-off.
+2. Hash the PIN (and ideally the recovery answer) instead of storing/syncing plaintext (H-1), and add attempt lockout (H-2) — these two compound each other and compound C-1.
 3. Decide whether timezone-naive day rollover (M-1) is acceptable for the target use case (single household, mostly-same-timezone devices) or worth hardening.
 4. If/when touching `GoalsPanel`/modals again, extract the shared `<Modal>` and form-row patterns (L-3, L-4) opportunistically rather than as a dedicated refactor.
 5. Consider further code-splitting (M-4) if initial load time on mobile becomes a concern.
