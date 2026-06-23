@@ -4,6 +4,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { GrownUpsDrawer } from './components/parent/GrownUpsDrawer';
 import { AccountMenu } from './components/AccountMenu';
 import { ToastContainer } from './components/ToastContainer';
+import { UpdatePrompt } from './components/UpdatePrompt';
 import { Celebration } from './components/Celebration';
 import { Confetti } from './components/Confetti';
 import { BadgePopup } from './components/BadgePopup';
@@ -108,6 +109,7 @@ function AppShell() {
       <Celebration />
       <Confetti />
       <ToastContainer />
+      <UpdatePrompt />
       <Suspense fallback={null}>
         {onboarded ? <SyncGateModal /> : <Onboarding onComplete={() => setOnboarded(true)} />}
       </Suspense>
