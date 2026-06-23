@@ -49,10 +49,14 @@ export interface Settings {
   foodPts: number;
   bonusPts: number;
   gamePts: number;
-  pin: string;
+  // PIN and recovery answer are never stored or synced in plaintext — only a salted
+  // SHA-256 hash. See src/state/hash.ts.
+  pinHash: string;
+  pinSalt: string;
   childName: string;
   recoveryQuestion: string;
-  recoveryAnswer: string;
+  recoveryAnswerHash: string;
+  recoveryAnswerSalt: string;
   theme: Theme;
   avatarIcon: string;       // registered icon key (see data/icons.ts)
   avatarIconColor: string;  // hex color for the avatar icon glyph

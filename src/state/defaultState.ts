@@ -1,7 +1,17 @@
-import type { GravyState, GravyRoot, ProfileEntry, Settings, Theme } from './types';
+import type { GravyState, GravyRoot, ProfileEntry, Settings, Theme, Goal, Reward, PendingReward } from './types';
 import { FOODS } from '../data/foods';
+import { hashWithSalt, randomSaltHex } from './hash';
 
 export const STORAGE_KEY = 'gravy_v1';
+// Lives here (not in Onboarding.tsx) so App.tsx can read it without a static import that
+// would pull the lazy-loaded Onboarding component back into the main bundle.
+export const ONBOARDING_DONE_KEY = 'gravy_onboarded';
+
+// Fixed salt for the shipped default PIN only — the value '1234' is already public
+// (documented as the default), so there's nothing to protect by randomizing it. Any
+// PIN a parent actually sets gets a fresh random salt (see saveSetting/migration below).
+const DEFAULT_PIN_SALT = 'gravy-default-pin-salt-v1';
+const DEFAULT_PIN_HASH = hashWithSalt('1234', DEFAULT_PIN_SALT);
 
 export const defaultState: GravyState = {
   points: 0,
@@ -55,10 +65,12 @@ export const defaultState: GravyState = {
     foodPts: 10,
     bonusPts: 25,
     gamePts: 15,
-    pin: '1234',
+    pinHash: DEFAULT_PIN_HASH,
+    pinSalt: DEFAULT_PIN_SALT,
     childName: 'Zack',
     recoveryQuestion: '',
-    recoveryAnswer: '',
+    recoveryAnswerHash: '',
+    recoveryAnswerSalt: '',
     theme: 'classic',
     avatarIcon: 'faceSmile',
     avatarIconColor: '#2F3E46',
@@ -70,9 +82,15 @@ export function cloneDefaultState(): GravyState {
   return JSON.parse(JSON.stringify(defaultState));
 }
 
+// Formats a date as YYYY-MM-DD using UTC fields, not the device's local timezone — so every
+// device in a household agrees on what day it is regardless of where each one is physically
+// located, rather than each one rolling over at its own local midnight.
+function dateStrUTC(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
 export function todayStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return dateStrUTC(new Date());
 }
 
 // Migrates saved state that was written by an older version of the app
@@ -144,6 +162,31 @@ export function migrateLegacyState(state: Record<string, unknown>): void {
       settings.theme = 'classic';
     }
   }
+
+  // PIN and recovery answer used to be stored as plaintext. Hash any plaintext value found
+  // (one-time, on first load after upgrading) and delete the original field immediately —
+  // it must never reach the typed GravyState, since that's what gets autosaved/synced.
+  if (settings) {
+    if (typeof settings.pin === 'string' && !('pinHash' in settings)) {
+      const pin = settings.pin.slice(0, 4) || '1234';
+      const salt = randomSaltHex();
+      settings.pinHash = hashWithSalt(pin, salt);
+      settings.pinSalt = salt;
+    }
+    delete settings.pin;
+    if (typeof settings.recoveryAnswer === 'string' && !('recoveryAnswerHash' in settings)) {
+      const answer = settings.recoveryAnswer.trim().toLowerCase();
+      if (answer) {
+        const salt = randomSaltHex();
+        settings.recoveryAnswerHash = hashWithSalt(answer, salt);
+        settings.recoveryAnswerSalt = salt;
+      } else {
+        settings.recoveryAnswerHash = '';
+        settings.recoveryAnswerSalt = '';
+      }
+    }
+    delete settings.recoveryAnswer;
+  }
 }
 
 // Walks backward day-by-day from yesterday through `dayLogs`, replaying the same
@@ -159,9 +202,9 @@ export function backfillStreaksFromLogs(state: GravyState): void {
   let trackingGoal = true;
   let trackingMega = true;
   const d = new Date();
-  d.setDate(d.getDate() - 1);
+  d.setUTCDate(d.getUTCDate() - 1);
   for (let i = 0; i < 3650 && (trackingFood || trackingGoal || trackingMega); i++) {
-    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const dateStr = dateStrUTC(d);
     const log = state.dayLogs[dateStr];
     if (!log) break;
     const fullTray = FOODS.every((f) => (log.foodCounts[f.id] || 0) > 0);
@@ -169,16 +212,118 @@ export function backfillStreaksFromLogs(state: GravyState): void {
     if (trackingFood && fullTray) foodStreak++; else trackingFood = false;
     if (trackingGoal && allGoalsDone) goalStreak++; else trackingGoal = false;
     if (trackingMega && fullTray && allGoalsDone) megaStreak++; else trackingMega = false;
-    d.setDate(d.getDate() - 1);
+    d.setUTCDate(d.getUTCDate() - 1);
   }
   state.foodStreak = foodStreak;
   state.goalStreak = goalStreak;
   state.megaStreak = megaStreak;
 }
 
+function asFiniteNumber(v: unknown, fallback: number): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+}
+
+function asString(v: unknown, fallback: string): string {
+  return typeof v === 'string' ? v : fallback;
+}
+
+function asPlainObject(v: unknown): Record<string, unknown> {
+  return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+
+function asStringArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+}
+
+function asNumberArray(v: unknown): number[] {
+  return Array.isArray(v) ? v.filter((x): x is number => typeof x === 'number') : [];
+}
+
+function sanitizeGoals(v: unknown): Goal[] {
+  const cleaned = Array.isArray(v)
+    ? v.filter(
+        (g): g is Goal =>
+          !!g && typeof g === 'object' && typeof (g as Goal).id === 'number' &&
+          typeof (g as Goal).name === 'string' && typeof (g as Goal).pts === 'number',
+      )
+    : [];
+  return cleaned.length > 0 ? cleaned : JSON.parse(JSON.stringify(defaultState.goals));
+}
+
+function sanitizeRewards(v: unknown): Reward[] {
+  const cleaned = Array.isArray(v)
+    ? v.filter(
+        (r): r is Reward =>
+          !!r && typeof r === 'object' && typeof (r as Reward).id === 'number' &&
+          typeof (r as Reward).name === 'string' && typeof (r as Reward).cost === 'number',
+      )
+    : [];
+  return cleaned.length > 0 ? cleaned : JSON.parse(JSON.stringify(defaultState.rewards));
+}
+
+function sanitizePendingRewards(v: unknown): PendingReward[] {
+  return Array.isArray(v)
+    ? v.filter(
+        (p): p is PendingReward =>
+          !!p && typeof p === 'object' && typeof (p as PendingReward).id === 'string' &&
+          typeof (p as PendingReward).rewardId === 'number',
+      )
+    : [];
+}
+
+// Coerces fields that are present but have the wrong runtime type/shape back to a safe
+// default, rather than letting a malformed payload — a buggy peer client, hand-edited
+// localStorage, or (if Supabase RLS is ever misconfigured) a third party writing directly to
+// a household row — propagate NaNs/non-arrays into arithmetic and iteration deeper in the app.
+function sanitizeState(state: GravyState): void {
+  state.points = asFiniteNumber(state.points, 0);
+  state.totalPoints = asFiniteNumber(state.totalPoints, 0);
+  state.streak = asFiniteNumber(state.streak, 0);
+  state.foodStreak = asFiniteNumber(state.foodStreak, 0);
+  state.goalStreak = asFiniteNumber(state.goalStreak, 0);
+  state.megaStreak = asFiniteNumber(state.megaStreak, 0);
+  state.todayPoints = asFiniteNumber(state.todayPoints, 0);
+  state.lastActiveDate = typeof state.lastActiveDate === 'string' ? state.lastActiveDate : null;
+
+  state.todayFoodCounts = asPlainObject(state.todayFoodCounts) as Record<string, number>;
+  state.todayGoalCounts = asPlainObject(state.todayGoalCounts) as Record<number, number>;
+  state.todayBonusApplied = asPlainObject(state.todayBonusApplied) as Record<number, number>;
+  state.dayLogs = asPlainObject(state.dayLogs) as GravyState['dayLogs'];
+  state.badgeConfig = asPlainObject(state.badgeConfig) as GravyState['badgeConfig'];
+
+  state.todayGoals = asNumberArray(state.todayGoals);
+  state.earnedBadges = asStringArray(state.earnedBadges);
+  state.pendingRewards = sanitizePendingRewards(state.pendingRewards);
+  state.goals = sanitizeGoals(state.goals);
+  state.rewards = sanitizeRewards(state.rewards);
+
+  const counters = state.counters as unknown as Record<string, unknown>;
+  counters.fullTrayDays = asFiniteNumber(counters.fullTrayDays, 0);
+  counters.totalGoals = asFiniteNumber(counters.totalGoals, 0);
+  counters.allGoalsDays = asFiniteNumber(counters.allGoalsDays, 0);
+  counters.comboDays = asFiniteNumber(counters.comboDays, 0);
+  counters.totalRewards = asFiniteNumber(counters.totalRewards, 0);
+  counters.maxDayPoints = asFiniteNumber(counters.maxDayPoints, 0);
+  counters.foodLogs = asPlainObject(counters.foodLogs);
+
+  const settings = state.settings as unknown as Record<string, unknown>;
+  settings.pinHash = asString(settings.pinHash, defaultState.settings.pinHash);
+  settings.pinSalt = asString(settings.pinSalt, defaultState.settings.pinSalt);
+  settings.recoveryAnswerHash = asString(settings.recoveryAnswerHash, '');
+  settings.recoveryAnswerSalt = asString(settings.recoveryAnswerSalt, '');
+  settings.recoveryQuestion = asString(settings.recoveryQuestion, '');
+  settings.childName = asString(settings.childName, defaultState.settings.childName);
+  settings.avatarIcon = asString(settings.avatarIcon, defaultState.settings.avatarIcon);
+  settings.avatarIconColor = asString(settings.avatarIconColor, defaultState.settings.avatarIconColor);
+  settings.avatarBgColor = asString(settings.avatarBgColor, defaultState.settings.avatarBgColor);
+  settings.foodPts = asFiniteNumber(settings.foodPts, defaultState.settings.foodPts);
+  settings.bonusPts = asFiniteNumber(settings.bonusPts, defaultState.settings.bonusPts);
+}
+
 // Takes a raw parsed flat GravyState (or null/garbage), runs the legacy migration, backfills any
-// missing top-level/settings/counter fields and streaks, then applies the day rollover. Shared by
-// every code path that hydrates a single profile's state (initial load + incoming Supabase rows).
+// missing top-level/settings/counter fields and streaks, then validates field types/shapes
+// before applying the day rollover. Shared by every code path that hydrates a single profile's
+// state (initial load + incoming Supabase rows).
 export function hydrateState(raw: unknown): GravyState {
   let state: GravyState;
   if (raw && typeof raw === 'object') {
@@ -208,6 +353,7 @@ export function hydrateState(raw: unknown): GravyState {
   }
   if (!state.counters.foodLogs) state.counters.foodLogs = {};
   if (!state.badgeConfig) state.badgeConfig = {};
+  sanitizeState(state);
   return applyDayRollover(state);
 }
 
@@ -233,9 +379,11 @@ export const SHARED_SETTING_KEYS: (keyof Settings)[] = [
   'foodPts',
   'bonusPts',
   'gamePts',
-  'pin',
+  'pinHash',
+  'pinSalt',
   'recoveryQuestion',
-  'recoveryAnswer',
+  'recoveryAnswerHash',
+  'recoveryAnswerSalt',
 ];
 
 function genProfileId(): string {
@@ -319,8 +467,8 @@ export function applyDayRollover(state: GravyState): GravyState {
   const today = todayStr();
   if (state.lastActiveDate && state.lastActiveDate !== today) {
     const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+    const yStr = dateStrUTC(yesterday);
     const hadActivity =
       Object.keys(state.todayFoodCounts).length > 0 ||
       state.todayGoals.length > 0 ||

@@ -9,6 +9,62 @@ import type { Goal } from '../../state/types';
 
 const DEFAULT_GOAL_ICON = 'circleCheck';
 
+interface GoalFormFieldsProps {
+  icon: string;
+  legacyEmoji?: string;
+  onIconChange: (key: string) => void;
+  name: string;
+  namePlaceholder?: string;
+  onNameChange: (name: string) => void;
+  pts: string;
+  ptsPlaceholder?: string;
+  onPtsChange: (pts: string) => void;
+  isDaily: boolean;
+  target: string;
+  onTargetChange: (target: string) => void;
+}
+
+// Shared by the add-goal form and each goal row's inline edit form — both collect the
+// same icon/name/points/target fields, just with different placeholders and surrounding
+// submit controls.
+function GoalFormFields({
+  icon, legacyEmoji, onIconChange, name, namePlaceholder, onNameChange,
+  pts, ptsPlaceholder, onPtsChange, isDaily, target, onTargetChange,
+}: GoalFormFieldsProps) {
+  return (
+    <>
+      <IconPicker value={icon} legacyEmoji={legacyEmoji} onChange={onIconChange} ariaLabel="Choose a goal icon" />
+      <input
+        type="text"
+        placeholder={namePlaceholder}
+        value={name}
+        onChange={(e) => onNameChange(e.target.value)}
+      />
+      <input
+        type="number"
+        className="pts-input"
+        placeholder={ptsPlaceholder}
+        min={isDaily ? 1 : -999}
+        max={999}
+        value={pts}
+        onChange={(e) => onPtsChange(e.target.value)}
+      />
+      {isDaily && (
+        <input
+          type="number"
+          className="pts-input"
+          placeholder="×"
+          title="Times to complete"
+          min={1}
+          max={99}
+          value={target}
+          onChange={(e) => onTargetChange(e.target.value)}
+        />
+      )}
+    </>
+  );
+}
+
 export function GoalsPanel() {
   const { state, addGoal, removeGoal, updateGoal } = useGravy();
   const [icon, setIcon] = useState(DEFAULT_GOAL_ICON);
@@ -62,35 +118,18 @@ export function GoalsPanel() {
         key={g.id}
         onSubmit={(e) => { e.preventDefault(); saveEdit(g.id); }}
       >
-        <IconPicker
-          value={editGoal.icon}
+        <GoalFormFields
+          icon={editGoal.icon}
           legacyEmoji={editGoal.emoji}
-          onChange={(key) => setEditGoal({ ...editGoal, icon: key })}
-          ariaLabel="Choose a goal icon"
+          onIconChange={(key) => setEditGoal({ ...editGoal, icon: key })}
+          name={editGoal.name}
+          onNameChange={(value) => setEditGoal({ ...editGoal, name: value })}
+          pts={editGoal.pts}
+          onPtsChange={(value) => setEditGoal({ ...editGoal, pts: value })}
+          isDaily={isDailyGoal}
+          target={editGoal.target}
+          onTargetChange={(value) => setEditGoal({ ...editGoal, target: value })}
         />
-        <input
-          type="text"
-          value={editGoal.name}
-          onChange={(e) => setEditGoal({ ...editGoal, name: e.target.value })}
-        />
-        <input
-          type="number"
-          className="pts-input"
-          min={isDailyGoal ? 1 : -999}
-          max={999}
-          value={editGoal.pts}
-          onChange={(e) => setEditGoal({ ...editGoal, pts: e.target.value })}
-        />
-        {isDailyGoal && (
-          <input
-            type="number"
-            className="pts-input"
-            min={1}
-            max={99}
-            value={editGoal.target}
-            onChange={(e) => setEditGoal({ ...editGoal, target: e.target.value })}
-          />
-        )}
         <button type="submit" className="btn btn-sm btn-purple" title="Save">
           <FontAwesomeIcon icon={faCheck} />
         </button>
@@ -134,29 +173,19 @@ export function GoalsPanel() {
       <PointsPanel />
       <div className="section-label">Add a Goal</div>
       <form className="input-row" onSubmit={(e) => { e.preventDefault(); handleAdd(); }}>
-        <IconPicker value={icon} onChange={setIcon} ariaLabel="Choose a goal icon" />
-        <input type="text" placeholder="Goal name..." value={name} onChange={(e) => setName(e.target.value)} />
-        <input
-          type="number"
-          className="pts-input"
-          placeholder={isDaily ? 'pts' : '± pts'}
-          min={isDaily ? 1 : -999}
-          max={999}
-          value={pts}
-          onChange={(e) => setPts(e.target.value)}
+        <GoalFormFields
+          icon={icon}
+          onIconChange={setIcon}
+          name={name}
+          namePlaceholder="Goal name..."
+          onNameChange={setName}
+          pts={pts}
+          ptsPlaceholder={isDaily ? 'pts' : '± pts'}
+          onPtsChange={setPts}
+          isDaily={isDaily}
+          target={target}
+          onTargetChange={setTarget}
         />
-        {isDaily && (
-          <input
-            type="number"
-            className="pts-input"
-            placeholder="×"
-            title="Times to complete"
-            min={1}
-            max={99}
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-          />
-        )}
         <button type="submit" className="btn btn-sm btn-purple">
           Add
         </button>

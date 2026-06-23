@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock, faDeleteLeft, faKey } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
+import { hashWithSalt } from '../state/hash';
+import { getLockedUntil, recordFailedAttempt, recordSuccess } from '../state/pinLockout';
 
 interface PinScreenProps {
   onSuccess: () => void;
@@ -19,10 +21,26 @@ export function PinScreen({ onSuccess }: PinScreenProps) {
   const [recoverError, setRecoverError] = useState(false);
   const [newPin, setNewPin] = useState('');
   const [newPinConfirm, setNewPinConfirm] = useState('');
-  const canRecover = state.settings.recoveryQuestion.trim() !== '' && state.settings.recoveryAnswer.trim() !== '';
+  const [lockedUntil, setLockedUntil] = useState(() => getLockedUntil());
+  const [now, setNow] = useState(() => Date.now());
+  const canRecover = state.settings.recoveryQuestion.trim() !== '' && state.settings.recoveryAnswerHash !== '';
+
+  // Ticks the countdown shown on the lockout screen and clears the lockout once it expires.
+  useEffect(() => {
+    if (lockedUntil === 0) return;
+    const interval = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (t >= lockedUntil) {
+        setLockedUntil(0);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockedUntil]);
 
   const submitRecoverAnswer = () => {
-    if (recoverAnswer.trim().toLowerCase() === state.settings.recoveryAnswer.trim().toLowerCase()) {
+    const answerHash = hashWithSalt(recoverAnswer.trim().toLowerCase(), state.settings.recoveryAnswerSalt);
+    if (answerHash === state.settings.recoveryAnswerHash) {
       setRecoverError(false);
       setRecoverStep('newPin');
     } else {
@@ -42,7 +60,7 @@ export function PinScreen({ onSuccess }: PinScreenProps) {
   };
 
   const pinKey = (digit: string) => {
-    if (pin.length >= 4) return;
+    if (lockedUntil > 0 || pin.length >= 4) return;
     setShowError(false);
     const next = pin + digit;
     setPin(next);
@@ -52,17 +70,24 @@ export function PinScreen({ onSuccess }: PinScreenProps) {
   };
 
   const checkPin = (value: string) => {
-    if (value === String(state.settings.pin)) {
+    if (hashWithSalt(value, state.settings.pinSalt) === state.settings.pinHash) {
+      recordSuccess();
       setPin('');
       onSuccess();
+      return;
+    }
+    setPin('');
+    const newLockedUntil = recordFailedAttempt();
+    if (newLockedUntil > 0) {
+      setLockedUntil(newLockedUntil);
     } else {
       setShowError(true);
-      setPin('');
       setShake(true);
     }
   };
 
   const pinDelete = () => {
+    if (lockedUntil > 0) return;
     setShowError(false);
     setPin((p) => p.slice(0, -1));
   };
@@ -73,6 +98,7 @@ export function PinScreen({ onSuccess }: PinScreenProps) {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (lockedUntil > 0) return;
       if (e.key >= '0' && e.key <= '9') {
         const current = pinRef.current;
         if (current.length >= 4) return;
@@ -89,9 +115,9 @@ export function PinScreen({ onSuccess }: PinScreenProps) {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  // checkPin is stable for the life of the component; re-run only when PIN setting changes
+  // checkPin is stable for the life of the component; re-run only when PIN setting or lockout changes
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.settings.pin]);
+  }, [state.settings.pinHash, lockedUntil]);
 
   if (recoverStep === 'question') {
     return (
@@ -171,6 +197,19 @@ export function PinScreen({ onSuccess }: PinScreenProps) {
         >
           ← Back
         </button>
+      </div>
+    );
+  }
+
+  if (lockedUntil > 0) {
+    const remainingSec = Math.max(0, Math.ceil((lockedUntil - now) / 1000));
+    const mm = Math.floor(remainingSec / 60);
+    const ss = String(remainingSec % 60).padStart(2, '0');
+    return (
+      <div className="pin-screen">
+        <div style={{ fontSize: '3rem' }}><FontAwesomeIcon icon={faLock} /></div>
+        <div className="pin-title">Too Many Tries</div>
+        <div className="pin-sub">Try again in {mm}:{ss}</div>
       </div>
     );
   }
