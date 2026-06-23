@@ -121,7 +121,7 @@ First-run users (no `localStorage[STORAGE_KEY]` and no `ONBOARDING_DONE_KEY = 'g
 - Real-time sync via Supabase `postgres_changes` subscription; conflict resolution is last-write-wins
 - `SyncGateModal` prompts new users to create/join a household after onboarding, unless dismissed (`gravy_sync_skipped` key) — onboarding's own `sync` phase covers first-run setup, so this modal mainly catches users who skipped that step.
 
-**Known gap (tracked in `BACKLOG.md`)**: the parent PIN and recovery answer are stored in plaintext in `localStorage`/Supabase with no rate-limiting on PIN attempts. Don't assume this is accidental dead code to "clean up" — it's a known, prioritized backlog item; check `BACKLOG.md` before changing PIN/recovery storage or lockout behavior.
+The parent PIN and recovery answer are stored as salted SHA-256 hashes (`src/state/hash.ts`), never plaintext, with a per-device exponential-backoff lockout after 5 failed attempts (`src/state/pinLockout.ts`) — see `DATA_HANDLING.md` for what's collected/stored/deletable overall, and `BACKLOG.md` Epic 1 for the remaining known gaps (the synced Supabase household row isn't deleted by "Reset Everything" or "Leave household").
 
 ### Deployment
 

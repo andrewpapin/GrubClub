@@ -64,9 +64,18 @@ process), not missing features.
   Realtime, so a client that bypasses this RPC and queries the REST endpoint
   directly isn't blocked by it — this closes the documented, discoverable
   join-flow path, not direct REST access. *(P1, S–M.)*
-- **Write a short data-handling note**: what's collected, where it lives
-  (device `localStorage` + optional Supabase row), how to delete it (`Reset
-  Everything`). Cheap now, required before any wider distribution. *(P1, S.)*
+- ~~**Write a short data-handling note**~~ — **DONE.** See `DATA_HANDLING.md`:
+  what's collected (child name + hashed PIN/recovery answer only — no email,
+  accounts, or analytics), where it lives (`localStorage` + optional Supabase
+  household row), and how to delete it.
+- **Close two gaps found while writing that note**: (1) "Reset Everything"
+  and "Leave household" only disconnect the local device — neither deletes
+  the Supabase `households` row, so a "left" household's data keeps existing
+  server-side until overwritten; there's no in-app "delete this household
+  everywhere" action. (2) `household_lookup_attempts` (the rate-limit bucket
+  table from the lookup-throttle item above) never expires old rows and grows
+  unbounded — low severity (small, low-cardinality, not user content) but
+  worth a cleanup pass. *(P2, S.)*
 
 ## Epic 2 — Engineering Foundation & Quality
 
@@ -182,8 +191,8 @@ gate, Vitest, and Supabase access control) is now fully done — see the
 strikethroughs in Epics 1, 2, and 7 above. Replacing it with the next five,
 prioritized from what's actually still open:
 
-1. **Write the data-handling note** (Epic 1, P1/S) — cheapest remaining item,
-   and a prerequisite for any wider distribution.
+1. ~~Write the data-handling note~~ (Epic 1, P1/S) — **DONE**, see
+   `DATA_HANDLING.md`.
 2. **Harden error handling** around `localStorage` writes and incoming
    Supabase realtime payloads (Epic 2, P1/M).
 3. **Run the accessibility hardening pass** (Epic 3, P1/M) — bundles
