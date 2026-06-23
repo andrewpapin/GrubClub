@@ -9,6 +9,7 @@ import { Celebration } from './components/Celebration';
 import { Confetti } from './components/Confetti';
 import { BadgePopup } from './components/BadgePopup';
 import { STORAGE_KEY, ONBOARDING_DONE_KEY } from './state/defaultState';
+import { safeGetItem } from './state/storage';
 
 // These are all overlays/modals that aren't needed for the initial kid-facing paint (closed
 // by default, or — for Onboarding/SyncGateModal — only one of the two ever mounts depending
@@ -60,7 +61,7 @@ function AppShell() {
   // Returning users who already had saved progress before this feature shipped
   // shouldn't suddenly see the walkthrough — only brand-new installs get it.
   const [onboarded, setOnboarded] = useState(
-    () => localStorage.getItem(ONBOARDING_DONE_KEY) === 'true' || localStorage.getItem(STORAGE_KEY) !== null,
+    () => safeGetItem(ONBOARDING_DONE_KEY) === 'true' || safeGetItem(STORAGE_KEY) !== null,
   );
 
   return (

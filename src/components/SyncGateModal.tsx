@@ -3,19 +3,20 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloud, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useGravy, SYNC_SKIPPED_KEY } from '../state/GravyContext';
 import { isValidHouseholdCode } from '../state/sync';
+import { safeGetItem, safeSetItem } from '../state/storage';
 
 export function SyncGateModal() {
   const { householdCode, syncStatus, createHousehold, joinHousehold } = useGravy();
   const [joinCode, setJoinCode] = useState('');
   const [customCode, setCustomCode] = useState('');
-  const [dismissed, setDismissed] = useState(() => localStorage.getItem(SYNC_SKIPPED_KEY) === 'true');
+  const [dismissed, setDismissed] = useState(() => safeGetItem(SYNC_SKIPPED_KEY) === 'true');
 
   if (householdCode || dismissed) return null;
 
   const syncing = syncStatus === 'syncing';
 
   const handleSkip = () => {
-    localStorage.setItem(SYNC_SKIPPED_KEY, 'true');
+    safeSetItem(SYNC_SKIPPED_KEY, 'true');
     setDismissed(true);
   };
 

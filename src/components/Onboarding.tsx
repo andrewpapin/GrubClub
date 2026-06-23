@@ -13,6 +13,7 @@ import {
 import { useGravy, SYNC_SKIPPED_KEY } from '../state/GravyContext';
 import { isValidHouseholdCode } from '../state/sync';
 import { ONBOARDING_DONE_KEY } from '../state/defaultState';
+import { safeSetItem } from '../state/storage';
 
 interface WalkStep {
   icon: typeof faHandSparkles;
@@ -62,7 +63,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const syncing = syncStatus === 'syncing';
 
   const finish = () => {
-    localStorage.setItem(ONBOARDING_DONE_KEY, 'true');
+    safeSetItem(ONBOARDING_DONE_KEY, 'true');
     onComplete();
   };
 
@@ -104,7 +105,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
   };
 
   const handleSkipForNow = () => {
-    localStorage.setItem(SYNC_SKIPPED_KEY, 'true');
+    safeSetItem(SYNC_SKIPPED_KEY, 'true');
     finish();
   };
 

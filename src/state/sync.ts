@@ -46,6 +46,15 @@ export async function pushHouseholdState(code: string, state: GravyRoot): Promis
   if (error) throw error;
 }
 
+// Minimal structural check on a realtime payload before handing it to the app — a
+// malformed row (flaky replication, a buggy peer client, or RLS ever being misconfigured)
+// shouldn't be trusted just because it arrived over the household's postgres_changes
+// channel. Deeper per-profile validation still happens in hydrateState/sanitizeState once
+// this passes.
+export function isValidHouseholdStatePayload(v: unknown): v is GravyRoot {
+  return !!v && typeof v === 'object' && !Array.isArray(v) && Array.isArray((v as { profiles?: unknown }).profiles);
+}
+
 export function subscribeToHousehold(code: string, onUpdate: (state: GravyRoot) => void): () => void {
   const channel = supabase
     .channel(`household-${code}`)
@@ -53,7 +62,10 @@ export function subscribeToHousehold(code: string, onUpdate: (state: GravyRoot) 
       'postgres_changes',
       { event: 'UPDATE', schema: 'public', table: 'households', filter: `code=eq.${code}` },
       (payload) => {
-        onUpdate(payload.new.state as GravyRoot);
+        const incomingState = (payload.new as { state?: unknown } | null)?.state;
+        if (isValidHouseholdStatePayload(incomingState)) {
+          onUpdate(incomingState);
+        }
       },
     )
     .subscribe();

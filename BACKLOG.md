@@ -102,10 +102,20 @@ process), not missing features.
 - ~~**Add a CI gate**~~ — **DONE.** `deploy.yml` now runs `npm run lint` then
   `npm test` before `npm run build`, so a lint or test failure blocks deploy.
   *(P0, S.)*
-- **Harden error handling**: wrap `localStorage` writes in try/catch with a
+- ~~**Harden error handling**: wrap `localStorage` writes in try/catch with a
   user-visible fallback for quota-exceeded or disabled storage (e.g. iOS private
   browsing), and validate the shape of incoming Supabase realtime payloads
-  before trusting them. *(P1, M.)*
+  before trusting them.~~ — **DONE.** Every `localStorage` call in `src/`
+  now goes through `safeGetItem`/`safeSetItem`/`safeRemoveItem`
+  (`src/state/storage.ts`), which catch the exception `localStorage` throws
+  when disabled or full instead of letting it propagate. `saveState`/
+  `saveRoot` (`src/state/defaultState.ts`) return a boolean; `GravyProvider`'s
+  autosave effect shows a one-time "Couldn't save" toast on failure (deduped
+  on repeat failures, reset once a write succeeds again) so a kid's progress
+  isn't silently lost. `subscribeToHousehold` (`src/state/sync.ts`) now
+  validates an incoming realtime payload has a `profiles` array
+  (`isValidHouseholdStatePayload`) before handing it to the app, on top of
+  the existing per-field `hydrateState`/`sanitizeState` validation. *(P1, M.)*
 - ~~**Add an "update available" prompt** for the PWA.~~ — **DONE.**
   `src/components/UpdatePrompt.tsx` (using `virtual:pwa-register/react`'s
   `useRegisterSW()`) checks for a new service worker every 60s while the app
@@ -193,8 +203,8 @@ prioritized from what's actually still open:
 
 1. ~~Write the data-handling note~~ (Epic 1, P1/S) — **DONE**, see
    `DATA_HANDLING.md`.
-2. **Harden error handling** around `localStorage` writes and incoming
-   Supabase realtime payloads (Epic 2, P1/M).
+2. ~~Harden error handling~~ around `localStorage` writes and incoming
+   Supabase realtime payloads (Epic 2, P1/M) — **DONE**, see Epic 2 above.
 3. **Run the accessibility hardening pass** (Epic 3, P1/M) — bundles
    aria-labels, focus trapping, contrast, and the font-size audit into one
    effort over the same surfaces.

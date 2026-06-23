@@ -1,3 +1,5 @@
+import { safeGetItem, safeSetItem } from './storage';
+
 // Throttles PIN-pad guessing. Deliberately stored outside GravyState/localStorage's synced
 // `gravy_v1` blob — this is a per-device guess counter, not app data, so it must never sync
 // across devices or get wiped by "Reset Everything".
@@ -13,7 +15,7 @@ interface LockoutState {
 
 function readState(): LockoutState {
   try {
-    const raw = localStorage.getItem(LOCKOUT_KEY);
+    const raw = safeGetItem(LOCKOUT_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
     return {
       failCount: typeof parsed?.failCount === 'number' ? parsed.failCount : 0,
@@ -26,7 +28,7 @@ function readState(): LockoutState {
 }
 
 function writeState(state: LockoutState) {
-  localStorage.setItem(LOCKOUT_KEY, JSON.stringify(state));
+  safeSetItem(LOCKOUT_KEY, JSON.stringify(state));
 }
 
 // Returns the epoch-ms timestamp the current lockout ends at, or 0 if not locked out.

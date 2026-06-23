@@ -1,6 +1,7 @@
 import type { GravyState, GravyRoot, ProfileEntry, Settings, Theme, Goal, Reward, PendingReward } from './types';
 import { FOODS } from '../data/foods';
 import { hashWithSalt, randomSaltHex } from './hash';
+import { safeGetItem, safeSetItem } from './storage';
 
 export const STORAGE_KEY = 'gravy_v1';
 // Lives here (not in Onboarding.tsx) so App.tsx can read it without a static import that
@@ -367,15 +368,17 @@ export function hydrateState(raw: unknown): GravyState {
 
 export function loadState(): GravyState {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = safeGetItem(STORAGE_KEY);
     return hydrateState(saved ? JSON.parse(saved) : null);
   } catch {
     return applyDayRollover(cloneDefaultState());
   }
 }
 
-export function saveState(state: GravyState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+// Returns whether the write actually persisted, so callers can warn the user instead of
+// silently losing progress (e.g. quota exceeded, or storage disabled in private browsing).
+export function saveState(state: GravyState): boolean {
+  return safeSetItem(STORAGE_KEY, JSON.stringify(state));
 }
 
 // ---- Profiles (multi-kid) ----------------------------------------------------------------
@@ -439,7 +442,7 @@ export function makeNewProfile(
 
 export function loadRoot(): GravyRoot {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = safeGetItem(STORAGE_KEY);
     const raw = saved ? JSON.parse(saved) : null;
     if (raw && Array.isArray(raw.profiles)) {
       const root = raw as GravyRoot;
@@ -467,8 +470,10 @@ export function loadRoot(): GravyRoot {
   }
 }
 
-export function saveRoot(root: GravyRoot): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(root));
+// Returns whether the write actually persisted, so callers can warn the user instead of
+// silently losing progress (e.g. quota exceeded, or storage disabled in private browsing).
+export function saveRoot(root: GravyRoot): boolean {
+  return safeSetItem(STORAGE_KEY, JSON.stringify(root));
 }
 
 export function applyDayRollover(state: GravyState): GravyState {
