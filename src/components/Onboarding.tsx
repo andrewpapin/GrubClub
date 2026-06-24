@@ -15,6 +15,7 @@ import { isValidHouseholdCode } from '../state/sync';
 import { ONBOARDING_DONE_KEY } from '../state/defaultState';
 import { safeSetItem } from '../state/storage';
 import { PinSetupStep } from './PinSetupStep';
+import { CopyCodeButton } from './CopyCodeButton';
 
 interface WalkStep {
   icon: typeof faHandSparkles;
@@ -230,7 +231,10 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
               <>
                 <div className="onb-title">Your Family Code</div>
                 <div className="onb-desc">Enter this on another device to keep everyone in sync.</div>
-                <div className="household-code-display">{revealCode}</div>
+                <div className="household-code-row">
+                  <div className="household-code-display">{revealCode}</div>
+                  <CopyCodeButton code={revealCode} />
+                </div>
               </>
             ) : revealFailed ? (
               <>

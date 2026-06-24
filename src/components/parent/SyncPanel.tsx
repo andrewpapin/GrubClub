@@ -4,6 +4,7 @@ import { faTriangleExclamation, faCheck, faCloud, faTrashCan } from '@fortawesom
 import { useGravy } from '../../state/GravyContext';
 import { isValidHouseholdCode } from '../../state/sync';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { CopyCodeButton } from '../CopyCodeButton';
 
 export function SyncPanel() {
   const {
@@ -53,7 +54,10 @@ export function SyncPanel() {
         <div className="settings-row settings-row--col">
           <div>
             <div className="settings-label">Household code</div>
-            <div className="household-code-display">{householdCode}</div>
+            <div className="household-code-row">
+              <div className="household-code-display">{householdCode}</div>
+              <CopyCodeButton code={householdCode} />
+            </div>
             <div className="settings-sub">
               {syncStatus === 'syncing' && 'Syncing…'}
               {syncStatus === 'idle' && <><FontAwesomeIcon icon={faCheck} /> Synced — enter this code on other phones to sync them</>}
