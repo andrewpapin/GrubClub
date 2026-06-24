@@ -68,14 +68,19 @@ process), not missing features.
   what's collected (child name + hashed PIN/recovery answer only — no email,
   accounts, or analytics), where it lives (`localStorage` + optional Supabase
   household row), and how to delete it.
-- **Close two gaps found while writing that note**: (1) "Reset Everything"
-  and "Leave household" only disconnect the local device — neither deletes
-  the Supabase `households` row, so a "left" household's data keeps existing
-  server-side until overwritten; there's no in-app "delete this household
-  everywhere" action. (2) `household_lookup_attempts` (the rate-limit bucket
-  table from the lookup-throttle item above) never expires old rows and grows
-  unbounded — low severity (small, low-cardinality, not user content) but
-  worth a cleanup pass. *(P2, S.)*
+- ~~**Close two gaps found while writing that note**~~ — **DONE.**
+  (1) `supabase/migrations/20260623225331_delete_household_everywhere.sql`
+  adds a `gravy_delete_household` SECURITY DEFINER RPC, scoped to one code
+  like the other three; `SyncPanel` now has a "Delete household everywhere"
+  action distinct from "Turn off cloud sync" — leaving still only disconnects
+  this device (other devices may depend on the row), but a parent can now
+  explicitly delete it for everyone. (2)
+  `supabase/migrations/20260623225536_cleanup_lookup_attempts.sql` has
+  `gravy_lookup_household` opportunistically delete other buckets whose
+  rate-limit window has lapsed on every call, bounding
+  `household_lookup_attempts` to roughly the IPs seen in the last window
+  instead of growing forever, without needing a separate scheduled job.
+  *(P2, S.)*
 
 ## Epic 2 — Engineering Foundation & Quality
 
@@ -129,21 +134,37 @@ process), not missing features.
 
 ## Epic 3 — Accessibility
 
-- **Accessibility hardening pass** — bundle the four items below into one
-  effort instead of four separate sweeps: each one touches the same surfaces
-  (interactive tiles, modals/drawers, theme CSS), so reviewing/landing them
-  together is cheaper than reopening the same components four times.
-  *(P1, M overall.)*
-  - Add aria-labels / semantic roles to interactive tiles — many are
+- ~~**Accessibility hardening pass**~~ — **DONE.** All four sub-items below
+  landed together (interactive tiles, modals/drawers, theme CSS, label
+  sizes), as planned. *(P1, M overall.)*
+  - ~~Add aria-labels / semantic roles to interactive tiles~~ — many were
     `div`+`onClick` or unlabeled buttons across both kid and parent surfaces.
-  - Add focus trapping / return-focus to modals and drawers (Calendar, Badge
-    popup, Onboarding, PIN screen).
-  - Run a color-contrast pass across all 5 themes (classic / midnight / ocean
-    / bubblegum / cyberpunk) — likely WCAG AA failures in muted-text-on-card
-    combinations, especially after prior ad-hoc contrast patches.
-  - Audit/raise minimum label font sizes (some labels sit around ~10px) —
-    lowest priority of the four (P2); fold in opportunistically rather than
-    blocking the rest.
+    **DONE.**
+  - ~~Add focus trapping / return-focus to modals and drawers~~ (Calendar,
+    Badge popup, Onboarding, PIN screen). **DONE** — `useFocusTrap`
+    (`src/components/useFocusTrap.ts`), wired into `Modal`, `RankScreen`,
+    `GamesScreen`, `BadgePopup`, `ConfirmDialog`, `AccountMenu`,
+    `SyncGateModal`, `Celebration`, and `PinScreen`.
+  - ~~Run a color-contrast pass across all 5 themes~~ (classic / midnight /
+    ocean / bubblegum / cyberpunk). **DONE** — darkened the base `--muted`
+    token for classic and ocean (the two themes where `--bg`/`--card`/
+    `--cream` are all light, so a single token fix covers every
+    muted-text-on-card combination); for midnight/cyberpunk, where `--dark`/
+    `--text`/`--muted` are dual-purposed (flipped light to read on dark
+    surfaces elsewhere), extended the existing scoped per-selector ink
+    overrides in `src/index.css` instead of touching the shared token. Added
+    `.muted-note` and `.empty-state--bare` classes to replace inline
+    `color: 'var(--muted)'` styles and a dual-context shared class, both of
+    which were otherwise unreachable by a CSS theme override.
+  - ~~Audit/raise minimum label font sizes~~ — **DONE.** Raised the
+    `--text-2xs` token from 10px to 11px (the floor used by `.food-label`,
+    `.store-need-more`, `.badge-progress-label`, `.rank-row-points`,
+    `.rank-row-status`, and `.theme-swatch-label`); verified via Playwright
+    screenshots across classic/cyberpunk that none of the six clip or
+    overflow at the new size. Left three single-glyph icon-badge sizes below
+    11px untouched as out of scope — `.sync-warning-icon` (0.6rem),
+    `.nav-badge::after` (0.6rem), and `.food-check-badge` (0.55rem) are
+    decorative counts/glyphs in small fixed circles, not textual labels.
 
 ## Epic 4 — Game Balance & Content Debt
 
@@ -205,9 +226,9 @@ prioritized from what's actually still open:
    `DATA_HANDLING.md`.
 2. ~~Harden error handling~~ around `localStorage` writes and incoming
    Supabase realtime payloads (Epic 2, P1/M) — **DONE**, see Epic 2 above.
-3. **Run the accessibility hardening pass** (Epic 3, P1/M) — bundles
-   aria-labels, focus trapping, contrast, and the font-size audit into one
-   effort over the same surfaces.
+3. ~~Run the accessibility hardening pass~~ (Epic 3, P1/M) — **DONE**: all
+   four sub-items (aria-labels, focus trapping, the contrast pass, and the
+   font-size audit) are complete, see Epic 3 above.
 4. **Design the points economy in one pass**: rank curve + daily point
    ceiling together (Epic 4, P1/M).
 5. **Ship PWA push notifications** (Epic 5, P1/L) — the single biggest lever
