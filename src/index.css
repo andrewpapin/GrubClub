@@ -2176,6 +2176,30 @@ button.goal-tile:active { transform: scale(0.97); }
   box-shadow: 2px 2px 0 var(--dark);
   margin: 6px 0;
 }
+.household-code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.copy-code-btn {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--dark);
+  border: var(--border-width-lg) solid var(--dark);
+  box-shadow: 2px 2px 0 var(--dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.copy-code-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--dark);
+}
 .saved-flash {
   color: var(--sage);
   margin-left: 6px;
