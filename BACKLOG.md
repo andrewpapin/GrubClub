@@ -125,6 +125,25 @@ process), not missing features.
   against the old UTC-keyed implementation. Tradeoff: a household synced
   across timezones may now briefly disagree on "today" near midnight
   instead of agreeing on the wrong "today" for everyone.
+- ~~**Add a household-wide configurable time zone**~~ — resolves the
+  tradeoff noted at the end of the entry above: with day-boundary logic
+  keyed off each device's own local clock, a household synced across
+  timezones could briefly disagree on "today" near midnight, and any
+  device's own system timezone (not necessarily where the kid actually
+  lives) silently decided streak/rollover behavior. **DONE** —
+  `Settings.timezone` (an IANA zone id, default `'America/New_York'`) is now
+  a shared field (`SHARED_SETTING_KEYS` in `defaultState.ts`) editable by a
+  parent via the new `TimezonePanel` in the Settings screen. `todayStr()`,
+  `applyDayRollover()`, and `backfillStreaksFromLogs()` (`defaultState.ts`)
+  no longer read any local `Date` field at all — they take/derive an
+  explicit zone and use `Intl.DateTimeFormat` (and a UTC-anchored
+  `addDaysToDateStr()` helper for date-string arithmetic), so every device
+  in a household now agrees on "today" by using the same configured zone,
+  not whichever zone each device's clock happens to be set to.
+  `src/data/timezones.ts` holds the default, the full IANA list (via
+  `Intl.supportedValuesOf('timeZone')`, with a static fallback for older
+  runtimes), and `isValidTimezone()` validation used by both
+  `sanitizeState()` and `saveSetting()`.
 - ~~**Add a CI gate**~~ — **DONE.** `deploy.yml` now runs `npm run lint` then
   `npm test` before `npm run build`, so a lint or test failure blocks deploy.
   *(P0, S.)*

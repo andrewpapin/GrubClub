@@ -49,7 +49,7 @@ Both surfaces are reached as overlay drawers/modals from `HomeScreen` (`src/App.
   - `CalendarPanel` — view/edit past days.
   - `StorePanel` — reward CRUD.
   - `BadgesPanel` — customize badge name/emoji/icon/visibility.
-  - `SettingsPanel` — a thin composer that just renders `SecurityPanel` (PIN + recovery Q&A) + `SyncPanel` (household code create/join/change/leave) + `DangerZonePanel` (reset today / reset everything) in sequence.
+  - `SettingsPanel` — a thin composer that just renders `TimezonePanel` (account time zone) + `SecurityPanel` (PIN + recovery Q&A) + `SyncPanel` (household code create/join/change/leave) + `DangerZonePanel` (reset today / reset everything) in sequence.
 
 ### Global State
 
@@ -107,6 +107,12 @@ Every visual entity (`Goal`, `Reward`, `BadgeDef`/`BadgeOverride`, `Rank`, `Game
 ### Theming
 
 `Settings.theme` is one of `'classic' | 'midnight' | 'ocean' | 'bubblegum' | 'cyberpunk'` (renamed from the older `light`/`dark`/`rainbow`/`gold` — `migrateLegacyState()` falls back any unrecognized saved value to `'classic'`), set per-profile via `ProfilesManager` and applied globally for the active profile (see Global State above). Theme CSS lives in `src/index.css`, keyed off `[data-theme="..."]` on `<html>`.
+
+### Time Zone
+
+`Settings.timezone` is a single household-wide IANA zone id (e.g. `'America/New_York'`), defaulting to `DEFAULT_TIMEZONE` (`'America/New_York'`, `src/data/timezones.ts`) and listed in `SHARED_SETTING_KEYS` (`defaultState.ts`) alongside the other account-level settings — accounts don't support per-profile zones, since the product assumption is one household, one time zone. A parent changes it via `TimezonePanel` (`src/components/parent/TimezonePanel.tsx`, the first panel rendered in `SettingsPanel`), a grouped-by-region `<select>` (the app's first native HTML select, since the ~400-entry IANA list is too large for the grid-style `IconPicker`/`ColorPicker` pattern) populated from `TIMEZONES` in `src/data/timezones.ts` (`Intl.supportedValuesOf('timeZone')`, with a small static `FALLBACK_TIMEZONES` list for older runtimes that lack it).
+
+This setting is what "today" means for the whole household, not each device's own clock. `todayStr(timezone)` (`src/state/defaultState.ts`) computes the current date string via `Intl.DateTimeFormat` scoped to the given zone, instead of reading the device/process-local `Date` fields the old implementation used — so `applyDayRollover()` and `backfillStreaksFromLogs()` (also in `defaultState.ts`) now take/derive their zone from `state.settings.timezone` and walk dates with a UTC-anchored `addDaysToDateStr()` helper, never local-`Date` mutation. The practical effect: every device in a household agrees on when a day rolls over and what "today" is for streaks, badges, and the calendar, regardless of which time zone any individual device's system clock is set to. `isValidTimezone()` (`src/data/timezones.ts`) guards both `saveSetting()` (so a bad value is never written) and `sanitizeState()`/`hydrateState()` (so a corrupt or pre-feature save falls back to the default rather than throwing inside `Intl.DateTimeFormat`).
 
 ### Onboarding
 

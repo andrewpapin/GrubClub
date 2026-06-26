@@ -12,7 +12,7 @@ interface FoodTrayProps {
 
 export function FoodTray({ dateStr }: FoodTrayProps = {}) {
   const { state, logFood, removeFood, logFoodForDay, removeFoodForDay } = useGravy();
-  const today = todayStr();
+  const today = todayStr(state.settings.timezone);
   const day = dateStr ?? today;
   const isToday = day === today;
   const foodCounts = getDayLog(state, day, today)?.foodCounts ?? {};

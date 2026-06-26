@@ -28,6 +28,7 @@ import {
 } from './defaultState';
 import { FOODS } from '../data/foods';
 import { resolveToastIcon } from '../data/icons';
+import { isValidTimezone } from '../data/timezones';
 import { findNewlyEarnedBadges, getBadgeDisplay } from './badges';
 import { applyAward, applyAwardForDay, applyBonusItem, applyBonusItemForDay, reverseBonusItem } from './points';
 import { getRank, RANKS } from '../data/ranks';
@@ -899,6 +900,8 @@ export function GravyProvider({ children }: { children: ReactNode }) {
         next.settings.avatarIcon = val;
       } else if (key === 'avatarIconColor' || key === 'avatarBgColor') {
         next.settings[key] = val;
+      } else if (key === 'timezone') {
+        if (isValidTimezone(val)) next.settings.timezone = val;
       } else {
         (next.settings[key] as number) = Math.max(0, parseInt(val) || 0);
       }

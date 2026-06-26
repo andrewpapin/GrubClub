@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { applyDayRollover, backfillStreaksFromLogs, cloneDefaultState, saveRoot, saveState, todayStr } from './defaultState';
+import {
+  applyDayRollover, backfillStreaksFromLogs, cloneDefaultState, hydrateState, saveRoot, saveState, todayStr,
+} from './defaultState';
+import { DEFAULT_TIMEZONE } from '../data/timezones';
 import type { Goal, GravyRoot, GravyState } from './types';
 
 const FULL_TRAY = { fruit: 1, veggie: 1, protein: 1, dairy: 1, grain: 1 };
@@ -176,28 +179,50 @@ describe('applyDayRollover', () => {
     expect(result.todayGoals).toEqual([]); // cleared for the new day regardless
   });
 
-  it('keys "today" off the device-local calendar date, not the UTC date', () => {
-    vi.stubEnv('TZ', 'America/New_York');
-    // 11:30pm Jan 10 in New York is already 4:30am Jan 11 in UTC.
+  it('keys "today" off the account-configured time zone, not the device/process time zone', () => {
+    // Device/process zone is deliberately set far from the account's configured zone.
+    vi.stubEnv('TZ', 'Asia/Tokyo');
+    // 11:30pm Jan 10 in New York (the account zone) is already 1:30pm Jan 11 in Tokyo
+    // (the device zone) -- if the old device-local logic were still in play this would
+    // wrongly resolve to Jan 11.
     setToday('2024-01-11T04:30:00Z');
-    expect(todayStr()).toBe('2024-01-10');
+    expect(todayStr('America/New_York')).toBe('2024-01-10');
+    expect(todayStr()).toBe('2024-01-10'); // defaults to DEFAULT_TIMEZONE ('America/New_York')
   });
 
-  it('does not roll over between two moments that fall on the same local day but different UTC days', () => {
-    vi.stubEnv('TZ', 'America/New_York');
-    // Kid checks off a goal at 11:30pm Jan 10 local time -- already Jan 11 in UTC.
+  it('resolves "today" differently for two different account time zones given the same instant', () => {
+    setToday('2024-01-11T04:30:00Z');
+    expect(todayStr('America/New_York')).toBe('2024-01-10');
+    expect(todayStr('Asia/Tokyo')).toBe('2024-01-11');
+  });
+
+  it('does not roll over between two moments that fall on the same account-zone day but different UTC days', () => {
+    vi.stubEnv('TZ', 'Asia/Tokyo'); // device zone disagrees with the account zone throughout
+    // Kid checks off a goal at 11:30pm Jan 10 in the account's zone (New York) -- already
+    // Jan 11 in UTC.
     setToday('2024-01-11T04:30:00Z');
     const lastNight = applyDayRollover(freshState({ lastActiveDate: null }));
     expect(lastNight.lastActiveDate).toBe('2024-01-10');
     lastNight.todayGoals = [DAILY_GOAL.id];
     lastNight.todayPoints = 10;
 
-    // 7am Jan 11 local time: a new local day, but still the same UTC calendar date as above.
+    // 7am Jan 11 in the account's zone: a new account-zone day, but still the same UTC
+    // calendar date as above.
     setToday('2024-01-11T12:00:00Z');
     const nextMorning = applyDayRollover(lastNight);
     expect(nextMorning.lastActiveDate).toBe('2024-01-11');
     expect(nextMorning.todayGoals).toEqual([]);
     expect(nextMorning.todayPoints).toBe(0);
+  });
+
+  it('rolls over using a non-default account time zone', () => {
+    setToday('2024-01-11T04:30:00Z'); // 1:30pm Jan 11 in Tokyo, still Jan 10 in New York
+    const state = freshState({ lastActiveDate: '2024-01-10', streak: 3, todayPoints: 10 });
+    state.settings.timezone = 'Asia/Tokyo';
+    const result = applyDayRollover(state);
+    expect(result.lastActiveDate).toBe('2024-01-11');
+    expect(result.streak).toBe(4); // yesterday (Jan 10, Tokyo time) had logged activity
+    expect(result.todayPoints).toBe(0);
   });
 });
 
@@ -253,6 +278,48 @@ describe('backfillStreaksFromLogs', () => {
     expect(state.foodStreak).toBe(0);
     expect(state.goalStreak).toBe(0);
     expect(state.megaStreak).toBe(0);
+  });
+
+  it('walks backward from the account-configured zone\'s "yesterday", not the device zone\'s', () => {
+    vi.stubEnv('TZ', 'America/New_York');
+    // 1am Jan 13 in Tokyo (the account zone here) -- still Jan 12 in New York (the device
+    // zone). Walking backward from the device zone's "yesterday" would start one day early
+    // and miss the most recent log entirely.
+    setToday('2024-01-12T16:00:00Z');
+    const state = freshState({
+      dayLogs: {
+        '2024-01-12': { foodCounts: { ...FULL_TRAY }, goalIds: [DAILY_GOAL.id], points: 25 },
+      },
+    });
+    state.settings.timezone = 'Asia/Tokyo';
+    backfillStreaksFromLogs(state);
+    expect(state.foodStreak).toBe(1);
+    expect(state.goalStreak).toBe(1);
+    expect(state.megaStreak).toBe(1);
+  });
+});
+
+describe('timezone hydration/sanitization', () => {
+  it('falls back an invalid saved timezone to the default', () => {
+    const raw = { ...cloneDefaultState(), settings: { ...cloneDefaultState().settings, timezone: 'Not/AZone' } };
+    expect(hydrateState(raw).settings.timezone).toBe(DEFAULT_TIMEZONE);
+  });
+
+  it('falls back a missing/non-string saved timezone to the default', () => {
+    const raw = { ...cloneDefaultState(), settings: { ...cloneDefaultState().settings, timezone: 42 } };
+    expect(hydrateState(raw).settings.timezone).toBe(DEFAULT_TIMEZONE);
+  });
+
+  it('preserves a valid non-default saved timezone', () => {
+    const raw = { ...cloneDefaultState(), settings: { ...cloneDefaultState().settings, timezone: 'Europe/London' } };
+    expect(hydrateState(raw).settings.timezone).toBe('Europe/London');
+  });
+
+  it('backfills a missing timezone field (pre-feature save) to the default', () => {
+    const state = cloneDefaultState() as unknown as Record<string, unknown>;
+    const settings = state.settings as Record<string, unknown>;
+    delete settings.timezone;
+    expect(hydrateState(state).settings.timezone).toBe(DEFAULT_TIMEZONE);
   });
 });
 

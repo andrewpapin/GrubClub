@@ -36,10 +36,10 @@ interface CalendarPanelProps {
 
 export function CalendarPanel({ onHeaderChange, goToRoot }: CalendarPanelProps) {
   const { state, showToast } = useGravy();
-  const today = todayStr();
-  const now = new Date();
-  const [viewYear, setViewYear] = useState(now.getFullYear());
-  const [viewMonth, setViewMonth] = useState(now.getMonth());
+  const today = todayStr(state.settings.timezone);
+  const [todayYear, todayMonth] = today.split('-').map(Number);
+  const [viewYear, setViewYear] = useState(todayYear);
+  const [viewMonth, setViewMonth] = useState(todayMonth - 1);
   const [pickedDate, setPickedDate] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function CalendarPanel({ onHeaderChange, goToRoot }: CalendarPanelProps) 
     );
   }
 
-  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth();
+  const isCurrentMonth = viewYear === todayYear && viewMonth === todayMonth - 1;
 
   const prevMonth = () => {
     if (viewMonth === 0) {

@@ -11,7 +11,7 @@ interface DailyGoalsProps {
 
 export function DailyGoals({ dateStr }: DailyGoalsProps = {}) {
   const { state, incrementGoal, decrementGoal, toggleGoalForDay } = useGravy();
-  const today = todayStr();
+  const today = todayStr(state.settings.timezone);
   const day = dateStr ?? today;
   const isToday = day === today;
   const dailyGoals = state.goals.filter((g) => g.isDaily !== false);

@@ -2,6 +2,7 @@ import type { GravyState, GravyRoot, ProfileEntry, Settings, Theme, Goal, Reward
 import { FOODS } from '../data/foods';
 import { hashWithSalt, randomSaltHex } from './hash';
 import { safeGetItem, safeSetItem } from './storage';
+import { DEFAULT_TIMEZONE, isValidTimezone } from '../data/timezones';
 
 export const STORAGE_KEY = 'gravy_v1';
 // Lives here (not in Onboarding.tsx) so App.tsx can read it without a static import that
@@ -84,6 +85,7 @@ export const defaultState: GravyState = {
     avatarIcon: 'faceSmile',
     avatarIconColor: '#2F3E46',
     avatarBgColor: '#FFFFFF',
+    timezone: DEFAULT_TIMEZONE,
   },
 };
 
@@ -91,16 +93,32 @@ export function cloneDefaultState(): GravyState {
   return JSON.parse(JSON.stringify(defaultState));
 }
 
-// Formats a date as YYYY-MM-DD using local fields, matching the device's own midnight —
-// this is also how the date shown in the UI (Greeting, CalendarPanel) is computed, so the
-// app has one consistent notion of "today" instead of two. A household synced across
-// timezones may briefly disagree on "today" near midnight as a result.
-function dateStrLocal(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// Formats a date as YYYY-MM-DD in the given IANA zone — this is also how the date shown in
+// the UI (Greeting, CalendarPanel) is computed, so the app has one consistent notion of
+// "today" instead of two. Every device in a household uses the same configured
+// Settings.timezone (see SHARED_SETTING_KEYS), so "today" no longer depends on each
+// device's own system clock/timezone.
+function dateStrInZone(d: Date, timezone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
 }
 
-export function todayStr(): string {
-  return dateStrLocal(new Date());
+export function todayStr(timezone: string = DEFAULT_TIMEZONE): string {
+  return dateStrInZone(new Date(), timezone);
+}
+
+// Shifts a YYYY-MM-DD string by `delta` days. Anchored in UTC purely as a calendar-math
+// trick (so setUTCDate can't be perturbed by DST) — it has nothing to do with the zone the
+// dateStr itself was computed in.
+function addDaysToDateStr(dateStr: string, delta: number): string {
+  const [y, m, day] = dateStr.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m - 1, day));
+  d.setUTCDate(d.getUTCDate() + delta);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 }
 
 // Migrates saved state that was written by an older version of the app
@@ -211,10 +229,8 @@ export function backfillStreaksFromLogs(state: GravyState): void {
   let trackingFood = true;
   let trackingGoal = true;
   let trackingMega = true;
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
+  let dateStr = addDaysToDateStr(todayStr(state.settings.timezone), -1);
   for (let i = 0; i < 3650 && (trackingFood || trackingGoal || trackingMega); i++) {
-    const dateStr = dateStrLocal(d);
     const log = state.dayLogs[dateStr];
     if (!log) break;
     const fullTray = FOODS.every((f) => (log.foodCounts[f.id] || 0) > 0);
@@ -222,7 +238,7 @@ export function backfillStreaksFromLogs(state: GravyState): void {
     if (trackingFood && fullTray) foodStreak++; else trackingFood = false;
     if (trackingGoal && allGoalsDone) goalStreak++; else trackingGoal = false;
     if (trackingMega && fullTray && allGoalsDone) megaStreak++; else trackingMega = false;
-    d.setDate(d.getDate() - 1);
+    dateStr = addDaysToDateStr(dateStr, -1);
   }
   state.foodStreak = foodStreak;
   state.goalStreak = goalStreak;
@@ -328,6 +344,7 @@ function sanitizeState(state: GravyState): void {
   settings.avatarBgColor = asString(settings.avatarBgColor, defaultState.settings.avatarBgColor);
   settings.foodPts = asFiniteNumber(settings.foodPts, defaultState.settings.foodPts);
   settings.bonusPts = asFiniteNumber(settings.bonusPts, defaultState.settings.bonusPts);
+  settings.timezone = isValidTimezone(settings.timezone) ? settings.timezone : defaultState.settings.timezone;
 }
 
 // Takes a raw parsed flat GravyState (or null/garbage), runs the legacy migration, backfills any
@@ -350,12 +367,15 @@ export function hydrateState(raw: unknown): GravyState {
       stateRecord[k] = JSON.parse(JSON.stringify(defaultState[k]));
     }
   }
-  if (!hadStreakFields) backfillStreaksFromLogs(state);
   if (!state.settings) state.settings = { ...defaultState.settings };
   const settingsRecord = state.settings as unknown as Record<string, unknown>;
   for (const k of Object.keys(defaultState.settings) as (keyof GravyState['settings'])[]) {
     if (!(k in state.settings)) settingsRecord[k] = defaultState.settings[k];
   }
+  // Validated again (redundantly but harmlessly) below in sanitizeState — done here too so an
+  // invalid/garbage saved value can't blow up Intl.DateTimeFormat inside backfillStreaksFromLogs.
+  if (!isValidTimezone(state.settings.timezone)) state.settings.timezone = defaultState.settings.timezone;
+  if (!hadStreakFields) backfillStreaksFromLogs(state);
   if (!state.counters) state.counters = JSON.parse(JSON.stringify(defaultState.counters));
   const countersRecord = state.counters as unknown as Record<string, unknown>;
   for (const k of Object.keys(defaultState.counters) as (keyof GravyState['counters'])[]) {
@@ -396,6 +416,7 @@ export const SHARED_SETTING_KEYS: (keyof Settings)[] = [
   'recoveryQuestion',
   'recoveryAnswerHash',
   'recoveryAnswerSalt',
+  'timezone',
 ];
 
 function genProfileId(): string {
@@ -478,11 +499,9 @@ export function saveRoot(root: GravyRoot): boolean {
 }
 
 export function applyDayRollover(state: GravyState): GravyState {
-  const today = todayStr();
+  const today = todayStr(state.settings.timezone);
   if (state.lastActiveDate && state.lastActiveDate !== today) {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yStr = dateStrLocal(yesterday);
+    const yStr = addDaysToDateStr(today, -1);
     const hadActivity =
       Object.keys(state.todayFoodCounts).length > 0 ||
       state.todayGoals.length > 0 ||
