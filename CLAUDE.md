@@ -36,10 +36,13 @@ Gravy is a gamified chores + nutrition + rewards PWA for kids built with React 1
 Both surfaces are reached as overlay drawers/modals from `HomeScreen` (`src/App.tsx` `AppShell`); there is no router, just boolean open/close state per drawer.
 
 - **Kid view** (`src/components/`) — `HomeScreen` (rank/streak/badge stats card, Games hub card, food tray, daily goals, bonus items) plus drawers for the reward store, badges, games, and the rank ladder. Tapping the avatar icon in `TopBar` opens **`AccountMenu`**, a menu with up to four destinations:
-  - **Reward Store** — no PIN.
-  - **Switch Profile** — PIN-gated; only shown when there's more than one profile. Opens `ProfileSwitcher`, a read-only quick-switch list (tap a profile → `switchProfile(id)`).
-  - **Grown ups** — PIN-gated. Gates `ParentDashboard` behind `PinScreen`.
-  - **Profiles** — PIN-gated. Opens `ProfilesManager`, full CRUD for kid profiles (add/edit name, avatar icon+colors, theme; delete with confirm; never deletes the last profile).
+  - **Reward Store** — no PIN, always tappable.
+  - **Grown-Up Access** — a single lock row, not a destination. Locked, it shows `faLock` and "Locked — tap to unlock"; tapping it opens `PinScreen` inline (in place of the menu list) and, on success, calls `unlockGrownUpAccess()`. Unlocked, it shows `faLockOpen` and "Unlocked for this session — tap to lock"; tapping it again calls `lockGrownUpAccess()` and re-locks immediately. This one lock gates all three items below — there's no more per-item PIN screen.
+  - **Switch Profile** — only shown when there's more than one profile; disabled (native `disabled` attribute) until the lock above is unlocked. Opens `ProfileSwitcher`, a read-only quick-switch list (tap a profile → `switchProfile(id)`).
+  - **Grown ups** — disabled until unlocked. Opens `GrownUpsDrawer` → `ParentDashboard` directly, no inline PIN step.
+  - **Profiles** — disabled until unlocked. Opens `ProfilesManager`, full CRUD for kid profiles (add/edit name, avatar icon+colors, theme; delete with confirm; never deletes the last profile).
+
+  The unlocked state (`grownUpUnlocked` in `GravyContext`, backed by `src/state/grownUpUnlock.ts`) is stored in `sessionStorage`, not `localStorage` like the rest of the app's data — so it follows the current browser tab/PWA window and resets to locked whenever that session ends, even though everything else persists indefinitely. `GrownUpsDrawer`/`ProfilesManager`/`ProfileSwitcher` no longer render `PinScreen` themselves; they assume they're only ever opened from `AccountMenu` once already unlocked.
 
   There is no longer a no-PIN "kid settings" screen — theme and child name, which used to live in a standalone `SettingsScreen`, are now per-profile fields edited through the PIN-gated `ProfilesManager`.
 

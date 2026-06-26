@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { safeGetItem, safeRemoveItem, safeSetItem } from './storage';
+import {
+  safeGetItem,
+  safeRemoveItem,
+  safeSessionGetItem,
+  safeSessionRemoveItem,
+  safeSessionSetItem,
+  safeSetItem,
+} from './storage';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -40,5 +47,33 @@ describe('safeGetItem/safeSetItem/safeRemoveItem', () => {
     });
 
     expect(safeSetItem('k', 'v')).toBe(false);
+  });
+});
+
+describe('safeSessionGetItem/safeSessionSetItem/safeSessionRemoveItem', () => {
+  it('pass through to a working sessionStorage', () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal('sessionStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => store.set(k, v),
+      removeItem: (k: string) => store.delete(k),
+    });
+
+    expect(safeSessionSetItem('k', 'v')).toBe(true);
+    expect(safeSessionGetItem('k')).toBe('v');
+    safeSessionRemoveItem('k');
+    expect(safeSessionGetItem('k')).toBeNull();
+  });
+
+  it('returns null/false instead of throwing when storage is disabled', () => {
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => { throw new DOMException('disabled', 'SecurityError'); },
+      setItem: () => { throw new DOMException('disabled', 'SecurityError'); },
+      removeItem: () => { throw new DOMException('disabled', 'SecurityError'); },
+    });
+
+    expect(safeSessionGetItem('k')).toBeNull();
+    expect(safeSessionSetItem('k', 'v')).toBe(false);
+    expect(() => safeSessionRemoveItem('k')).not.toThrow();
   });
 });

@@ -25,3 +25,30 @@ export function safeRemoveItem(key: string): void {
     // Nothing to clean up if storage is inaccessible.
   }
 }
+
+// Same degrade-on-failure behavior as above, but for sessionStorage — used for state that
+// should follow the current browser tab/PWA session instead of persisting forever.
+export function safeSessionGetItem(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function safeSessionSetItem(key: string, value: string): boolean {
+  try {
+    sessionStorage.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function safeSessionRemoveItem(key: string): void {
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    // Nothing to clean up if storage is inaccessible.
+  }
+}
