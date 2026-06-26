@@ -2233,6 +2233,18 @@ button.goal-tile:active { transform: scale(0.97); }
   text-align: center;
   color: var(--text);
 }
+.settings-row select {
+  border: var(--border-width-lg) solid var(--dark);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-family: var(--font-display);
+  font-size: var(--text-base); /* 16px — prevents iOS viewport zoom on focus */
+  font-weight: 800;
+  background: var(--cream);
+  outline: none;
+  max-width: 150px;
+  color: var(--text);
+}
 .section-label {
   font-size: 0.7rem;
   font-weight: 900;

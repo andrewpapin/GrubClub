@@ -11,7 +11,7 @@ interface BonusPointsProps {
 
 export function BonusPoints({ dateStr }: BonusPointsProps = {}) {
   const { state, logBonusItem, undoBonusItem, logBonusItemForDay, undoBonusItemForDay } = useGravy();
-  const today = todayStr();
+  const today = todayStr(state.settings.timezone);
   const day = dateStr ?? today;
   const isToday = day === today;
   const bonusItems = state.goals.filter((g) => g.isDaily === false);

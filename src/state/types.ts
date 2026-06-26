@@ -61,6 +61,10 @@ export interface Settings {
   avatarIcon: string;       // registered icon key (see data/icons.ts)
   avatarIconColor: string;  // hex color for the avatar icon glyph
   avatarBgColor: string;    // hex color for the avatar circle background
+  // IANA zone id (e.g. 'America/New_York'). Household-wide, not per-kid — see
+  // SHARED_SETTING_KEYS in defaultState.ts. Determines the day boundary used by
+  // todayStr()/applyDayRollover() regardless of any device's own system timezone.
+  timezone: string;
 }
 
 export interface DayLog {
