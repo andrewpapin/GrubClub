@@ -18,6 +18,7 @@ const THEME_OPTIONS: { id: Theme; label: string }[] = [
   { id: 'ocean', label: 'Ocean' },
   { id: 'bubblegum', label: 'Bubblegum' },
   { id: 'cyberpunk', label: 'Cyberpunk' },
+  { id: 'retro', label: 'Retro' },
 ];
 
 const AVATAR_COLORS: ColorOption[] = [

@@ -102,6 +102,17 @@
   --coral: #ff003c;
   --sage: #b300ff;
 }
+:root[data-theme="retro"] {
+  --bg: #8ee9bb;
+  --card: #ffffff;
+  --cream: #d7f5e3;
+  --text: #16183f;
+  --muted: #545b87;
+  --dark: #16183f;
+  --yellow: #ffb627;
+  --coral: #ff2ea6;
+  --sage: #2e2d7a;
+}
 /* midnight and cyberpunk pair a dark --card with --dark flipped light (above) so
    on-card text/icons stay legible. That flip breaks the few spots where --dark is
    used as a literal background fill paired with hardcoded white text — restore a

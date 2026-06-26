@@ -167,7 +167,7 @@ export function migrateLegacyState(state: Record<string, unknown>): void {
   // bubblegum/cyberpunk); fall back to the new default for any unrecognized value.
   const settings = state.settings as Record<string, unknown> | undefined;
   if (settings) {
-    const validThemes = ['classic', 'midnight', 'ocean', 'bubblegum', 'cyberpunk'];
+    const validThemes = ['classic', 'midnight', 'ocean', 'bubblegum', 'cyberpunk', 'retro'];
     if (!validThemes.includes(settings.theme as string)) {
       settings.theme = 'classic';
     }

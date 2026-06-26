@@ -59,6 +59,7 @@ const THEME_COLORS: Record<Theme, string> = {
   ocean: '#e0f7fa',
   bubblegum: '#ffe5ec',
   cyberpunk: '#fcee0a',
+  retro: '#8ee9bb',
 };
 
 export interface ToastAction {
