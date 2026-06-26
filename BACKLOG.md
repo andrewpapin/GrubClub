@@ -228,6 +228,12 @@ process), not missing features.
   so engagement doesn't require opening the dashboard. *(P2, M.)*
 - **Family/sibling comparison view** — multi-profile support shipped (PR #82)
   but profiles currently can't see each other. *(P2, M.)*
+- **Goal categorization (Morning/School/Evening tabs or collapsible sections)**
+  for `DailyGoals`/`BonusPoints` — raised in a UX review as a "only if the
+  list grows" suggestion; deliberately deferred since the current goal lists
+  are short enough that a flat grid is still clear. Revisit if a household's
+  goal count grows large enough that scanning the flat grid becomes a
+  problem. *(P2, M.)*
 
 ## Epic 6 — Distribution & Growth
 

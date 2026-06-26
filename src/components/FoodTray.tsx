@@ -5,6 +5,7 @@ import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 import { getDayLog } from '../state/dayLog';
 import { todayStr } from '../state/defaultState';
+import { triggerHaptic } from '../lib/haptics';
 
 interface FoodTrayProps {
   dateStr?: string;
@@ -41,6 +42,7 @@ export function FoodTray({ dateStr }: FoodTrayProps = {}) {
               type="button"
               className={`food-tile ${logged ? 'checked' : ''}`}
               onClick={() => {
+                triggerHaptic();
                 if (isToday) {
                   if (logged) removeFood(f.id); else logFood(f.id);
                 } else {
@@ -50,7 +52,7 @@ export function FoodTray({ dateStr }: FoodTrayProps = {}) {
               aria-label={logged ? `${f.label}, logged. Tap to undo.` : `${f.label}. Tap to log.`}
             >
               {logged && (
-                <span className="food-check-badge" aria-hidden="true">
+                <span className="tile-check-badge" aria-hidden="true">
                   <FontAwesomeIcon icon={faCheck} />
                 </span>
               )}

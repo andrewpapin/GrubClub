@@ -90,7 +90,7 @@ The persisted shape is `GravyRoot` (`{ version: 2, activeProfileId, profiles: Pr
 
 ### Rank Ladder
 
-`src/data/ranks.ts` defines `RANKS: Rank[]`, a 24-tier ladder (`Noob` → `Sonic Snail`) keyed by `totalPoints` thresholds (`min`/`max`). `getRank(pts)` returns the current tier; `useTodaySnapshot()` (`src/state/useTodaySnapshot.ts`) derives the rank, XP-to-next-rank text/percent, and today's food/goal completion — shared by the kid-facing `StatsCard` and used as the basis for the parent dashboard's day-snapshot displays. `RankScreen` is the kid-facing drawer listing every rank with locked/current/achieved state and a progress bar.
+`src/data/ranks.ts` defines `RANKS: Rank[]`, a 24-tier ladder (`Noob` → `Sonic Snail`) keyed by `totalPoints` thresholds (`min`/`max`). `getRank(pts)` returns the current tier; `useTodaySnapshot()` (`src/state/useTodaySnapshot.ts`) derives the rank, XP-to-next-rank text/percent, and today's food/goal completion — shared by the kid-facing `StatsCard` and used as the basis for the parent dashboard's day-snapshot displays. `RankScreen` is the kid-facing drawer listing every rank with locked/current/achieved state and a progress bar. Its modal body opens with a "Your Stats" summary row (`.rank-stats-summary`/`.rank-stats-chip`) — food streak, goal streak (when daily goals exist), day streak, and mega streak, the same four values (`state.foodStreak`/`goalStreak`/`streak`/`megaStreak`) formerly shown as chips on `StatsCard` itself — before the rank list. `StatsCard` was decluttered to show only the rank icon/name/XP bar plus the conditional streak-at-risk nudge; the existing (i) info button (`onOpenRank`) is the only entry point to these stats now.
 
 ### Badge System
 

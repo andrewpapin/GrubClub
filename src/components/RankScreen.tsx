@@ -1,8 +1,9 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faCheck, faLock } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faCheck, faLock, faFire, faUtensils, faListCheck, faStar } from '@fortawesome/free-solid-svg-icons';
 import { AppIcon } from './AppIcon';
 import { RANKS, getRank } from '../data/ranks';
 import { useGravy } from '../state/GravyContext';
+import { useTodaySnapshot } from '../state/useTodaySnapshot';
 import { useFocusTrap } from './useFocusTrap';
 
 interface RankScreenProps {
@@ -12,6 +13,7 @@ interface RankScreenProps {
 
 export function RankScreen({ open, onClose }: RankScreenProps) {
   const { state } = useGravy();
+  const { foodDone, dailyGoals, goalsAllDone } = useTodaySnapshot();
   const displayTotal = Math.max(0, state.totalPoints);
   const { index: currentIndex } = getRank(displayTotal);
   const sheetRef = useFocusTrap<HTMLDivElement>(open, onClose);
@@ -29,6 +31,24 @@ export function RankScreen({ open, onClose }: RankScreenProps) {
           </button>
         </div>
         <div className="calendar-modal-body">
+          <div className="rank-stats-summary" aria-label={`Food streak ${state.foodStreak}, goal streak ${state.goalStreak}, day streak ${state.streak}, mega streak ${state.megaStreak}`}>
+            <span className={`rank-stats-chip ${foodDone ? 'done' : ''}`} title="Food streak">
+              <FontAwesomeIcon icon={faUtensils} aria-hidden="true" /> {state.foodStreak}
+            </span>
+            {dailyGoals.length > 0 && (
+              <span className={`rank-stats-chip ${goalsAllDone ? 'done' : ''}`} title="Goal streak">
+                <FontAwesomeIcon icon={faListCheck} aria-hidden="true" /> {state.goalStreak}
+              </span>
+            )}
+            {state.streak > 0 && (
+              <span className="rank-stats-chip" title="Day streak">
+                <FontAwesomeIcon icon={faFire} aria-hidden="true" /> {state.streak}
+              </span>
+            )}
+            <span className="rank-stats-chip" title="Mega streak">
+              <FontAwesomeIcon icon={faStar} aria-hidden="true" /> {state.megaStreak}
+            </span>
+          </div>
           <div className="rank-list">
             {RANKS.map((r, i) => {
               const achieved = i < currentIndex;

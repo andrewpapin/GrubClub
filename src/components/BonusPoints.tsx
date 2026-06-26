@@ -4,6 +4,7 @@ import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 import { getDayLog } from '../state/dayLog';
 import { todayStr } from '../state/defaultState';
+import { triggerHaptic } from '../lib/haptics';
 
 interface BonusPointsProps {
   dateStr?: string;
@@ -54,7 +55,10 @@ export function BonusPoints({ dateStr }: BonusPointsProps = {}) {
                   <button
                     type="button"
                     className="stepper-btn"
-                    onClick={() => (isToday ? undoBonusItem(g.id) : undoBonusItemForDay(day, g.id))}
+                    onClick={() => {
+                      triggerHaptic();
+                      if (isToday) undoBonusItem(g.id); else undoBonusItemForDay(day, g.id);
+                    }}
                     disabled={count === 0}
                     aria-label={`Undo ${g.name}`}
                   >−</button>
@@ -62,7 +66,10 @@ export function BonusPoints({ dateStr }: BonusPointsProps = {}) {
                   <button
                     type="button"
                     className="stepper-btn"
-                    onClick={() => (isToday ? logBonusItem(g.id) : logBonusItemForDay(day, g.id))}
+                    onClick={() => {
+                      triggerHaptic();
+                      if (isToday) logBonusItem(g.id); else logBonusItemForDay(day, g.id);
+                    }}
                     aria-label={`Log ${g.name}`}
                   >+</button>
                 </div>
