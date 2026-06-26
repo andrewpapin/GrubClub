@@ -1,9 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMoon } from '@fortawesome/free-solid-svg-icons';
+import { faMoon, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 import { getDayLog } from '../state/dayLog';
 import { todayStr } from '../state/defaultState';
+import { triggerHaptic } from '../lib/haptics';
 
 interface DailyGoalsProps {
   dateStr?: string;
@@ -50,6 +51,11 @@ export function DailyGoals({ dateStr }: DailyGoalsProps = {}) {
             if (isToday && target > 1) {
               return (
                 <div key={g.id} className={`goal-tile ${done ? 'checked' : ''}`}>
+                  {done && (
+                    <span className="tile-check-badge" aria-hidden="true">
+                      <FontAwesomeIcon icon={faCheck} />
+                    </span>
+                  )}
                   <div className="goal-tile-top">
                     <AppIcon iconKey={g.icon} emojiFallback={g.emoji} className="goal-tile-emoji" />
                     <span className="pts-badge">+{g.pts}</span>
@@ -59,7 +65,7 @@ export function DailyGoals({ dateStr }: DailyGoalsProps = {}) {
                     <button
                       type="button"
                       className="stepper-btn"
-                      onClick={() => decrementGoal(g.id)}
+                      onClick={() => { triggerHaptic(); decrementGoal(g.id); }}
                       disabled={count === 0}
                       aria-label={`Undo ${g.name}`}
                     >−</button>
@@ -67,7 +73,7 @@ export function DailyGoals({ dateStr }: DailyGoalsProps = {}) {
                     <button
                       type="button"
                       className="stepper-btn"
-                      onClick={() => incrementGoal(g.id)}
+                      onClick={() => { triggerHaptic(); incrementGoal(g.id); }}
                       aria-label={`Complete ${g.name}`}
                     >+</button>
                   </div>
@@ -81,6 +87,7 @@ export function DailyGoals({ dateStr }: DailyGoalsProps = {}) {
                 type="button"
                 className={`goal-tile ${done ? 'checked' : ''}`}
                 onClick={() => {
+                  triggerHaptic();
                   if (isToday) {
                     if (count > 0) decrementGoal(g.id); else incrementGoal(g.id);
                   } else {
@@ -90,6 +97,11 @@ export function DailyGoals({ dateStr }: DailyGoalsProps = {}) {
                 aria-pressed={done}
                 aria-label={done ? `${g.name}, done. Tap to undo.` : `${g.name}. Tap to complete.`}
               >
+                {done && (
+                  <span className="tile-check-badge" aria-hidden="true">
+                    <FontAwesomeIcon icon={faCheck} />
+                  </span>
+                )}
                 <div className="goal-tile-top">
                   <AppIcon iconKey={g.icon} emojiFallback={g.emoji} className="goal-tile-emoji" />
                   <span className="pts-badge">+{g.pts}</span>

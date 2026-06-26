@@ -145,9 +145,8 @@
 :root[data-theme="midnight"] .card-title-icon.icon-yellow,
 :root[data-theme="midnight"] .btn-primary,
 :root[data-theme="midnight"] .btn-yellow,
-:root[data-theme="midnight"] .stats-today-chip.done,
 :root[data-theme="midnight"] .food-count-badge,
-:root[data-theme="midnight"] .food-check-badge,
+:root[data-theme="midnight"] .tile-check-badge,
 :root[data-theme="midnight"] .pts-badge:not(.negative),
 :root[data-theme="midnight"] .store-cost:not(.unaffordable),
 :root[data-theme="midnight"] .badge-tile.unlocked .badge-info-btn,
@@ -164,9 +163,8 @@
 :root[data-theme="cyberpunk"] .card-title-icon.icon-yellow,
 :root[data-theme="cyberpunk"] .btn-primary,
 :root[data-theme="cyberpunk"] .btn-yellow,
-:root[data-theme="cyberpunk"] .stats-today-chip.done,
 :root[data-theme="cyberpunk"] .food-count-badge,
-:root[data-theme="cyberpunk"] .food-check-badge,
+:root[data-theme="cyberpunk"] .tile-check-badge,
 :root[data-theme="cyberpunk"] .pts-badge:not(.negative),
 :root[data-theme="cyberpunk"] .store-cost:not(.unaffordable),
 :root[data-theme="cyberpunk"] .badge-tile.unlocked .badge-info-btn,
@@ -542,17 +540,6 @@ button.calendar-day {
   gap: 2px 8px;
 }
 .stats-rank-name { font-size: 1.1rem; font-weight: 900; min-width: 0; overflow-wrap: break-word; }
-.streak-badge {
-  color: var(--yellow);
-}
-.streak-badge--risk {
-  color: #fff;
-  animation: streak-risk-pulse 1.6s ease-in-out infinite;
-}
-@keyframes streak-risk-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.55; }
-}
 .streak-risk-nudge {
   margin-top: 8px;
   font-size: 0.72rem;
@@ -586,28 +573,13 @@ button.calendar-day {
   border-radius: 50px;
   transition: width 0.5s ease;
 }
-/* "Today" at-a-glance chips inside the rank card */
-.stats-today {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
+.xp-bar-track.xp-pulse {
+  animation: xp-pulse 0.5s ease;
 }
-.stats-today-chip {
-  display: inline-flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 900;
-  padding: 4px 10px;
-  border-radius: 50px;
-}
-.stats-today-chip.done {
-  background: var(--yellow);
-  color: var(--dark);
+@keyframes xp-pulse {
+  0% { box-shadow: 0 0 0 0 var(--yellow); }
+  40% { box-shadow: 0 0 8px 3px var(--yellow); }
+  100% { box-shadow: 0 0 0 0 var(--yellow); }
 }
 
 /* ===== FOOD TRAY ===== */
@@ -627,7 +599,7 @@ button.calendar-day {
   justify-content: center;
   gap: 3px;
   cursor: pointer;
-  transition: box-shadow var(--transition), border-color var(--transition), background var(--transition);
+  transition: box-shadow var(--transition), border-color var(--transition), background var(--transition), transform var(--transition);
   box-shadow: 3px 3px 0 var(--dark);
   position: relative;
   padding: 6px 4px;
@@ -637,7 +609,9 @@ button.calendar-day {
   border-color: var(--dark);
   background: var(--sage);
   box-shadow: 3px 3px 0 var(--dark);
+  transform: scale(1.03);
 }
+.food-tile.checked:active { transform: scale(0.99); }
 .food-count-badge {
   position: absolute;
   top: -6px; left: -6px;
@@ -657,7 +631,7 @@ button.calendar-day {
 .food-label { font-size: var(--text-2xs); font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: var(--dark); }
 .food-tile.checked .food-emoji { color: #fff; animation: icon-pop 0.28s ease; }
 .food-tile.checked .food-label { color: rgba(255,255,255,0.9); }
-.food-check-badge {
+.tile-check-badge {
   position: absolute;
   top: -6px; right: -6px;
   width: 18px; height: 18px;
@@ -684,8 +658,8 @@ button.calendar-day {
   color: var(--sage);
 }
 .stepper-btn {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: var(--border-width-md) solid var(--dark);
   background: var(--cream);
@@ -703,6 +677,15 @@ button.calendar-day {
   -webkit-tap-highlight-color: transparent;
   box-shadow: 2px 2px 0 var(--dark);
   transition: transform 0.08s, box-shadow 0.08s;
+  position: relative;
+}
+/* Invisible hit-area expansion (same trick as .stats-rank-info-btn::before)
+   so the tappable area is closer to the ~44px touch-target guideline
+   without growing the visible chip and crowding the goal grid. */
+.stepper-btn::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
 }
 .stepper-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--dark); }
 .stepper-btn:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -797,13 +780,15 @@ button.calendar-day {
   gap: 6px;
   padding: 10px;
   box-shadow: 3px 3px 0 var(--dark);
-  transition: background var(--transition), border-color var(--transition);
+  transition: background var(--transition), border-color var(--transition), transform var(--transition);
   text-align: left;
   font-family: var(--font-display);
+  position: relative;
 }
 button.goal-tile { cursor: pointer; color: inherit; }
 button.goal-tile:active { transform: scale(0.97); }
-.goal-tile.checked { background: var(--sage); }
+.goal-tile.checked { background: var(--sage); transform: scale(1.03); }
+button.goal-tile.checked:active { transform: scale(0.99); }
 .goal-tile-top {
   display: flex;
   align-items: flex-start;
@@ -1192,6 +1177,30 @@ button.goal-tile:active { transform: scale(0.97); }
 .badge-info-btn:active { background: var(--dark); color: white; }
 
 /* ===== RANK LADDER SCREEN ===== */
+.rank-stats-summary {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.rank-stats-chip {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--cream);
+  color: var(--dark);
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 6px 10px;
+  border-radius: 50px;
+  border: var(--border-width-md) solid var(--dark);
+}
+.rank-stats-chip.done {
+  background: var(--sage);
+  color: #fff;
+  border-color: var(--sage);
+}
 .rank-list {
   display: flex;
   flex-direction: column;

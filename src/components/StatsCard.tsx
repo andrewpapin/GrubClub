@@ -1,9 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFire, faUtensils, faListCheck, faStar, faMedal, faChevronRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { faFire, faMedal, faChevronRight, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 import { useTodaySnapshot } from '../state/useTodaySnapshot';
 import { getEnabledBadgeCount } from '../state/badges';
+import { useEffect, useRef, useState } from 'react';
 
 interface StatsCardProps {
   onOpenBadges: () => void;
@@ -12,14 +13,26 @@ interface StatsCardProps {
 
 export function StatsCard({ onOpenBadges, onOpenRank }: StatsCardProps) {
   const { state } = useGravy();
-  const { rank, xpText, pct, foodDone, dailyGoals, goalsAllDone, streakAtRisk } = useTodaySnapshot();
+  const { rank, xpText, pct, streakAtRisk } = useTodaySnapshot();
   const earnedCount = state.earnedBadges.length;
   const totalBadgeCount = getEnabledBadgeCount(state);
+
+  const prevPointsRef = useRef(state.totalPoints);
+  const [xpPulse, setXpPulse] = useState(false);
+  useEffect(() => {
+    if (state.totalPoints > prevPointsRef.current) {
+      setXpPulse(true);
+      const timer = setTimeout(() => setXpPulse(false), 500);
+      prevPointsRef.current = state.totalPoints;
+      return () => clearTimeout(timer);
+    }
+    prevPointsRef.current = state.totalPoints;
+  }, [state.totalPoints]);
 
   return (
     <div className="stats-card">
       <div className="stats-rank">
-        <button className="stats-rank-info-btn" onClick={onOpenRank} aria-label="View rank ladder" type="button">
+        <button className="stats-rank-info-btn" onClick={onOpenRank} aria-label="View rank ladder and stats" type="button">
           <FontAwesomeIcon icon={faCircleInfo} />
         </button>
         <div className="stats-rank-header">
@@ -31,31 +44,10 @@ export function StatsCard({ onOpenBadges, onOpenRank }: StatsCardProps) {
               <span className="stats-rank-name">{rank.name}</span>
               <span className="stats-rank-xp">{xpText}</span>
             </div>
-            <div className="xp-bar-track">
+            <div className={`xp-bar-track ${xpPulse ? 'xp-pulse' : ''}`}>
               <div className="xp-bar-fill" style={{ width: `${pct}%` }} />
             </div>
           </div>
-        </div>
-        <div className="stats-today" aria-label={`Food streak ${state.foodStreak}, goal streak ${state.goalStreak}, streak ${state.streak}, mega streak ${state.megaStreak}`}>
-          <span className={`stats-today-chip ${foodDone ? 'done' : ''}`} title="Food streak">
-            <FontAwesomeIcon icon={faUtensils} aria-hidden="true" /> {state.foodStreak}
-          </span>
-          {dailyGoals.length > 0 && (
-            <span className={`stats-today-chip ${goalsAllDone ? 'done' : ''}`} title="Goal streak">
-              <FontAwesomeIcon icon={faListCheck} aria-hidden="true" /> {state.goalStreak}
-            </span>
-          )}
-          {state.streak > 0 && (
-            <span
-              className={`stats-today-chip streak-badge${streakAtRisk ? ' streak-badge--risk' : ''}`}
-              title={streakAtRisk ? `Log something today to keep your ${state.streak}-day streak!` : `${state.streak} day streak`}
-            >
-              <FontAwesomeIcon icon={faFire} /> {state.streak}
-            </span>
-          )}
-          <span className="stats-today-chip" title="Mega streak">
-            <FontAwesomeIcon icon={faStar} aria-hidden="true" /> {state.megaStreak}
-          </span>
         </div>
         {streakAtRisk && (
           <div className="streak-risk-nudge">
