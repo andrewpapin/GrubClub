@@ -17,6 +17,12 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+
+# Capacitor / iOS native build artifacts (the `ios/` project itself IS committed
+# once generated on a Mac via `npx cap add ios`; these are local build outputs)
+ios/App/Pods
+ios/App/App/public
+DerivedData
 *.suo
 *.ntvs*
 *.njsproj

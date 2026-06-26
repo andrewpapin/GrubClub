@@ -143,6 +143,15 @@ The parent PIN and recovery answer are stored as salted SHA-256 hashes (`src/sta
 
 GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pages on push to `main`. The Vite `base` is `/Gravy/`. The checkout step uses `fetch-depth: 0` (full history, not the default shallow clone) so the version computation below has commit messages to search.
 
+### Native App (Capacitor / iOS App Store)
+
+Gravy can also ship as a native iOS app via [Capacitor](https://capacitorjs.com/) (config in `capacitor.config.ts`, `webDir: 'dist'`). The web app is unchanged; Capacitor wraps the built `dist/` in a native shell. Two build modes share one Vite config (`vite.config.ts`), keyed off `process.env.BUILD_TARGET`:
+
+- **Web build** (`npm run build`, the default / GitHub Pages): `base: '/Gravy/'`, PWA service worker enabled.
+- **Native build** (`npm run build:native`, sets `BUILD_TARGET=capacitor` via `cross-env`): `base: '/'` (Capacitor serves assets from the bundle root, so `/Gravy/` would 404) and `VitePWA({ disable: true })` (the SW is redundant inside the native shell and causes reload loops; with it disabled, `virtual:pwa-register` in `UpdatePrompt.tsx` is a no-op).
+
+Helper scripts: `npm run cap:sync` (native build + `cap sync`) and `npm run ios` (native build + `cap sync ios` + `cap open ios`). The `ios/` native project is generated on a Mac with `npx cap add ios` (requires Xcode + CocoaPods — can't run in CI/Linux) and, once generated, is committed; local build outputs under it are gitignored. Change `appId` in `capacitor.config.ts` from the `com.example.gravy` placeholder before adding the platform — it's the permanent App Store bundle id. Submitting to the App Store additionally requires a paid Apple Developer account, a hosted privacy policy, and (since Gravy is a kids' app collecting a child's name) extra Kids-Category/privacy review.
+
 ### Version Display
 
 `vite.config.ts` computes a version string at build time and injects it via the `__APP_VERSION__` define: `APP_VERSION_BASE` (currently `'1.1'`, bumped manually for breaking/major UI changes) plus the most recent PR number found by scanning `git log -50 --pretty=%s` for a `#<digits>` pattern (matches both merge-commit titles like `Merge pull request #109 from ...` and squash-merge titles like `Title (#102)`) — falls back to `0` if none is found (e.g. a shallow clone with no PR-referencing commit in range). `src/version.ts` declares the `__APP_VERSION__` ambient global and re-exports it as `APP_VERSION`; `AccountMenu.tsx` renders it (`v1.1.109`-style) in a small footer below the menu options so a parent/tester can always see which build is running. This number is for display/debugging only — it doesn't drive `migrateLegacyState()` or any other app logic, and it isn't related to the persisted-state `version: 2` field in `GravyRoot` (`src/state/types.ts`).

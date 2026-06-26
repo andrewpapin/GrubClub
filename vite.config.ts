@@ -17,15 +17,23 @@ function getAppVersion(): string {
   }
 }
 
+// Native (Capacitor) builds load assets from a local bundle at the web root,
+// so they must use base '/' and ship without the PWA service worker (Capacitor
+// already bundles the assets locally; the SW only causes redundant reloads
+// inside the native shell). Set via `BUILD_TARGET=capacitor` (see `build:native`
+// npm script). The default web build still targets GitHub Pages at '/Gravy/'.
+const isNativeBuild = process.env.BUILD_TARGET === 'capacitor'
+
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/Gravy/' : '/',
+  base: command === 'build' && !isNativeBuild ? '/Gravy/' : '/',
   define: {
     __APP_VERSION__: JSON.stringify(getAppVersion()),
   },
   plugins: [
     react(),
     VitePWA({
+      disable: isNativeBuild,
       registerType: 'prompt',
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png'],
       manifest: {
