@@ -45,6 +45,7 @@ import {
   subscribeToHousehold,
 } from './sync';
 import { safeGetItem, safeRemoveItem, safeSetItem } from './storage';
+import { readGrownUpUnlocked, writeGrownUpUnlocked } from './grownUpUnlock';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error';
 
@@ -138,6 +139,9 @@ interface GravyContextValue {
   resetToday: () => void;
   resetAll: () => void;
   updateBadgeConfig: (id: string, key: 'enabled' | 'name' | 'emoji' | 'icon', value: string | boolean) => void;
+  grownUpUnlocked: boolean;
+  unlockGrownUpAccess: () => void;
+  lockGrownUpAccess: () => void;
   householdCode: string | null;
   syncStatus: SyncStatus;
   createHousehold: (customCode?: string) => Promise<string | null>;
@@ -190,6 +194,15 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     safeGetItem(HOUSEHOLD_CODE_KEY),
   );
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [grownUpUnlocked, setGrownUpUnlocked] = useState(() => readGrownUpUnlocked());
+  const unlockGrownUpAccess = useCallback(() => {
+    writeGrownUpUnlocked(true);
+    setGrownUpUnlocked(true);
+  }, []);
+  const lockGrownUpAccess = useCallback(() => {
+    writeGrownUpUnlocked(false);
+    setGrownUpUnlocked(false);
+  }, []);
   const lastSyncedRef = useRef<string | null>(null);
   const pendingTimersRef = useRef<number[]>([]);
   const storageWarnedRef = useRef(false);
@@ -1266,6 +1279,9 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     resetToday,
     resetAll,
     updateBadgeConfig,
+    grownUpUnlocked,
+    unlockGrownUpAccess,
+    lockGrownUpAccess,
     householdCode,
     syncStatus,
     createHousehold,

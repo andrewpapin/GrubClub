@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLock, faGift, faRightLeft, faUsers } from '@fortawesome/free-solid-svg-icons';
+import { faLock, faLockOpen, faGift, faRightLeft, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 import { useFocusTrap } from './useFocusTrap';
+import { PinScreen } from './PinScreen';
 import { APP_VERSION } from '../version';
+
+type Stage = 'menu' | 'pin';
 
 interface AccountMenuProps {
   open: boolean;
@@ -21,9 +25,22 @@ export function AccountMenu({
   onOpenSwitchProfile,
   onOpenProfiles,
 }: AccountMenuProps) {
-  const { state, profiles } = useGravy();
+  const { state, profiles, grownUpUnlocked, unlockGrownUpAccess, lockGrownUpAccess } = useGravy();
   const pendingCount = state.pendingRewards.length;
   const menuRef = useFocusTrap<HTMLDivElement>(open, onClose);
+  const [stage, setStage] = useState<Stage>('menu');
+  // Re-prompt the PIN on every fresh open, adjusted during render (not an effect) — this
+  // component never unmounts (only its inner JSX is conditionally rendered below), so a
+  // half-finished PIN attempt would otherwise linger across opens/closes.
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [pinNonce, setPinNonce] = useState(0);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setStage('menu');
+      setPinNonce((n) => n + 1);
+    }
+  }
 
   return (
     <div
@@ -32,43 +49,71 @@ export function AccountMenu({
     >
       {open && (
         <div className="badge-popup account-menu" ref={menuRef} role="dialog" aria-modal="true" aria-label="Account menu" tabIndex={-1}>
-          <button type="button" className="account-menu-option" onClick={onOpenStore}>
-            <span
-              className="account-menu-option-icon nav-badge"
-              data-count={pendingCount}
-              title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
-            >
-              <FontAwesomeIcon icon={faGift} />
-            </span>
-            <span className="account-menu-option-text">
-              <span className="account-menu-option-title">Reward Store</span>
-              <span className="account-menu-option-sub">Spend your points</span>
-            </span>
-          </button>
-          {profiles.length > 1 && (
-            <button type="button" className="account-menu-option" onClick={onOpenSwitchProfile}>
-              <span className="account-menu-option-icon"><FontAwesomeIcon icon={faRightLeft} /></span>
-              <span className="account-menu-option-text">
-                <span className="account-menu-option-title">Switch Profile</span>
-                <span className="account-menu-option-sub">Enter PIN</span>
-              </span>
-            </button>
+          {stage === 'pin' ? (
+            <>
+              <PinScreen key={pinNonce} onSuccess={() => { unlockGrownUpAccess(); setStage('menu'); }} />
+              <button
+                className="btn btn-sm btn-ghost"
+                onClick={() => setStage('menu')}
+                style={{ marginTop: 8 }}
+              >
+                ← Back
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="account-menu-option" onClick={onOpenStore}>
+                <span
+                  className="account-menu-option-icon nav-badge"
+                  data-count={pendingCount}
+                  title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
+                >
+                  <FontAwesomeIcon icon={faGift} />
+                </span>
+                <span className="account-menu-option-text">
+                  <span className="account-menu-option-title">Reward Store</span>
+                  <span className="account-menu-option-sub">Spend your points</span>
+                </span>
+              </button>
+              <button
+                type="button"
+                className="account-menu-option"
+                onClick={() => (grownUpUnlocked ? lockGrownUpAccess() : setStage('pin'))}
+              >
+                <span className="account-menu-option-icon"><FontAwesomeIcon icon={grownUpUnlocked ? faLockOpen : faLock} /></span>
+                <span className="account-menu-option-text">
+                  <span className="account-menu-option-title">Grown-Up Access</span>
+                  <span className="account-menu-option-sub">
+                    {grownUpUnlocked ? 'Unlocked for this session — tap to lock' : 'Locked — tap to unlock'}
+                  </span>
+                </span>
+              </button>
+              {profiles.length > 1 && (
+                <button type="button" className="account-menu-option" disabled={!grownUpUnlocked} onClick={onOpenSwitchProfile}>
+                  <span className="account-menu-option-icon"><FontAwesomeIcon icon={faRightLeft} /></span>
+                  <span className="account-menu-option-text">
+                    <span className="account-menu-option-title">Switch Profile</span>
+                    <span className="account-menu-option-sub">Pick another kid</span>
+                  </span>
+                </button>
+              )}
+              <button type="button" className="account-menu-option" disabled={!grownUpUnlocked} onClick={onOpenGrownUps}>
+                <span className="account-menu-option-icon"><FontAwesomeIcon icon={faUserShield} /></span>
+                <span className="account-menu-option-text">
+                  <span className="account-menu-option-title">Grown ups</span>
+                  <span className="account-menu-option-sub">Parent dashboard</span>
+                </span>
+              </button>
+              <button type="button" className="account-menu-option" disabled={!grownUpUnlocked} onClick={onOpenProfiles}>
+                <span className="account-menu-option-icon"><FontAwesomeIcon icon={faUsers} /></span>
+                <span className="account-menu-option-text">
+                  <span className="account-menu-option-title">Profiles</span>
+                  <span className="account-menu-option-sub">Manage kids</span>
+                </span>
+              </button>
+              <div className="account-menu-version">v{APP_VERSION}</div>
+            </>
           )}
-          <button type="button" className="account-menu-option" onClick={onOpenGrownUps}>
-            <span className="account-menu-option-icon"><FontAwesomeIcon icon={faLock} /></span>
-            <span className="account-menu-option-text">
-              <span className="account-menu-option-title">Grown ups</span>
-              <span className="account-menu-option-sub">Enter PIN</span>
-            </span>
-          </button>
-          <button type="button" className="account-menu-option" onClick={onOpenProfiles}>
-            <span className="account-menu-option-icon"><FontAwesomeIcon icon={faUsers} /></span>
-            <span className="account-menu-option-text">
-              <span className="account-menu-option-title">Profiles</span>
-              <span className="account-menu-option-sub">Enter PIN</span>
-            </span>
-          </button>
-          <div className="account-menu-version">v{APP_VERSION}</div>
         </div>
       )}
     </div>
