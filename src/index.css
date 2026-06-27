@@ -230,8 +230,25 @@ body {
 .topbar {
   color: var(--dark);
   padding: max(14px, env(safe-area-inset-top)) 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.topbar-brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.topbar-brand {
+  font-family: var(--font-logo);
+  font-size: 1.9rem;
+  line-height: 1;
+  color: var(--dark);
+}
+.topbar-greeting-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
   gap: 8px;
 }

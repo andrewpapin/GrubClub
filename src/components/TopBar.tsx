@@ -20,15 +20,9 @@ export function TopBar({ dateStr, onOpenAccountMenu, onOpenStore, onOpenHistory 
 
   return (
     <div className="topbar">
-      <div
-        className="topbar-avatar"
-        aria-hidden="true"
-        style={{ background: state.settings.avatarBgColor, color: state.settings.avatarIconColor }}
-      >
-        <AppIcon iconKey={state.settings.avatarIcon} emojiFallback="😊" />
-      </div>
-      <Greeting dateStr={dateStr} />
-      <div className="topbar-pills">
+      <div className="topbar-brand-row">
+        <div className="topbar-brand">Gravy</div>
+        <div className="topbar-pills">
         <button
           type="button"
           className="points-pill"
@@ -73,6 +67,17 @@ export function TopBar({ dateStr, onOpenAccountMenu, onOpenStore, onOpenHistory 
             <FontAwesomeIcon icon={faCalendarDays} />
           </button>
         )}
+        </div>
+      </div>
+      <div className="topbar-greeting-row">
+        <div
+          className="topbar-avatar"
+          aria-hidden="true"
+          style={{ background: state.settings.avatarBgColor, color: state.settings.avatarIconColor }}
+        >
+          <AppIcon iconKey={state.settings.avatarIcon} emojiFallback="😊" />
+        </div>
+        <Greeting dateStr={dateStr} />
       </div>
     </div>
   );
