@@ -1,17 +1,18 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faCloudArrowUp, faCalendarDays } from '@fortawesome/free-solid-svg-icons';
+import { faCoins, faCloudArrowUp, faCalendarDays, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 import { AppIcon } from './AppIcon';
 import { Greeting } from './Greeting';
 
 interface TopBarProps {
   dateStr: string;
-  onOpenAvatarMenu?: () => void;
+  onOpenAccountMenu?: () => void;
+  onOpenStore?: () => void;
   onOpenHistory?: () => void;
 }
 
-export function TopBar({ dateStr, onOpenAvatarMenu, onOpenHistory }: TopBarProps) {
-  const { state, householdCode, syncStatus } = useGravy();
+export function TopBar({ dateStr, onOpenAccountMenu, onOpenStore, onOpenHistory }: TopBarProps) {
+  const { state, householdCode, syncStatus, grownUpUnlocked } = useGravy();
   const syncError = !!householdCode && syncStatus === 'error';
   const pendingCount = state.pendingRewards.length;
   // The internal balance can dip below zero after a large deduction; never show negative.
@@ -19,27 +20,22 @@ export function TopBar({ dateStr, onOpenAvatarMenu, onOpenHistory }: TopBarProps
 
   return (
     <div className="topbar">
-      {onOpenAvatarMenu && (
-        <button
-          className="topbar-icon-btn topbar-avatar-btn"
-          onClick={onOpenAvatarMenu}
-          aria-label="Open account menu"
-          type="button"
-          style={{ background: state.settings.avatarBgColor, color: state.settings.avatarIconColor }}
-        >
-          <span
-            className="nav-badge"
-            data-count={pendingCount}
-            title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
-          >
-            <AppIcon iconKey={state.settings.avatarIcon} emojiFallback="😊" />
-          </span>
-        </button>
-      )}
+      <div
+        className="topbar-avatar"
+        aria-hidden="true"
+        style={{ background: state.settings.avatarBgColor, color: state.settings.avatarIconColor }}
+      >
+        <AppIcon iconKey={state.settings.avatarIcon} emojiFallback="😊" />
+      </div>
       <Greeting dateStr={dateStr} />
       <div className="topbar-pills">
-        <div className="points-pill" aria-label={`${displayPoints} points`}>
-          <FontAwesomeIcon icon={faStar} /> <span>{displayPoints}</span>
+        <button
+          type="button"
+          className="points-pill"
+          onClick={onOpenStore}
+          aria-label={`${displayPoints} points — open Reward Store`}
+        >
+          <FontAwesomeIcon icon={faCoins} /> <span>{displayPoints}</span>
           {syncError && (
             <span
               className="sync-warning-icon"
@@ -50,7 +46,23 @@ export function TopBar({ dateStr, onOpenAvatarMenu, onOpenHistory }: TopBarProps
               <FontAwesomeIcon icon={faCloudArrowUp} aria-hidden="true" />
             </span>
           )}
-        </div>
+        </button>
+        {onOpenAccountMenu && (
+          <button
+            className="topbar-icon-btn"
+            onClick={onOpenAccountMenu}
+            aria-label="Open grown-up menu"
+            type="button"
+          >
+            <span
+              className="nav-badge"
+              data-count={pendingCount}
+              title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
+            >
+              <FontAwesomeIcon icon={grownUpUnlocked ? faLockOpen : faLock} />
+            </span>
+          </button>
+        )}
         {onOpenHistory && (
           <button
             className="topbar-icon-btn"
