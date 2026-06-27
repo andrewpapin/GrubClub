@@ -302,16 +302,16 @@ to `auth.uid()` are only cleanly achievable through it.)*
   household" prompt in `SyncPanel` is the in-app banner driving the window. Tightening the
   open-`SELECT` residual risk into `auth.uid()`-scoped RLS (the actual close-out) is the
   Epic 9 RLS-migration item, sequenced after enough households claim. *(was P1, M.)*
-- **Per-parent attribution on `actionLog`.** Add an actor field (`actorUserId`/
-  `actorLabel`) to `ActionLogEntry` (`src/state/types.ts`, confirmed it has no actor
-  field today) so `LogPanel` can show which parent logged food, approved a reward, or
-  adjusted a goal — every entry is anonymous-parent by construction today. Sequenced after
-  the two items above (nothing to attribute to before accounts exist). *(P2, S.)*
-- **Audit trail for dashboard-level/destructive actions.** Extends attribution beyond
-  kid-progress actions to what `LogPanel` deliberately excludes today (catalog edits,
-  settings changes, profile CRUD, Danger Zone resets, sync changes) now that there's a real
-  identity to attach to each. A separate, currently-nonexistent log surface, not an
-  extension of the existing action log. *(P2, M.)*
+- ~~**Per-parent attribution on `actionLog`.**~~ — **DONE.** `ActionLogEntry` gained
+  `actorUserId`/`actorLabel` (`src/state/types.ts`); `appendActionLog(next, actor, entry)`
+  stamps them from the signed-in account (absent when none), and `LogPanel` shows "· by
+  <email>" on attributed entries. Unit-tested in `actionLog.test.ts`. *(was P2, S.)*
+- ~~**Audit trail for dashboard-level/destructive actions.**~~ — **DONE.** New shared
+  `auditLog` field + `src/state/auditLog.ts` (`appendAuditLog`, cap 300), instrumented across
+  catalog edits, settings (value-change-only; never logs secret values), badge config, profile
+  CRUD, danger-zone resets, and sync/ownership changes — each actor-attributed. Surfaced as a
+  new read-only "Admin Log" `ParentDashboard` destination (`AuditLogPanel`), distinct from the
+  kid-progress action log. Unit-tested in `auditLog.test.ts`. *(was P2, M.)*
 - *(Decision, stated so it isn't silently revisited: kid profiles stay non-authenticated
   sub-records under a parent-owned household, switched via the existing PIN-gated
   `ProfileSwitcher` — no kid email/password/OAuth, avoiding COPPA exposure from collecting
