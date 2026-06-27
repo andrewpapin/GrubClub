@@ -48,6 +48,18 @@ import {
 } from './sync';
 import { safeGetItem, safeRemoveItem, safeSetItem } from './storage';
 import { readGrownUpUnlocked, writeGrownUpUnlocked } from './grownUpUnlock';
+import {
+  type AuthResult,
+  type AuthUser,
+  type HouseholdStatus,
+  claimHousehold as claimHouseholdRpc,
+  getHouseholdStatus,
+  onAuthChange,
+  sendMagicLink,
+  signInWithPassword,
+  signOut as signOutSupabase,
+  signUpWithPassword,
+} from './auth';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error';
 
@@ -146,6 +158,17 @@ interface GravyContextValue {
   leaveHousehold: () => void;
   deleteHouseholdEverywhere: () => Promise<boolean>;
   changeHouseholdCode: (newCode: string) => Promise<boolean>;
+  // --- Parent account (Epic 8) ---
+  authUser: AuthUser | null;
+  authReady: boolean;
+  signUp: (email: string, password: string) => Promise<AuthResult>;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  sendSignInLink: (email: string) => Promise<AuthResult>;
+  signOutAccount: () => Promise<void>;
+  // Whether the current synced household is owned by an account (claimed). null = unknown/not
+  // checked yet (e.g. no household, or offline). Drives the "secure this household" prompt.
+  householdStatus: HouseholdStatus | null;
+  claimHousehold: () => Promise<boolean>;
 }
 
 const GravyContext = createContext<GravyContextValue | null>(null);
@@ -200,9 +223,39 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     writeGrownUpUnlocked(false);
     setGrownUpUnlocked(false);
   }, []);
+  // Parent account (Epic 8). Independent of the kid-screen PIN/grownUpUnlocked lock above —
+  // signing in identifies a parent for household ownership, the PIN keeps a kid out of the
+  // dashboard on a shared device. authReady gates UI until the initial session check resolves.
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [householdStatus, setHouseholdStatus] = useState<HouseholdStatus | null>(null);
   const lastSyncedRef = useRef<string | null>(null);
   const pendingTimersRef = useRef<number[]>([]);
   const storageWarnedRef = useRef(false);
+
+  // Track the signed-in parent account. Fires once on mount with the current session (or null)
+  // and again on every sign-in/out.
+  useEffect(() => {
+    const unsub = onAuthChange((user) => {
+      setAuthUser(user);
+      setAuthReady(true);
+    });
+    return unsub;
+  }, []);
+
+  // Refresh whether the current household is claimed whenever the code or the signed-in account
+  // changes — drives the "secure this household" prompt. Failures (offline) leave status null.
+  useEffect(() => {
+    if (!householdCode) {
+      setHouseholdStatus(null);
+      return;
+    }
+    let cancelled = false;
+    getHouseholdStatus(householdCode)
+      .then((s) => { if (!cancelled) setHouseholdStatus(s); })
+      .catch(() => { if (!cancelled) setHouseholdStatus(null); });
+    return () => { cancelled = true; };
+  }, [householdCode, authUser]);
 
   // Applies the parent-selected theme to the whole app. useLayoutEffect (rather than
   // useEffect) so the attribute is set before paint, avoiding a flash of the light theme.
@@ -1304,6 +1357,59 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     }
   }, [householdCode, showToast]);
 
+  // --- Parent account actions (Epic 8) ---
+  const signUp = useCallback(async (email: string, password: string) => {
+    const res = await signUpWithPassword(email, password);
+    if (res.ok) showToast(faCircleCheck, 'Account created — check your email to confirm');
+    else showToast(faCircleXmark, res.error);
+    return res;
+  }, [showToast]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    const res = await signInWithPassword(email, password);
+    if (res.ok) showToast(faCircleCheck, 'Signed in');
+    else showToast(faCircleXmark, res.error);
+    return res;
+  }, [showToast]);
+
+  const sendSignInLink = useCallback(async (email: string) => {
+    const res = await sendMagicLink(email);
+    if (res.ok) showToast(faEnvelope, 'Check your email for a sign-in link');
+    else showToast(faCircleXmark, res.error);
+    return res;
+  }, [showToast]);
+
+  const signOutAccount = useCallback(async () => {
+    await signOutSupabase();
+    showToast(faCircleCheck, 'Signed out');
+  }, [showToast]);
+
+  // Secures the currently-synced household to the signed-in account (the claim-or-deprecate
+  // path for an existing PIN-only household). No-ops harmlessly if already owned by this account.
+  const claimHousehold = useCallback(async () => {
+    if (!householdCode) return false;
+    if (!authUser) {
+      showToast(faCircleXmark, 'Sign in first to secure this household');
+      return false;
+    }
+    try {
+      await claimHouseholdRpc(householdCode);
+      const status = await getHouseholdStatus(householdCode).catch(() => null);
+      if (status) setHouseholdStatus(status);
+      showToast(faCircleCheck, 'Household secured to your account');
+      return true;
+    } catch (err) {
+      const message = (err as { message?: string }).message;
+      showToast(
+        faCircleXmark,
+        message?.includes('already claimed')
+          ? 'This household is already owned by another account'
+          : navigator.onLine ? 'Server error — please try again' : 'No internet connection — try again when back online',
+      );
+      return false;
+    }
+  }, [householdCode, authUser, showToast]);
+
   // The active kid's identity comes from the live `state`; the others from the root.
   const profiles: ProfileSummary[] = root.profiles.map((p) => {
     const s = p.id === root.activeProfileId ? state : p.state;
@@ -1368,6 +1474,14 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     leaveHousehold,
     deleteHouseholdEverywhere,
     changeHouseholdCode,
+    authUser,
+    authReady,
+    signUp,
+    signIn,
+    sendSignInLink,
+    signOutAccount,
+    householdStatus,
+    claimHousehold,
   };
 
   return <GravyContext.Provider value={value}>{children}</GravyContext.Provider>;
