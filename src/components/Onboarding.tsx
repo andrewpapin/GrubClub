@@ -15,6 +15,7 @@ import { isValidHouseholdCode } from '../state/sync';
 import { ONBOARDING_DONE_KEY } from '../state/defaultState';
 import { safeSetItem } from '../state/storage';
 import { PinSetupStep } from './PinSetupStep';
+import { AccountSetupStep } from './AccountSetupStep';
 import { CopyCodeButton } from './CopyCodeButton';
 
 interface WalkStep {
@@ -46,7 +47,7 @@ const STEPS: WalkStep[] = [
   },
 ];
 
-type Phase = 'welcome' | 'join' | 'name' | 'walkthrough' | 'sync' | 'creating' | 'pinSetup';
+type Phase = 'welcome' | 'join' | 'name' | 'walkthrough' | 'account' | 'sync' | 'creating' | 'pinSetup';
 type JoinOrigin = 'welcome' | 'sync';
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
@@ -103,7 +104,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
       setWalkStep((s) => s + 1);
       return;
     }
-    setPhase('sync');
+    setPhase('account');
   };
 
   const handleSkipForNow = () => {
@@ -119,13 +120,15 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
     } else if (phase === 'walkthrough') {
       if (walkStep === 0) setPhase('name');
       else setWalkStep((s) => s - 1);
-    } else if (phase === 'sync') {
+    } else if (phase === 'account') {
       setWalkStep(STEPS.length - 1);
       setPhase('walkthrough');
+    } else if (phase === 'sync') {
+      setPhase('account');
     }
   };
 
-  const showBack = phase === 'join' || phase === 'name' || phase === 'walkthrough' || phase === 'sync';
+  const showBack = phase === 'join' || phase === 'name' || phase === 'walkthrough' || phase === 'account' || phase === 'sync';
   const showDots = phase === 'name' || phase === 'walkthrough' || phase === 'sync';
   const dotCount = STEPS.length + 2;
   const activeDot = phase === 'name' ? 0 : phase === 'walkthrough' ? walkStep + 1 : STEPS.length + 1;
@@ -309,6 +312,7 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             </button>
           </div>
         )}
+        {phase === 'account' && <AccountSetupStep onDone={() => setPhase('sync')} />}
         {phase === 'pinSetup' && <PinSetupStep onDone={finish} />}
         {phase === 'creating' && revealFailed && (
           <div className="onb-actions">
