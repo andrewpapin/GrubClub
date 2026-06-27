@@ -208,13 +208,28 @@ process), not missing features.
 
 ## Epic 4 — Game Balance & Content Debt
 
-- **Design the points economy in one pass**: resolve the rank point-curve
-  (explicitly called a placeholder in PR #90, "exact balance will be revisited
-  later") *and* re-check the total daily point ceiling (daily goals, bonus
-  items, and 4 separately-capped games all award points now) together — rank
-  thresholds can't be sanely set without first knowing the realistic
-  daily/weekly point ceiling they're paced against, so treat the curve and the
-  ceiling check as one design pass, not two. *(P1, M.)*
+- ~~**Design the points economy in one pass**~~ — **DONE.** Computed the
+  realistic daily point ceiling from current defaults: food (5 groups ×
+  `foodPts` + the one-time full-tray `bonusPts`) = 75, all 8 default daily
+  goals = 105, each positive bonus item once = ~60, games capped at
+  `DAILY_GAME_WIN_CAP` (3) × `gamePts` = 45 — a max-engagement day ≈ 285,
+  with a more typical day around 120–200. Decision (confirmed with product
+  owner): bonus items stay uncapped — the parent tapping the button after
+  witnessing the real behavior is the actual gate, not a UI limit, so the
+  ceiling math is sized off realistic engagement rather than a theoretical
+  unbounded one. Against that ceiling, the old rank curve (gaps growing 50/
+  rank, max rank at 13,800 — the placeholder from PR #90) topped out in only
+  ~2-3 months of consistent play, leaving the 24-tier ladder with nothing
+  left to chase for the rest of the app's life. Rescaled gaps 5x (250/rank,
+  `src/data/ranks.ts`, max rank now 69,000) to target roughly 11-15 months
+  to max rank at the typical 150-200 pts/day pace (69,000 / 200 ≈ 345 days,
+  69,000 / 150 ≈ 460 days), while keeping the first rank-up
+  fast (~1-2 days) for early hook. Action point values (food/goal/bonus/game
+  pts, reward costs) were left untouched — they're parent-editable per
+  household already, and the points-badges in `badges.ts` (max 10,000) were
+  also left as-is, intentionally completing earlier in the new ladder as a
+  shorter-arc reward system distinct from the rank ladder's longer arc.
+  *(P1, M.)*
 - **Lock the theme palette.** It was wholesale-replaced once already (4 themes →
   5 new ones in PR #80); avoid a second full swap without a clear signal that
   the current set isn't working. *(P2, decision only.)*
@@ -422,7 +437,11 @@ prioritized from what's actually still open:
 3. ~~Run the accessibility hardening pass~~ (Epic 3, P1/M) — **DONE**: all
    four sub-items (aria-labels, focus trapping, the contrast pass, and the
    font-size audit) are complete, see Epic 3 above.
-4. **Design the points economy in one pass**: rank curve + daily point
-   ceiling together (Epic 4, P1/M).
+4. ~~Design the points economy in one pass~~ (Epic 4, P1/M) — **DONE**, see
+   Epic 4 above.
 5. **Ship PWA push notifications** (Epic 5, P1/L) — the single biggest lever
-   for retention; sequenced last here only because of size, not importance.
+   for retention. Note: with a Capacitor-wrapped iOS app now the planned
+   distribution path (Epic 10), skip the web-push (Notifications API)
+   implementation here — iOS PWA web push is limited and would be partly
+   throwaway. Go straight to native push (APNs/FCM) as Epic 10's distinct
+   P1/M item once the Capacitor wrap ships instead.
