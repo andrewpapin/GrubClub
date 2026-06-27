@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLock, faLockOpen, faGift, faRightLeft, faUsers, faUserShield, faGear, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons';
+import { faLock, faLockOpen, faRightLeft, faUsers, faUserShield, faGear, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 import { useFocusTrap } from './useFocusTrap';
 import { PinScreen } from './PinScreen';
@@ -11,7 +11,6 @@ type Stage = 'menu' | 'pin';
 interface AccountMenuProps {
   open: boolean;
   onClose: () => void;
-  onOpenStore: () => void;
   onOpenGrownUps: () => void;
   onOpenSwitchProfile: () => void;
   onOpenProfiles: () => void;
@@ -22,15 +21,13 @@ interface AccountMenuProps {
 export function AccountMenu({
   open,
   onClose,
-  onOpenStore,
   onOpenGrownUps,
   onOpenSwitchProfile,
   onOpenProfiles,
   onOpenSettings,
   onOpenLog,
 }: AccountMenuProps) {
-  const { state, profiles, grownUpUnlocked, unlockGrownUpAccess, lockGrownUpAccess } = useGravy();
-  const pendingCount = state.pendingRewards.length;
+  const { profiles, grownUpUnlocked, unlockGrownUpAccess, lockGrownUpAccess } = useGravy();
   const menuRef = useFocusTrap<HTMLDivElement>(open, onClose);
   const [stage, setStage] = useState<Stage>('menu');
   // Re-prompt the PIN on every fresh open, adjusted during render (not an effect) — this
@@ -52,7 +49,7 @@ export function AccountMenu({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       {open && (
-        <div className="badge-popup account-menu" ref={menuRef} role="dialog" aria-modal="true" aria-label="Account menu" tabIndex={-1}>
+        <div className="badge-popup account-menu" ref={menuRef} role="dialog" aria-modal="true" aria-label="Grown-up menu" tabIndex={-1}>
           {stage === 'pin' ? (
             <>
               <PinScreen key={pinNonce} onSuccess={() => { unlockGrownUpAccess(); setStage('menu'); }} />
@@ -66,19 +63,6 @@ export function AccountMenu({
             </>
           ) : (
             <>
-              <button type="button" className="account-menu-option" onClick={onOpenStore}>
-                <span
-                  className="account-menu-option-icon nav-badge"
-                  data-count={pendingCount}
-                  title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
-                >
-                  <FontAwesomeIcon icon={faGift} />
-                </span>
-                <span className="account-menu-option-text">
-                  <span className="account-menu-option-title">Reward Store</span>
-                  <span className="account-menu-option-sub">Spend your points</span>
-                </span>
-              </button>
               <button
                 type="button"
                 className="account-menu-option"

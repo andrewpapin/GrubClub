@@ -72,7 +72,8 @@ function AppShell() {
     <>
       <div id="kidApp">
         <HomeScreen
-          onOpenAvatarMenu={() => setAccountMenuOpen(true)}
+          onOpenAccountMenu={() => setAccountMenuOpen(true)}
+          onOpenStore={() => setStoreOpen(true)}
           onOpenBadges={() => setBadgesOpen(true)}
           onOpenGames={() => setGamesOpen(true)}
           onOpenRank={() => setRankOpen(true)}
@@ -96,7 +97,6 @@ function AppShell() {
         <AccountMenu
           open={accountMenuOpen}
           onClose={() => setAccountMenuOpen(false)}
-          onOpenStore={() => { setAccountMenuOpen(false); setStoreOpen(true); }}
           onOpenGrownUps={() => { setAccountMenuOpen(false); setGrownUpsOpen(true); }}
           onOpenSwitchProfile={() => { setAccountMenuOpen(false); setSwitchProfileOpen(true); }}
           onOpenProfiles={() => { setAccountMenuOpen(false); setProfilesOpen(true); }}

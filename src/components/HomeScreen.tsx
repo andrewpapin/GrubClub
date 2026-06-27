@@ -12,13 +12,14 @@ import { useGravy } from '../state/GravyContext';
 import { todayStr, formatShortDate } from '../state/defaultState';
 
 interface HomeScreenProps {
-  onOpenAvatarMenu: () => void;
+  onOpenAccountMenu: () => void;
+  onOpenStore: () => void;
   onOpenBadges: () => void;
   onOpenGames: () => void;
   onOpenRank: () => void;
 }
 
-export function HomeScreen({ onOpenAvatarMenu, onOpenBadges, onOpenGames, onOpenRank }: HomeScreenProps) {
+export function HomeScreen({ onOpenAccountMenu, onOpenStore, onOpenBadges, onOpenGames, onOpenRank }: HomeScreenProps) {
   const { state } = useGravy();
   const today = todayStr(state.settings.timezone);
   // null means "follow today live" — set to a concrete date once the user navigates away
@@ -35,7 +36,8 @@ export function HomeScreen({ onOpenAvatarMenu, onOpenBadges, onOpenGames, onOpen
     <div className="screen active">
       <TopBar
         dateStr={dateStr}
-        onOpenAvatarMenu={onOpenAvatarMenu}
+        onOpenAccountMenu={onOpenAccountMenu}
+        onOpenStore={onOpenStore}
         onOpenHistory={() => setHistoryOpen(true)}
       />
       <div className="scroll-area">

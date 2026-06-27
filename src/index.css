@@ -247,6 +247,13 @@ body {
   gap: 6px;
   border: var(--border-width-lg) solid var(--dark);
   box-shadow: 2px 2px 0 var(--dark);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+.points-pill:hover { background: var(--sage); color: var(--card); }
+.points-pill:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 var(--dark);
 }
 .topbar-icon-btn {
   justify-self: end;
@@ -269,10 +276,17 @@ body {
   transform: translate(2px, 2px);
   box-shadow: 0 0 0 var(--dark);
 }
-.topbar-avatar-btn {
+.topbar-avatar {
   width: 44px;
   height: 44px;
   flex-shrink: 0;
+  border-radius: 50%;
+  border: var(--border-width-lg) solid var(--dark);
+  box-shadow: 2px 2px 0 var(--dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
 }
 .sync-warning-icon {
   display: inline-flex;
