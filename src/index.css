@@ -627,7 +627,7 @@ button.calendar-day {
 }
 .food-tile {
   width: 100%;
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   border: var(--border-width-xl) solid var(--dark);
   background: var(--cream);
   display: flex;
@@ -813,7 +813,7 @@ button.calendar-day {
 .goal-grid > *:nth-child(odd):last-child { grid-column: 1 / -1; }
 .goal-tile {
   width: 100%;
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   border: var(--border-width-xl) solid var(--dark);
   background: var(--cream);
   display: flex;
@@ -1805,7 +1805,7 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
   width: 100%;
   background: var(--card);
   border: var(--border-width-lg) solid var(--dark);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   padding: 14px;
   box-shadow: 3px 3px 0 var(--dark);
   cursor: pointer;
@@ -1901,7 +1901,7 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
   gap: 14px;
   background: var(--card);
   border: var(--border-width-lg) solid var(--dark);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   padding: var(--space-md);
   margin-bottom: var(--space-sm);
   box-shadow: 3px 3px 0 var(--dark);
@@ -1941,7 +1941,7 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
 /* ===== PARENT ITEMS ===== */
 .parent-item {
   background: var(--card);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   padding: var(--space-md);
   margin-bottom: var(--space-sm);
   display: flex;
@@ -2131,7 +2131,7 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
   text-align: left;
   background: var(--card);
   border: var(--border-width-lg) solid var(--dark);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   box-shadow: 3px 3px 0 var(--dark);
   padding: var(--space-md);
   cursor: pointer;
@@ -2155,7 +2155,7 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
   margin-top: -4px;
   background: var(--card);
   border: var(--border-width-lg) dashed var(--dark);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
 }
 .profile-edit-panel input[type="text"] {
   width: 100%;
@@ -2168,7 +2168,7 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
   margin-top: -4px;
   background: var(--card);
   border: var(--border-width-lg) solid var(--coral);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--dark);
@@ -2212,7 +2212,7 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
 
 .settings-row {
   background: var(--card);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   padding: var(--space-md);
   margin-bottom: var(--space-sm);
   display: flex;
@@ -2454,7 +2454,7 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
 /* ===== PARENT BADGE LIST ===== */
 .pbadge-row {
   background: var(--card);
-  border-radius: 14px;
+  border-radius: var(--radius-sm);
   padding: var(--space-sm) var(--space-md);
   margin-bottom: var(--space-sm);
   display: flex;
