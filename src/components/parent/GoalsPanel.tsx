@@ -4,6 +4,8 @@ import { faPen, faCheck, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../../state/GravyContext';
 import { AppIcon } from '../AppIcon';
 import { IconPicker } from '../IconPicker';
+import { ColorPicker } from '../ColorPicker';
+import { GOAL_COLORS, DEFAULT_GOAL_COLOR } from '../../data/colors';
 import { PointsPanel } from './PointsPanel';
 import type { Goal } from '../../state/types';
 
@@ -13,6 +15,8 @@ interface GoalFormFieldsProps {
   icon: string;
   legacyEmoji?: string;
   onIconChange: (key: string) => void;
+  color: string;
+  onColorChange: (hex: string) => void;
   name: string;
   namePlaceholder?: string;
   onNameChange: (name: string) => void;
@@ -28,12 +32,13 @@ interface GoalFormFieldsProps {
 // same icon/name/points/target fields, just with different placeholders and surrounding
 // submit controls.
 function GoalFormFields({
-  icon, legacyEmoji, onIconChange, name, namePlaceholder, onNameChange,
+  icon, legacyEmoji, onIconChange, color, onColorChange, name, namePlaceholder, onNameChange,
   pts, ptsPlaceholder, onPtsChange, isDaily, target, onTargetChange,
 }: GoalFormFieldsProps) {
   return (
     <>
       <IconPicker value={icon} legacyEmoji={legacyEmoji} onChange={onIconChange} ariaLabel="Choose a goal icon" />
+      <ColorPicker value={color} colors={GOAL_COLORS} onChange={onColorChange} ariaLabel="Choose a goal color" />
       <input
         type="text"
         placeholder={namePlaceholder}
@@ -68,16 +73,17 @@ function GoalFormFields({
 export function GoalsPanel() {
   const { state, addGoal, removeGoal, updateGoal } = useGravy();
   const [icon, setIcon] = useState(DEFAULT_GOAL_ICON);
+  const [color, setColor] = useState(DEFAULT_GOAL_COLOR);
   const [name, setName] = useState('');
   const [pts, setPts] = useState('');
   const [target, setTarget] = useState('1');
   const [isDaily, setIsDaily] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [editGoal, setEditGoal] = useState({ icon: '', emoji: '', name: '', pts: '', target: '1' });
+  const [editGoal, setEditGoal] = useState({ icon: '', emoji: '', color: DEFAULT_GOAL_COLOR, name: '', pts: '', target: '1' });
 
   const startEdit = (g: Goal) => {
     setEditingId(g.id);
-    setEditGoal({ icon: g.icon || '', emoji: g.emoji, name: g.name, pts: String(g.pts), target: String(g.target || 1) });
+    setEditGoal({ icon: g.icon || '', emoji: g.emoji, color: g.color || DEFAULT_GOAL_COLOR, name: g.name, pts: String(g.pts), target: String(g.target || 1) });
   };
 
   const saveEdit = (id: number) => {
@@ -86,6 +92,7 @@ export function GoalsPanel() {
     const isDailyGoal = state.goals.find((g) => g.id === id)?.isDaily !== false;
     updateGoal(id, {
       icon: editGoal.icon || DEFAULT_GOAL_ICON,
+      color: editGoal.color,
       name: trimmedName,
       pts: parseInt(editGoal.pts) || 10,
       target: isDailyGoal ? Math.max(1, parseInt(editGoal.target) || 1) : undefined,
@@ -99,12 +106,14 @@ export function GoalsPanel() {
     addGoal({
       emoji: '',
       icon: icon || DEFAULT_GOAL_ICON,
+      color,
       name: trimmedName,
       pts: parseInt(pts) || 10,
       target: isDaily ? Math.max(1, parseInt(target) || 1) : undefined,
       isDaily,
     });
     setIcon(DEFAULT_GOAL_ICON);
+    setColor(DEFAULT_GOAL_COLOR);
     setName('');
     setPts('');
     setTarget('1');
@@ -122,6 +131,8 @@ export function GoalsPanel() {
           icon={editGoal.icon}
           legacyEmoji={editGoal.emoji}
           onIconChange={(key) => setEditGoal({ ...editGoal, icon: key })}
+          color={editGoal.color}
+          onColorChange={(hex) => setEditGoal({ ...editGoal, color: hex })}
           name={editGoal.name}
           onNameChange={(value) => setEditGoal({ ...editGoal, name: value })}
           pts={editGoal.pts}
@@ -139,6 +150,7 @@ export function GoalsPanel() {
       </form>
     ) : (
       <div className="parent-item" key={g.id}>
+        <span className="parent-item-color" style={{ background: g.color || DEFAULT_GOAL_COLOR }} aria-hidden="true" />
         <AppIcon iconKey={g.icon} emojiFallback={g.emoji} className="parent-item-emoji" />
         <div className="parent-item-info">
           <div className="parent-item-name">{g.name}</div>
@@ -176,6 +188,8 @@ export function GoalsPanel() {
         <GoalFormFields
           icon={icon}
           onIconChange={setIcon}
+          color={color}
+          onColorChange={setColor}
           name={name}
           namePlaceholder="Goal name..."
           onNameChange={setName}

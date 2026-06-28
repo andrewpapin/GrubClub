@@ -47,23 +47,23 @@ export const defaultState: GravyState = {
   },
   badgeConfig: {},
   goals: [
-    // Daily
-    { id: 1, emoji: '📖', icon: 'bookOpen', name: 'Read for 30 minutes', pts: 15, isDaily: true },
-    { id: 2, emoji: '🎨', icon: 'palette', name: '1 hour of creative time', pts: 20, isDaily: true },
-    { id: 3, emoji: '🧹', icon: 'broom', name: 'Tidy your space without being asked', pts: 15, isDaily: true },
-    { id: 4, emoji: '🦷', icon: 'tooth', name: 'Brush your teeth', pts: 5, isDaily: true },
-    { id: 5, emoji: '🛏️', icon: 'bed', name: 'Make your bed', pts: 10, isDaily: true },
-    { id: 6, emoji: '🏃', icon: 'personRunning', name: '30 minutes of outdoor activity', pts: 15, isDaily: true },
-    { id: 7, emoji: '✌️', icon: 'handPeace', name: 'Kind to family members', pts: 10, isDaily: true },
-    { id: 8, emoji: '📐', icon: 'calculator', name: 'Homework done without reminders', pts: 15, isDaily: true },
-    // Bonus (repeatable, resets daily; negative pts = deduction)
-    { id: 9, emoji: '📚', icon: 'bookOpen', name: 'Extra reading time', pts: 15, isDaily: false },
-    { id: 10, emoji: '📵', icon: 'gamepad', name: 'Stopped screen time the first time asked', pts: 20, isDaily: false },
-    { id: 11, emoji: '💚', icon: 'heart', name: 'Handled a frustrating moment calmly', pts: 10, isDaily: false },
-    { id: 12, emoji: '🤝', icon: 'thumbsUp', name: 'Helped someone without being asked', pts: 15, isDaily: false },
-    { id: 13, emoji: '🤬', icon: 'commentSlash', name: 'Swear jar', pts: -10, isDaily: false },
-    { id: 14, emoji: '😡', icon: 'faceAngry', name: 'Sore loser or rage quitting', pts: -15, isDaily: false },
-    { id: 15, emoji: '🍟', icon: 'cookieBite', name: 'Junk food as a "meal"', pts: -20, isDaily: false },
+    // Daily — cooler / calmer accents
+    { id: 1, emoji: '📖', icon: 'bookOpen', name: 'Read for 30 minutes', pts: 15, isDaily: true, color: '#5B8DEF' },
+    { id: 2, emoji: '🎨', icon: 'palette', name: '1 hour of creative time', pts: 20, isDaily: true, color: '#B388EB' },
+    { id: 3, emoji: '🧹', icon: 'broom', name: 'Tidy your space without being asked', pts: 15, isDaily: true, color: '#3D9BB5' },
+    { id: 4, emoji: '🦷', icon: 'tooth', name: 'Brush your teeth', pts: 5, isDaily: true, color: '#3D9BB5' },
+    { id: 5, emoji: '🛏️', icon: 'bed', name: 'Make your bed', pts: 10, isDaily: true, color: '#8E7DEF' },
+    { id: 6, emoji: '🏃', icon: 'personRunning', name: '30 minutes of outdoor activity', pts: 15, isDaily: true, color: '#6FCF97' },
+    { id: 7, emoji: '✌️', icon: 'handPeace', name: 'Kind to family members', pts: 10, isDaily: true, color: '#84A59D' },
+    { id: 8, emoji: '📐', icon: 'calculator', name: 'Homework done without reminders', pts: 15, isDaily: true, color: '#D86FB0' },
+    // Bonus (repeatable, resets daily; negative pts = deduction) — penalties get warm/warning accents
+    { id: 9, emoji: '📚', icon: 'bookOpen', name: 'Extra reading time', pts: 15, isDaily: false, color: '#6FCF97' },
+    { id: 10, emoji: '📵', icon: 'gamepad', name: 'Stopped screen time the first time asked', pts: 20, isDaily: false, color: '#3D9BB5' },
+    { id: 11, emoji: '💚', icon: 'heart', name: 'Handled a frustrating moment calmly', pts: 10, isDaily: false, color: '#84A59D' },
+    { id: 12, emoji: '🤝', icon: 'thumbsUp', name: 'Helped someone without being asked', pts: 15, isDaily: false, color: '#8E7DEF' },
+    { id: 13, emoji: '🤬', icon: 'commentSlash', name: 'Swear jar', pts: -10, isDaily: false, color: '#E07A5F' },
+    { id: 14, emoji: '😡', icon: 'faceAngry', name: 'Sore loser or rage quitting', pts: -15, isDaily: false, color: '#F28482' },
+    { id: 15, emoji: '🍟', icon: 'cookieBite', name: 'Junk food as a "meal"', pts: -20, isDaily: false, color: '#FF8C42' },
   ],
   rewards: [
     { id: 1, emoji: '🎮', icon: 'gamepad', name: '30 extra minutes of screen time', cost: 40 },
@@ -290,11 +290,15 @@ function asNumberArray(v: unknown): number[] {
 
 function sanitizeGoals(v: unknown): Goal[] {
   const cleaned = Array.isArray(v)
-    ? v.filter(
-        (g): g is Goal =>
-          !!g && typeof g === 'object' && typeof (g as Goal).id === 'number' &&
-          typeof (g as Goal).name === 'string' && typeof (g as Goal).pts === 'number',
-      )
+    ? v
+        .filter(
+          (g): g is Goal =>
+            !!g && typeof g === 'object' && typeof (g as Goal).id === 'number' &&
+            typeof (g as Goal).name === 'string' && typeof (g as Goal).pts === 'number',
+        )
+        // `color` feeds an inline style background on the kid rows, so coerce a non-string
+        // value (malformed/old payload) to undefined rather than letting it through.
+        .map((g) => (typeof g.color === 'string' ? g : { ...g, color: undefined }))
     : [];
   return cleaned.length > 0 ? cleaned : JSON.parse(JSON.stringify(defaultState.goals));
 }

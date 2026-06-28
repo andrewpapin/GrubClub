@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  applyDayRollover, backfillStreaksFromLogs, cloneDefaultState, hydrateState, saveRoot, saveState, todayStr,
+  applyDayRollover, backfillStreaksFromLogs, cloneDefaultState, hydrateState, mirrorSharedFields, saveRoot, saveState, todayStr,
 } from './defaultState';
 import { DEFAULT_TIMEZONE } from '../data/timezones';
 import type { Goal, GravyRoot, GravyState } from './types';
@@ -320,6 +320,39 @@ describe('timezone hydration/sanitization', () => {
     const settings = state.settings as Record<string, unknown>;
     delete settings.timezone;
     expect(hydrateState(state).settings.timezone).toBe(DEFAULT_TIMEZONE);
+  });
+});
+
+describe('goal color (per-item accent)', () => {
+  it('preserves a valid string color through hydration', () => {
+    const raw = { ...cloneDefaultState(), goals: [{ id: 1, emoji: '📖', name: 'Read', pts: 10, isDaily: true, color: '#5B8DEF' }] };
+    expect(hydrateState(raw).goals[0].color).toBe('#5B8DEF');
+  });
+
+  it('strips a non-string color but keeps the goal otherwise intact', () => {
+    const raw = { ...cloneDefaultState(), goals: [{ id: 1, emoji: '📖', name: 'Read', pts: 10, isDaily: true, color: 123 }] };
+    const g = hydrateState(raw).goals[0];
+    expect(g.color).toBeUndefined();
+    expect(g.name).toBe('Read');
+    expect(g.pts).toBe(10);
+  });
+
+  it('tolerates a legacy goal with no color (no backfill)', () => {
+    const raw = { ...cloneDefaultState(), goals: [{ id: 1, emoji: '📖', name: 'Read', pts: 10, isDaily: true }] };
+    expect(hydrateState(raw).goals[0].color).toBeUndefined();
+  });
+
+  it('mirrors a goal color from the active profile to the others', () => {
+    const a = freshState();
+    a.goals = [{ id: 1, emoji: '📖', name: 'Read', pts: 10, isDaily: true, color: '#D86FB0' }];
+    const b = freshState();
+    const root: GravyRoot = {
+      version: 2,
+      activeProfileId: 'pa',
+      profiles: [{ id: 'pa', state: a }, { id: 'pb', state: b }],
+    };
+    mirrorSharedFields(root);
+    expect(root.profiles[1].state.goals[0].color).toBe('#D86FB0');
   });
 });
 

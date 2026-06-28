@@ -1,10 +1,12 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMoon } from '@fortawesome/free-solid-svg-icons';
-import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 import { getDayLog } from '../state/dayLog';
 import { todayStr } from '../state/defaultState';
+import { DEFAULT_GOAL_COLOR } from '../data/colors';
 import { triggerHaptic } from '../lib/haptics';
+import { CollapsibleSection } from './CollapsibleSection';
+import { HomeRow } from './HomeRow';
 
 interface BonusPointsProps {
   dateStr?: string;
@@ -22,14 +24,15 @@ export function BonusPoints({ dateStr, editable = true }: BonusPointsProps = {})
   const allLogged = bonusItems.length > 0 && loggedCount === bonusItems.length;
 
   return (
-    <div className="card">
-      <div className="flex-between" style={{ marginBottom: 12 }}>
-        <div className="goal-card-title">Bonus Points</div>
-        {bonusItems.length > 0 && (
+    <CollapsibleSection
+      title="Bonus Points"
+      storageKey="bonus"
+      headerRight={
+        bonusItems.length > 0 ? (
           <div className={`goal-progress-badge ${allLogged ? 'done' : ''}`}>{loggedCount}/{bonusItems.length} logged</div>
-        )}
-      </div>
-
+        ) : undefined
+      }
+    >
       {bonusItems.length === 0 ? (
         <div className="empty-state">
           <span className="empty-state-emoji"><FontAwesomeIcon icon={faMoon} /></span>
@@ -40,46 +43,48 @@ export function BonusPoints({ dateStr, editable = true }: BonusPointsProps = {})
           </div>
         </div>
       ) : (
-        <div className="goal-grid">
+        <div className="gravy-row-list">
           {bonusItems.map((g) => {
             const count = goalCounts[g.id] || 0;
+            const color = g.color || DEFAULT_GOAL_COLOR;
             return (
-              <div key={g.id} className="goal-tile">
-                <div className="goal-tile-top">
-                  <AppIcon iconKey={g.icon} emojiFallback={g.emoji} className="goal-tile-emoji" />
-                  <span className={`pts-badge ${g.pts < 0 ? 'negative' : ''}`}>
-                    {g.pts < 0 ? '−' : '+'}{Math.abs(g.pts)}
-                  </span>
-                </div>
-                <div className="goal-tile-name">{g.name}</div>
-                <div className="goal-stepper">
-                  <button
-                    type="button"
-                    className="stepper-btn"
-                    onClick={() => {
-                      triggerHaptic();
-                      if (isToday) undoBonusItem(g.id); else undoBonusItemForDay(day, g.id);
-                    }}
-                    disabled={!editable || count === 0}
-                    aria-label={`Undo ${g.name}`}
-                  >−</button>
-                  <span className="stepper-count">{count}</span>
-                  <button
-                    type="button"
-                    className="stepper-btn"
-                    onClick={() => {
-                      triggerHaptic();
-                      if (isToday) logBonusItem(g.id); else logBonusItemForDay(day, g.id);
-                    }}
-                    disabled={!editable}
-                    aria-label={`Log ${g.name}`}
-                  >+</button>
-                </div>
-              </div>
+              <HomeRow
+                key={g.id}
+                color={color}
+                iconKey={g.icon}
+                emoji={g.emoji}
+                title={g.name}
+                sub={`${g.pts < 0 ? '−' : '+'}${Math.abs(g.pts)}`}
+                trailing={
+                  <div className="goal-stepper">
+                    <button
+                      type="button"
+                      className="stepper-btn"
+                      onClick={() => {
+                        triggerHaptic();
+                        if (isToday) undoBonusItem(g.id); else undoBonusItemForDay(day, g.id);
+                      }}
+                      disabled={!editable || count === 0}
+                      aria-label={`Undo ${g.name}`}
+                    >−</button>
+                    <span className="stepper-count">{count}</span>
+                    <button
+                      type="button"
+                      className="stepper-btn"
+                      onClick={() => {
+                        triggerHaptic();
+                        if (isToday) logBonusItem(g.id); else logBonusItemForDay(day, g.id);
+                      }}
+                      disabled={!editable}
+                      aria-label={`Log ${g.name}`}
+                    >+</button>
+                  </div>
+                }
+              />
             );
           })}
         </div>
       )}
-    </div>
+    </CollapsibleSection>
   );
 }

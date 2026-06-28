@@ -6,8 +6,9 @@ import type { Theme } from '../state/types';
 import { AppIcon } from './AppIcon';
 import { Modal } from './Modal';
 import { IconPicker } from './IconPicker';
-import { ColorPicker, type ColorOption } from './ColorPicker';
+import { ColorPicker } from './ColorPicker';
 import { AVATAR_ICONS } from '../data/icons';
+import { AVATAR_COLORS } from '../data/colors';
 
 const THEME_OPTIONS: { id: Theme; label: string }[] = [
   { id: 'classic', label: 'Classic' },
@@ -15,21 +16,6 @@ const THEME_OPTIONS: { id: Theme; label: string }[] = [
   { id: 'ocean', label: 'Ocean' },
   { id: 'bubblegum', label: 'Bubblegum' },
   { id: 'cyberpunk', label: 'Cyberpunk' },
-];
-
-const AVATAR_COLORS: ColorOption[] = [
-  { hex: '#2F3E46', label: 'Charcoal' },
-  { hex: '#FFFFFF', label: 'White' },
-  { hex: '#F28482', label: 'Coral' },
-  { hex: '#F6BD60', label: 'Yellow' },
-  { hex: '#84A59D', label: 'Sage' },
-  { hex: '#D4AF37', label: 'Gold' },
-  { hex: '#8EC5F6', label: 'Sky blue' },
-  { hex: '#B388EB', label: 'Lavender' },
-  { hex: '#F4A6C6', label: 'Pink' },
-  { hex: '#FF8C42', label: 'Orange' },
-  { hex: '#6FCF97', label: 'Green' },
-  { hex: '#161B1F', label: 'Black' },
 ];
 
 interface ProfilesManagerProps {

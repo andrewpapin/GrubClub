@@ -1,11 +1,11 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faStar, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faStar } from '@fortawesome/free-solid-svg-icons';
 import { FOODS } from '../data/foods';
-import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 import { getDayLog } from '../state/dayLog';
 import { todayStr } from '../state/defaultState';
-import { triggerHaptic } from '../lib/haptics';
+import { CollapsibleSection } from './CollapsibleSection';
+import { HomeRow } from './HomeRow';
 
 interface FoodTrayProps {
   dateStr?: string;
@@ -22,48 +22,42 @@ export function FoodTray({ dateStr, editable = true }: FoodTrayProps = {}) {
   const allEaten = eatenCount === FOODS.length;
 
   return (
-    <div className="card">
-      <div className="flex-between" style={{ marginBottom: 12 }}>
-        <div className="goal-card-title">Food Goals</div>
+    <CollapsibleSection
+      title="Food Goals"
+      storageKey="food"
+      headerRight={
         <div className={`goal-progress-badge ${allEaten ? 'done' : ''}`}>{eatenCount}/{FOODS.length} done</div>
-      </div>
+      }
+    >
       {allEaten && (
-        <div className="tray-progress-bonus" style={{ marginBottom: 12 }}>
+        <div className="tray-progress-bonus" style={{ marginBottom: 10 }}>
           <FontAwesomeIcon icon={faStar} aria-hidden="true" /> Full Tray Bonus!
         </div>
       )}
 
-      <div className="tray-grid">
+      <div className="gravy-row-list">
         {FOODS.map((f) => {
-          const count = foodCounts[f.id] || 0;
-          const logged = count > 0;
+          const logged = (foodCounts[f.id] || 0) > 0;
           return (
-            <button
+            <HomeRow
               key={f.id}
-              type="button"
-              className={`food-tile ${logged ? 'checked' : ''}`}
-              disabled={!editable}
-              onClick={() => {
-                triggerHaptic();
-                if (isToday) {
-                  if (logged) removeFood(f.id); else logFood(f.id);
-                } else {
-                  if (logged) removeFoodForDay(day, f.id); else logFoodForDay(day, f.id);
-                }
+              color={f.color}
+              iconKey={f.icon}
+              emoji={f.emoji}
+              title={f.label}
+              complete={{
+                editable,
+                done: logged,
+                onComplete: () => (isToday ? logFood(f.id) : logFoodForDay(day, f.id)),
+                onUndo: () => (isToday ? removeFood(f.id) : removeFoodForDay(day, f.id)),
+                ariaLabel: editable
+                  ? (logged ? `${f.label}, logged. Tap to undo.` : `${f.label}. Tap to log.`)
+                  : `${f.label}${logged ? ', logged' : ', not logged'}`,
               }}
-              aria-label={editable ? (logged ? `${f.label}, logged. Tap to undo.` : `${f.label}. Tap to log.`) : `${f.label}${logged ? ', logged' : ', not logged'}`}
-            >
-              {logged && (
-                <span className="tile-check-badge" aria-hidden="true">
-                  <FontAwesomeIcon icon={faCheck} />
-                </span>
-              )}
-              <AppIcon iconKey={f.icon} emojiFallback={f.emoji} className="food-emoji" />
-              <div className="food-label" aria-hidden="true">{f.label}</div>
-            </button>
+            />
           );
         })}
       </div>
-    </div>
+    </CollapsibleSection>
   );
 }

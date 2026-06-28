@@ -9,6 +9,9 @@ export interface Goal {
   // `pts` may be negative (deduction). `target` is unused for Bonus items.
   isDaily?: boolean;
   target?: number;  // how many times to complete (Daily goals only; default 1)
+  // hex accent for the kid-facing full-width row. Optional/additive like `icon` — never
+  // backfilled; rows resolve DEFAULT_GOAL_COLOR (data/colors.ts) at render time when unset.
+  color?: string;
 }
 
 export interface Reward {

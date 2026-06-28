@@ -1,10 +1,12 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMoon, faCheck } from '@fortawesome/free-solid-svg-icons';
-import { AppIcon } from './AppIcon';
+import { faMoon } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 import { getDayLog } from '../state/dayLog';
 import { todayStr } from '../state/defaultState';
+import { DEFAULT_GOAL_COLOR } from '../data/colors';
 import { triggerHaptic } from '../lib/haptics';
+import { CollapsibleSection } from './CollapsibleSection';
+import { HomeRow } from './HomeRow';
 
 interface DailyGoalsProps {
   dateStr?: string;
@@ -25,14 +27,15 @@ export function DailyGoals({ dateStr, editable = true }: DailyGoalsProps = {}) {
   const allDone = dailyGoals.length > 0 && completedGoals === dailyGoals.length;
 
   return (
-    <div className="card">
-      <div className="flex-between" style={{ marginBottom: 12 }}>
-        <div className="goal-card-title">Daily Goals</div>
-        {dailyGoals.length > 0 && (
+    <CollapsibleSection
+      title="Daily Goals"
+      storageKey="daily"
+      headerRight={
+        dailyGoals.length > 0 ? (
           <div className={`goal-progress-badge ${allDone ? 'done' : ''}`}>{completedGoals}/{dailyGoals.length} done</div>
-        )}
-      </div>
-
+        ) : undefined
+      }
+    >
       {dailyGoals.length === 0 ? (
         <div className="empty-state">
           <span className="empty-state-emoji"><FontAwesomeIcon icon={faMoon} /></span>
@@ -43,77 +46,68 @@ export function DailyGoals({ dateStr, editable = true }: DailyGoalsProps = {}) {
           </div>
         </div>
       ) : (
-        <div className="goal-grid">
+        <div className="gravy-row-list">
           {dailyGoals.map((g) => {
             const target = g.target || 1;
             const count = goalCounts[g.id] || 0;
             const done = isDone(g.id, target);
+            const color = g.color || DEFAULT_GOAL_COLOR;
 
+            // Multi-step goals (today only) keep a +/− stepper instead of swipe/check.
             if (isToday && target > 1) {
               return (
-                <div key={g.id} className={`goal-tile ${done ? 'checked' : ''}`}>
-                  {done && (
-                    <span className="tile-check-badge" aria-hidden="true">
-                      <FontAwesomeIcon icon={faCheck} />
-                    </span>
-                  )}
-                  <div className="goal-tile-top">
-                    <AppIcon iconKey={g.icon} emojiFallback={g.emoji} className="goal-tile-emoji" />
-                    <span className="pts-badge">+{g.pts}</span>
-                  </div>
-                  <div className="goal-tile-name">{g.name}</div>
-                  <div className="goal-stepper">
-                    <button
-                      type="button"
-                      className="stepper-btn"
-                      onClick={() => { triggerHaptic(); decrementGoal(g.id); }}
-                      disabled={count === 0}
-                      aria-label={`Undo ${g.name}`}
-                    >−</button>
-                    <span className="stepper-count">{count}/{target}</span>
-                    <button
-                      type="button"
-                      className="stepper-btn"
-                      onClick={() => { triggerHaptic(); incrementGoal(g.id); }}
-                      aria-label={`Complete ${g.name}`}
-                    >+</button>
-                  </div>
-                </div>
+                <HomeRow
+                  key={g.id}
+                  color={color}
+                  iconKey={g.icon}
+                  emoji={g.emoji}
+                  title={g.name}
+                  sub={`+${g.pts}`}
+                  done={done}
+                  trailing={
+                    <div className="goal-stepper">
+                      <button
+                        type="button"
+                        className="stepper-btn"
+                        onClick={() => { triggerHaptic(); decrementGoal(g.id); }}
+                        disabled={count === 0}
+                        aria-label={`Undo ${g.name}`}
+                      >−</button>
+                      <span className="stepper-count">{count}/{target}</span>
+                      <button
+                        type="button"
+                        className="stepper-btn"
+                        onClick={() => { triggerHaptic(); incrementGoal(g.id); }}
+                        aria-label={`Complete ${g.name}`}
+                      >+</button>
+                    </div>
+                  }
+                />
               );
             }
 
             return (
-              <button
+              <HomeRow
                 key={g.id}
-                type="button"
-                className={`goal-tile ${done ? 'checked' : ''}`}
-                disabled={!editable}
-                onClick={() => {
-                  triggerHaptic();
-                  if (isToday) {
-                    if (count > 0) decrementGoal(g.id); else incrementGoal(g.id);
-                  } else {
-                    toggleGoalForDay(day, g.id);
-                  }
+                color={color}
+                iconKey={g.icon}
+                emoji={g.emoji}
+                title={g.name}
+                sub={`+${g.pts}`}
+                complete={{
+                  editable,
+                  done,
+                  onComplete: () => (isToday ? incrementGoal(g.id) : toggleGoalForDay(day, g.id)),
+                  onUndo: () => (isToday ? decrementGoal(g.id) : toggleGoalForDay(day, g.id)),
+                  ariaLabel: editable
+                    ? (done ? `${g.name}, done. Tap to undo.` : `${g.name}. Tap to complete.`)
+                    : `${g.name}${done ? ', done' : ', not done'}`,
                 }}
-                aria-pressed={done}
-                aria-label={editable ? (done ? `${g.name}, done. Tap to undo.` : `${g.name}. Tap to complete.`) : `${g.name}${done ? ', done' : ', not done'}`}
-              >
-                {done && (
-                  <span className="tile-check-badge" aria-hidden="true">
-                    <FontAwesomeIcon icon={faCheck} />
-                  </span>
-                )}
-                <div className="goal-tile-top">
-                  <AppIcon iconKey={g.icon} emojiFallback={g.emoji} className="goal-tile-emoji" />
-                  <span className="pts-badge">+{g.pts}</span>
-                </div>
-                <div className="goal-tile-name">{g.name}</div>
-              </button>
+              />
             );
           })}
         </div>
       )}
-    </div>
+    </CollapsibleSection>
   );
 }
