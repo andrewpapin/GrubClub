@@ -1,0 +1,142 @@
+import { useEffect, useRef, useState, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
+import type { GravyRoot, GravyState, ProfileEntry } from './types';
+import { hydrateState, mirrorSharedFields } from './defaultState';
+import type { LogActor } from './actionLog';
+import { pushHouseholdState, subscribeToHousehold } from './sync';
+import { safeGetItem } from './storage';
+import {
+  type AuthUser,
+  type HouseholdStatus,
+  getHouseholdStatus,
+  onAuthChange,
+} from './auth';
+import { HOUSEHOLD_CODE_KEY, activeStateOf, buildMergedRoot } from './actions/shared';
+import type { SyncStatus } from './actions/types';
+
+export interface HouseholdSyncDeps {
+  root: GravyRoot;
+  state: GravyState;
+  setRoot: Dispatch<SetStateAction<GravyRoot>>;
+  setState: Dispatch<SetStateAction<GravyState>>;
+}
+
+export interface HouseholdSyncValue {
+  householdCode: string | null;
+  setHouseholdCode: Dispatch<SetStateAction<string | null>>;
+  syncStatus: SyncStatus;
+  setSyncStatus: Dispatch<SetStateAction<SyncStatus>>;
+  authUser: AuthUser | null;
+  authReady: boolean;
+  householdStatus: HouseholdStatus | null;
+  setHouseholdStatus: Dispatch<SetStateAction<HouseholdStatus | null>>;
+  // Last root JSON we pushed to / received from Supabase, so the outgoing-push effect can skip
+  // echoing a snapshot the realtime subscription just handed us.
+  lastSyncedRef: MutableRefObject<string | null>;
+  // Stamped with the signed-in parent account by the auth effect below; read synchronously by the
+  // audit-log helpers in the action hooks so every entry records who performed it (Epic 8 item 5/6).
+  actorRef: MutableRefObject<LogActor | undefined>;
+}
+
+// Owns the cloud-sync + parent-account reactive layer: the household code / sync status / auth /
+// ownership-status state and the four effects that wire Supabase realtime (push/subscribe), auth
+// tracking, and ownership-status refresh. Extracted from GravyContext so the provider keeps only its
+// local concerns (toasts/celebration/theme/rollover/persist) and this sync engine reads on its own.
+// The imperative create/join/leave/claim actions live in `./actions/useHouseholdActions.ts`; this
+// hook is the reactive half they share state with via the setters/refs returned here.
+export function useHouseholdSync({ root, state, setRoot, setState }: HouseholdSyncDeps): HouseholdSyncValue {
+  const [householdCode, setHouseholdCode] = useState<string | null>(() =>
+    safeGetItem(HOUSEHOLD_CODE_KEY),
+  );
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  // Parent account (Epic 8). Independent of the kid-screen PIN/grownUpUnlocked lock in GravyContext —
+  // signing in identifies a parent for household ownership, the PIN keeps a kid out of the
+  // dashboard on a shared device. authReady gates UI until the initial session check resolves.
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authReady, setAuthReady] = useState(false);
+  const [householdStatus, setHouseholdStatus] = useState<HouseholdStatus | null>(null);
+  const lastSyncedRef = useRef<string | null>(null);
+  const actorRef = useRef<LogActor | undefined>(undefined);
+
+  // Track the signed-in parent account. Fires once on mount with the current session (or null)
+  // and again on every sign-in/out.
+  useEffect(() => {
+    const unsub = onAuthChange((user) => {
+      setAuthUser(user);
+      setAuthReady(true);
+      actorRef.current = user ? { userId: user.id, label: user.email ?? undefined } : undefined;
+    });
+    return unsub;
+  }, []);
+
+  // Refresh whether the current household is claimed whenever the code or the signed-in account
+  // changes — drives the "secure this household" prompt. Failures (offline) leave status null.
+  useEffect(() => {
+    if (!householdCode) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHouseholdStatus(null);
+      return;
+    }
+    let cancelled = false;
+    getHouseholdStatus(householdCode)
+      .then((s) => { if (!cancelled) setHouseholdStatus(s); })
+      .catch(() => { if (!cancelled) setHouseholdStatus(null); });
+    return () => { cancelled = true; };
+  }, [householdCode, authUser]);
+
+  // Push local changes to Supabase when in a synced household. The whole root (all profiles +
+  // shared config) is the synced payload, so every device shares every kid.
+  useEffect(() => {
+    if (!householdCode) return;
+    const merged = buildMergedRoot(root, state);
+    const json = JSON.stringify(merged);
+    if (json === lastSyncedRef.current) return;
+    setSyncStatus('syncing');
+    const timeout = setTimeout(() => {
+      pushHouseholdState(householdCode, merged)
+        .then(() => {
+          lastSyncedRef.current = json;
+          setSyncStatus('idle');
+        })
+        .catch(() => setSyncStatus('error'));
+    }, 800);
+    return () => clearTimeout(timeout);
+  }, [state, root, householdCode]);
+
+  // Receive remote changes from other devices in the household
+  useEffect(() => {
+    if (!householdCode) return;
+    return subscribeToHousehold(householdCode, (remoteRoot) => {
+      try {
+        const incomingJson = JSON.stringify(remoteRoot);
+        if (incomingJson === lastSyncedRef.current) return;
+        const profiles: ProfileEntry[] = (remoteRoot.profiles || [])
+          .filter((p) => p && p.state)
+          .map((p) => ({ id: p.id, state: hydrateState(p.state) }));
+        if (profiles.length === 0) return;
+        const finalRoot: GravyRoot = {
+          version: 2,
+          activeProfileId: profiles.some((p) => p.id === remoteRoot.activeProfileId)
+            ? remoteRoot.activeProfileId
+            : profiles[0].id,
+          profiles,
+        };
+        mirrorSharedFields(finalRoot);
+        // Record the snapshot we're actually storing (post migration + rollover) so the
+        // outgoing-push effect treats it as already-synced and doesn't echo it straight back.
+        lastSyncedRef.current = JSON.stringify(finalRoot);
+        setRoot(finalRoot);
+        setState(activeStateOf(finalRoot));
+      } catch {
+        // Ignore malformed realtime payloads rather than crashing the whole app.
+      }
+    });
+  }, [householdCode, setRoot, setState]);
+
+  return {
+    householdCode, setHouseholdCode,
+    syncStatus, setSyncStatus,
+    authUser, authReady,
+    householdStatus, setHouseholdStatus,
+    lastSyncedRef, actorRef,
+  };
+}
