@@ -379,9 +379,17 @@ wrapper and not a React Native rewrite — gets real native capability access (A
 biometrics, camera, widgets, legitimate store-review posture) with near-zero rewrite of
 `src/`, versus a rewrite of all 40+ components in `src/components/` for React Native.)*
 
-- **Packaging spike: Capacitor wrap of the existing Vite/React build.** Wraps `dist/` in a
-  thin native shell with no rewrite of `src/`. *(P1, M for the initial wrap/spike; L total
-  once signing and store-review items below are included.)*
+- ~~**Packaging spike: Capacitor wrap of the existing Vite/React build.**~~ — **DONE
+  (Android scaffolded; iOS pending macOS).** `@capacitor/core`/`cli`/`android` installed;
+  `capacitor.config.ts` (`appId: com.gravy.app`, `webDir: dist`) points the shell at the web
+  build; the `android/` project is scaffolded and committed, and `cap sync` copies `dist/`
+  into it (verified end-to-end up to the Gradle compile, which needs the Android SDK not
+  present in CI). A native build mode (`CAPACITOR_BUILD=true`, `vite.config.ts`) gives native
+  builds a relative base and no PWA service worker — the web build that broke the shell
+  otherwise; see `CAPACITOR.md`. **Still open:** building an actual APK (needs Android
+  Studio/SDK), adding the iOS platform (needs macOS), and wiring native plugins — all the
+  items below. *(P1, M for the initial wrap/spike; L total once signing and store-review items
+  below are included.)*
 - **Native push notifications (APNs/FCM).** Distinct implementation from the existing
   web-push item in Epic 5 (see annotation there) — native transport only available once
   wrapped. *(P1, M, once wrapped.)*
@@ -444,4 +452,8 @@ prioritized from what's actually still open:
    distribution path (Epic 10), skip the web-push (Notifications API)
    implementation here — iOS PWA web push is limited and would be partly
    throwaway. Go straight to native push (APNs/FCM) as Epic 10's distinct
-   P1/M item once the Capacitor wrap ships instead.
+   P1/M item once the Capacitor wrap ships instead. **Progress:** Epic 10's
+   Capacitor packaging spike has now landed (Android scaffolded + `cap sync`
+   verified; see Epic 10 and `CAPACITOR.md`). Native push is unblocked at the
+   wrap level but still needs a buildable app first (Android SDK / a macOS
+   machine for iOS) before APNs/FCM can be wired.
