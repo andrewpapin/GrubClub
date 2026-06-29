@@ -90,6 +90,11 @@ GitHub Actions (`.github/workflows/deploy.yml`) builds and deploys to GitHub Pag
 `main`. The Vite `base` is `/Gravy/`. The checkout step uses `fetch-depth: 0` (full history) so the
 version computation below has commit messages to search.
 
+The Capacitor native wrap (Epic 10 spike) reuses this same build but needs a **root-relative**
+base, since a native WebView serves `dist/` from `/` rather than the Pages sub-path. `npm run
+build:native` (`vite build --mode capacitor`) selects `base: '/'`; see `docs/capacitor.md` for the
+full native build/sync workflow.
+
 ## Version Display
 
 `vite.config.ts` computes a version string at build time and injects it via the `__APP_VERSION__`

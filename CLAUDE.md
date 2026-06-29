@@ -90,5 +90,8 @@ Deep detail lives in `docs/`. Read the linked file when working in that area.
   `AppIcon`); Theming (`Settings.theme`, `src/index.css`); Time zone (`Settings.timezone`,
   `todayStr`, `src/data/timezones.ts`); Deployment (`deploy.yml`); Version display
   (`__APP_VERSION__`); PWA update (`UpdatePrompt.tsx`, `vite-plugin-pwa`).
+- **Native wrap** (`docs/capacitor.md`) — Capacitor packaging spike (Epic 10): `capacitor.config.ts`,
+  the `--mode capacitor` root-relative build (`npm run build:native`/`cap:sync`), and why
+  `ios/`/`android/` are gitignored. Read before touching the native build path.
 
 See also `DATA_HANDLING.md` for what's collected/stored/deletable (COPPA notes).
