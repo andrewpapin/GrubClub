@@ -134,9 +134,6 @@ wrapper and not a React Native rewrite — gets real native capability access (A
 biometrics, camera, widgets, legitimate store-review posture) with near-zero rewrite of
 `src/`, versus a rewrite of all 40+ components in `src/components/` for React Native.)*
 
-- **Packaging spike: Capacitor wrap of the existing Vite/React build.** Wraps `dist/` in a
-  thin native shell with no rewrite of `src/`. *(P1, M for the initial wrap/spike; L total
-  once signing and store-review items below are included.)*
 - **Native push notifications (APNs/FCM).** Distinct implementation from the existing
   web-push item in Epic 5 (see annotation there) — native transport only available once
   wrapped. *(P1, M, once wrapped.)*
@@ -211,19 +208,18 @@ opinionated changes that need a mockup before committing.
 The original top-5 (PIN/recovery hashing, the PR #92 decision, the lint gate,
 Vitest, and Supabase access control) is fully done, as is the second wave
 (data-handling note, error hardening, accessibility pass, points economy) — all
-in `BACKLOG_DONE.md`. The current open priorities:
+in `BACKLOG_DONE.md`. The **Capacitor wrap spike** (formerly #2) is now also done
+(see `BACKLOG_DONE.md` Epic 10; `docs/capacitor.md`), which unblocks native push.
+The current open priorities:
 
 1. **Ship push notifications** (Epic 5/10, P1) — the single biggest retention
    lever. Skip the web-push (Notifications API) path: with a Capacitor-wrapped
    iOS app the planned distribution route, iOS PWA web push is limited and would
    be partly throwaway. Go straight to native push (APNs/FCM) as Epic 10's
-   distinct item, sequenced right after the Capacitor wrap spike below.
-2. **Capacitor wrap spike** (Epic 10, P1/M) — the gate for native push,
-   biometrics, and store distribution; near-zero `src/` rewrite, so it unblocks
-   the most downstream work for the least cost.
-3. **Collection/record-level sync merge** (Epic 9, P1/L) — replace whole-blob
+   distinct item — now unblocked by the completed wrap spike.
+2. **Collection/record-level sync merge** (Epic 9, P1/L) — replace whole-blob
    last-write-wins before multi-device-per-account becomes the normal case.
-4. **Offline write queue with replay** (Epic 9, P1/M) — pairs with the merge
+3. **Offline write queue with replay** (Epic 9, P1/M) — pairs with the merge
    item so a kid can check off chores with no signal and have it land later.
-5. **COPPA review of the signup flow** (Epic 9, P0 once real-account rollout is
+4. **COPPA review of the signup flow** (Epic 9, P0 once real-account rollout is
    scheduled) — must land before real accounts ship to users.

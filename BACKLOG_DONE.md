@@ -113,3 +113,13 @@ work lives in `BACKLOG.md`.
 - **Decision (don't silently revisit):** kid profiles stay non-authenticated
   sub-records under a parent-owned household, switched via the PIN-gated
   `ProfileSwitcher` — no kid email/password/OAuth, avoiding COPPA exposure.
+
+## Epic 10 — Mobile App & Native Capacities
+
+- **Capacitor wrap spike** — `@capacitor/{core,cli,ios,android}` added, `capacitor.config.ts`
+  (`appId com.gravyapp.app`, `webDir dist`); `npm run build:native`/`cap:sync` build with
+  `--mode capacitor` to force a root-relative Vite `base` (a `/Gravy/` base white-screens the
+  native WebView). iOS (SPM) + Android (Gradle) platforms verified to scaffold and `cap sync`
+  cleanly; `ios/`/`android/` left gitignored (regenerable) until the shells carry real
+  customizations. `docs/capacitor.md`. Remaining Epic 10 items (native push, signing, store
+  config, CI, OTA) stay open in `BACKLOG.md`.

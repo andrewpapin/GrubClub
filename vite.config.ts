@@ -18,8 +18,13 @@ function getAppVersion(): string {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/Gravy/' : '/',
+export default defineConfig(({ command, mode }) => ({
+  // GitHub Pages serves the app from the `/Gravy/` sub-path, but a Capacitor
+  // native WebView serves the bundled `dist/` from the root of a custom scheme
+  // (capacitor://localhost / https://localhost), so a `/Gravy/` base would 404
+  // every asset. `npm run build:native` passes `--mode capacitor` to force a
+  // root-relative base; the plain `dev`/`build` paths are unchanged.
+  base: mode === 'capacitor' ? '/' : command === 'build' ? '/Gravy/' : '/',
   define: {
     __APP_VERSION__: JSON.stringify(getAppVersion()),
   },
