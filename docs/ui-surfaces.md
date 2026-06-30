@@ -20,13 +20,21 @@ Tapping the hamburger icon in `TopBar` always opens **`AccountMenu`**, whether l
 it's a single "open the menu" button, not a lock/unlock toggle, so closing the menu (e.g. after
 using an item) and tapping the icon again reopens the menu rather than re-locking. `AccountMenu` is
 styled like every other drawer (the shared `Modal` bottom-sheet — header with title + close button,
-scrollable body). Its content is derived directly from `grownUpUnlocked` rather than a separate
-stage: while locked, the drawer's body renders `PinScreen` immediately (no intermediate "tap to
-unlock" row); on a correct PIN, `onSuccess` calls `unlockGrownUpAccess()` and the same drawer
-re-renders as the full menu, with every item always enabled (there's nothing to disable — the menu
-only ever exists once unlocked):
+scrollable body), plus a round lock button passed via `Modal`'s `headerExtra` prop, rendered
+immediately to the left of the close (X) button. The lock button reflects `grownUpUnlocked`
+(closed-lock glyph + neutral background when locked, open-lock glyph + yellow background when
+unlocked) and is the only lock/unlock control — there's no separate "Lock" list item. The item list
+itself always renders (it's not swapped out for `PinScreen`): each item button gets `disabled` and a
+greyed-out/desaturated style whenever `grownUpUnlocked` is false, so the menu's shape is visible but
+inert while locked. Tapping the lock button when locked swaps the body (title becomes "Grown-Up
+Access", and a back-chevron appears via `Modal`'s `onBack`) to render `PinScreen` inline; on a
+correct PIN, `onSuccess` calls `unlockGrownUpAccess()` and the body reverts to the now-enabled item
+list. Tapping the lock button when unlocked calls `lockGrownUpAccess()` directly (no PIN re-entry to
+lock) and the menu stays open with items now greyed/disabled — re-locking doesn't close the drawer.
+A `pinPromptOpen` flag tracks whether the inline `PinScreen` is showing; it resets to `false`
+whenever the drawer transitions from closed to open (see the `pinNonce` note below), so the menu
+always opens to the greyed item list rather than mid-PIN-entry.
 
-- **Lock** — the only way to re-lock; calls `lockGrownUpAccess()` and closes the menu.
 - **Reward Store** — no PIN, always tappable (its entry point is on `StatsCard`, not this menu).
 - **Switch Profile** — only shown when there's more than one profile. Opens `ProfileSwitcher`, a
   read-only quick-switch list (tap → `switchProfile(id)`).

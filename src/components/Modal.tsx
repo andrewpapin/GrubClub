@@ -9,10 +9,11 @@ interface ModalProps {
   closeLabel: string;
   title: ReactNode;
   onBack?: () => void;
+  headerExtra?: ReactNode;
   children: ReactNode;
 }
 
-export function Modal({ open, onClose, closeLabel, title, onBack, children }: ModalProps) {
+export function Modal({ open, onClose, closeLabel, title, onBack, headerExtra, children }: ModalProps) {
   const sheetRef = useFocusTrap<HTMLDivElement>(open, onClose);
   return (
     <div
@@ -38,9 +39,12 @@ export function Modal({ open, onClose, closeLabel, title, onBack, children }: Mo
           ) : (
             <span className="calendar-modal-title">{title}</span>
           )}
-          <button className="calendar-modal-close" onClick={onClose} aria-label={closeLabel} type="button">
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
+          <div className="calendar-modal-header-actions">
+            {headerExtra}
+            <button className="calendar-modal-close" onClick={onClose} aria-label={closeLabel} type="button">
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          </div>
         </div>
         <div className="calendar-modal-body">
           {children}
