@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
+import { faBars } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 import { AppIcon } from './AppIcon';
 import { Greeting } from './Greeting';
@@ -36,7 +36,7 @@ export function TopBar({ dateStr, onOpenAccountMenu }: TopBarProps) {
               data-count={pendingCount}
               title={pendingCount > 0 ? `${pendingCount} request${pendingCount === 1 ? '' : 's'} waiting for approval` : undefined}
             >
-              <FontAwesomeIcon icon={grownUpUnlocked ? faLockOpen : faLock} />
+              <FontAwesomeIcon icon={faBars} />
             </span>
           </button>
         )}
