@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLockOpen, faRightLeft, faUsers, faUserShield, faGear, faClockRotateLeft, faCalendarDays } from '@fortawesome/free-solid-svg-icons';
+import { faLock, faLockOpen, faRightLeft, faUsers, faUserShield, faGear, faClockRotateLeft, faCalendarDays } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 import { Modal } from './Modal';
 import { PinScreen } from './PinScreen';
@@ -33,29 +33,42 @@ export function AccountMenu({
   // half-finished PIN attempt would otherwise linger across opens/closes.
   const [prevOpen, setPrevOpen] = useState(open);
   const [pinNonce, setPinNonce] = useState(0);
+  const [pinPromptOpen, setPinPromptOpen] = useState(false);
   if (open !== prevOpen) {
     setPrevOpen(open);
-    if (open) setPinNonce((n) => n + 1);
+    if (open) {
+      setPinNonce((n) => n + 1);
+      setPinPromptOpen(false);
+    }
   }
+
+  const locked = !grownUpUnlocked;
+  const runIfUnlocked = (action: () => void) => () => { if (!locked) action(); };
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       closeLabel="Close grown-up menu"
-      title={grownUpUnlocked ? 'Grown-Up Menu' : 'Grown-Up Access'}
+      title={pinPromptOpen ? 'Grown-Up Access' : 'Grown-Up Menu'}
+      onBack={pinPromptOpen ? () => setPinPromptOpen(false) : undefined}
+      headerExtra={
+        <button
+          type="button"
+          className={`calendar-modal-lock ${locked ? '' : 'unlocked'}`}
+          onClick={() => { if (locked) setPinPromptOpen(true); else lockGrownUpAccess(); }}
+          aria-label={locked ? 'Unlock grown-up access' : 'Lock grown-up access'}
+        >
+          <FontAwesomeIcon icon={locked ? faLock : faLockOpen} />
+        </button>
+      }
     >
-      {grownUpUnlocked ? (
+      {pinPromptOpen ? (
+        <PinScreen key={pinNonce} onSuccess={() => { unlockGrownUpAccess(); setPinPromptOpen(false); }} />
+      ) : (
         <div className="account-menu">
-          <button type="button" className="account-menu-option" onClick={() => { lockGrownUpAccess(); onClose(); }}>
-            <span className="account-menu-option-icon"><FontAwesomeIcon icon={faLockOpen} /></span>
-            <span className="account-menu-option-text">
-              <span className="account-menu-option-title">Lock</span>
-              <span className="account-menu-option-sub">Unlocked for this session — tap to lock</span>
-            </span>
-          </button>
           {profiles.length > 1 && (
-            <button type="button" className="account-menu-option" onClick={onOpenSwitchProfile}>
+            <button type="button" className="account-menu-option" disabled={locked} onClick={runIfUnlocked(onOpenSwitchProfile)}>
               <span className="account-menu-option-icon"><FontAwesomeIcon icon={faRightLeft} /></span>
               <span className="account-menu-option-text">
                 <span className="account-menu-option-title">Switch Profile</span>
@@ -63,35 +76,35 @@ export function AccountMenu({
               </span>
             </button>
           )}
-          <button type="button" className="account-menu-option" onClick={onOpenGrownUps}>
+          <button type="button" className="account-menu-option" disabled={locked} onClick={runIfUnlocked(onOpenGrownUps)}>
             <span className="account-menu-option-icon"><FontAwesomeIcon icon={faUserShield} /></span>
             <span className="account-menu-option-text">
               <span className="account-menu-option-title">Grown ups</span>
               <span className="account-menu-option-sub">Parent dashboard</span>
             </span>
           </button>
-          <button type="button" className="account-menu-option" onClick={onOpenCalendar}>
+          <button type="button" className="account-menu-option" disabled={locked} onClick={runIfUnlocked(onOpenCalendar)}>
             <span className="account-menu-option-icon"><FontAwesomeIcon icon={faCalendarDays} /></span>
             <span className="account-menu-option-text">
               <span className="account-menu-option-title">Calendar</span>
               <span className="account-menu-option-sub">View and edit past days</span>
             </span>
           </button>
-          <button type="button" className="account-menu-option" onClick={onOpenLog}>
+          <button type="button" className="account-menu-option" disabled={locked} onClick={runIfUnlocked(onOpenLog)}>
             <span className="account-menu-option-icon"><FontAwesomeIcon icon={faClockRotateLeft} /></span>
             <span className="account-menu-option-text">
               <span className="account-menu-option-title">Log</span>
               <span className="account-menu-option-sub">History of every action, including admin changes</span>
             </span>
           </button>
-          <button type="button" className="account-menu-option" onClick={onOpenProfiles}>
+          <button type="button" className="account-menu-option" disabled={locked} onClick={runIfUnlocked(onOpenProfiles)}>
             <span className="account-menu-option-icon"><FontAwesomeIcon icon={faUsers} /></span>
             <span className="account-menu-option-text">
               <span className="account-menu-option-title">Profiles</span>
               <span className="account-menu-option-sub">Manage kids</span>
             </span>
           </button>
-          <button type="button" className="account-menu-option" onClick={onOpenSettings}>
+          <button type="button" className="account-menu-option" disabled={locked} onClick={runIfUnlocked(onOpenSettings)}>
             <span className="account-menu-option-icon"><FontAwesomeIcon icon={faGear} /></span>
             <span className="account-menu-option-text">
               <span className="account-menu-option-title">Advanced Settings</span>
@@ -100,8 +113,6 @@ export function AccountMenu({
           </button>
           <div className="account-menu-version">v{APP_VERSION}</div>
         </div>
-      ) : (
-        <PinScreen key={pinNonce} onSuccess={unlockGrownUpAccess} />
       )}
     </Modal>
   );

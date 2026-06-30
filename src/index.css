@@ -1046,6 +1046,12 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
   letter-spacing: -0.5px;
   color: var(--dark);
 }
+.calendar-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
 .calendar-modal-close {
   background: var(--card);
   border: var(--border-width-lg) solid var(--dark);
@@ -1062,6 +1068,23 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
   flex-shrink: 0;
 }
 .calendar-modal-close:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--dark); }
+.calendar-modal-lock {
+  background: var(--card);
+  border: var(--border-width-lg) solid var(--dark);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 0 var(--dark);
+  flex-shrink: 0;
+}
+.calendar-modal-lock:active { transform: translate(2px,2px); box-shadow: 0 0 0 var(--dark); }
+.calendar-modal-lock.unlocked { background: var(--yellow); }
 .calendar-modal-header-titles {
   display: flex;
   align-items: center;
@@ -1847,6 +1870,12 @@ button.goal-tile.checked:disabled { transform: scale(1.03); }
 }
 .account-menu-option + .account-menu-option { margin-top: 10px; }
 .account-menu-option:active { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--dark); }
+.account-menu-option:disabled {
+  cursor: default;
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+.account-menu-option:disabled:active { transform: none; box-shadow: 3px 3px 0 var(--dark); }
 .account-menu-option-icon {
   width: 40px;
   height: 40px;
