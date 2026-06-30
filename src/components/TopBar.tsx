@@ -10,7 +10,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ dateStr, onOpenAccountMenu }: TopBarProps) {
-  const { state, grownUpUnlocked, lockGrownUpAccess } = useGravy();
+  const { state, grownUpUnlocked } = useGravy();
   const pendingCount = state.pendingRewards.length;
 
   return (
@@ -27,8 +27,8 @@ export function TopBar({ dateStr, onOpenAccountMenu }: TopBarProps) {
         {onOpenAccountMenu && (
           <button
             className="topbar-icon-btn"
-            onClick={grownUpUnlocked ? lockGrownUpAccess : onOpenAccountMenu}
-            aria-label={grownUpUnlocked ? 'Lock grown-up access' : 'Open grown-up menu'}
+            onClick={onOpenAccountMenu}
+            aria-label={grownUpUnlocked ? 'Open grown-up menu' : 'Unlock grown-up menu'}
             type="button"
           >
             <span
