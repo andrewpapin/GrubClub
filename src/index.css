@@ -447,15 +447,21 @@ button.calendar-day {
   box-shadow: var(--shadow-lg);
   border: var(--border-width-xl) solid var(--dark);
 }
+.stats-top-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: var(--border-width-xl) solid var(--dark);
+}
 .stats-coins-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   background: var(--yellow);
   border: none;
-  border-bottom: var(--border-width-xl) solid var(--dark);
+  border-right: var(--border-width-xl) solid var(--dark);
   padding: 10px 16px;
   font-family: var(--font-display);
   font-weight: 900;
@@ -500,10 +506,10 @@ button.calendar-day {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   background: var(--card);
   border: none;
-  border-top: var(--border-width-xl) solid var(--dark);
   padding: 10px 16px;
   font-family: var(--font-display);
   font-weight: 800;

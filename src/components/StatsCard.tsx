@@ -35,27 +35,35 @@ export function StatsCard({ onOpenBadges, onOpenRank, onOpenStore }: StatsCardPr
 
   return (
     <div className="stats-card">
-      <button
-        type="button"
-        className="stats-coins-bar"
-        onClick={onOpenStore}
-        aria-label={`${displayPoints} points — open Reward Store`}
-      >
-        <span className="stats-coins-bar-label">
-          <FontAwesomeIcon icon={faCoins} /> {displayPoints} Coins
-          {syncError && (
-            <span
-              className="sync-warning-icon"
-              title="Sync issue — your progress is saved here and will sync once connection is back"
-              aria-label="Sync issue — progress saved locally"
-              role="img"
-            >
-              <FontAwesomeIcon icon={faCloudArrowUp} aria-hidden="true" />
-            </span>
-          )}
-        </span>
-        <FontAwesomeIcon icon={faChevronRight} />
-      </button>
+      <div className="stats-top-row">
+        <button
+          type="button"
+          className="stats-coins-bar"
+          onClick={onOpenStore}
+          aria-label={`${displayPoints} points — open Reward Store`}
+        >
+          <span className="stats-coins-bar-label">
+            <FontAwesomeIcon icon={faCoins} /> {displayPoints} Coins
+            {syncError && (
+              <span
+                className="sync-warning-icon"
+                title="Sync issue — your progress is saved here and will sync once connection is back"
+                aria-label="Sync issue — progress saved locally"
+                role="img"
+              >
+                <FontAwesomeIcon icon={faCloudArrowUp} aria-hidden="true" />
+              </span>
+            )}
+          </span>
+          <FontAwesomeIcon icon={faChevronRight} />
+        </button>
+        <button className="stats-badges-bar" onClick={onOpenBadges} type="button">
+          <span className="stats-badges-bar-label">
+            <FontAwesomeIcon icon={faMedal} /> {earnedCount}/{totalBadgeCount} Badges
+          </span>
+          <FontAwesomeIcon icon={faChevronRight} />
+        </button>
+      </div>
       <div className="stats-rank">
         <button className="stats-rank-info-btn" onClick={onOpenRank} aria-label="View rank ladder and stats" type="button">
           <FontAwesomeIcon icon={faCircleInfo} />
@@ -80,12 +88,6 @@ export function StatsCard({ onOpenBadges, onOpenRank, onOpenStore }: StatsCardPr
           </div>
         )}
       </div>
-      <button className="stats-badges-bar" onClick={onOpenBadges} type="button">
-        <span className="stats-badges-bar-label">
-          <FontAwesomeIcon icon={faMedal} /> {earnedCount}/{totalBadgeCount} Badges
-        </span>
-        <FontAwesomeIcon icon={faChevronRight} />
-      </button>
     </div>
   );
 }
