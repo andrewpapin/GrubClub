@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFire, faMedal, faChevronRight, faCircleInfo, faCoins, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
+import { faFire, faMedal, faChevronRight, faCoins, faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { AppIcon } from './AppIcon';
 import { useGravy } from '../state/GravyContext';
 import { useTodaySnapshot } from '../state/useTodaySnapshot';
@@ -35,10 +35,7 @@ export function StatsCard({ onOpenBadges, onOpenRank, onOpenStore }: StatsCardPr
 
   return (
     <div className="stats-card">
-      <div className="stats-rank">
-        <button className="stats-rank-info-btn" onClick={onOpenRank} aria-label="View rank ladder and stats" type="button">
-          <FontAwesomeIcon icon={faCircleInfo} />
-        </button>
+      <button className="stats-rank" onClick={onOpenRank} type="button" aria-label="View rank ladder and stats">
         <div className="stats-rank-header">
           <div className="stats-rank-icon-circle">
             <AppIcon iconKey={rank.icon} emojiFallback={rank.emoji} className="stats-rank-emoji" />
@@ -52,13 +49,14 @@ export function StatsCard({ onOpenBadges, onOpenRank, onOpenStore }: StatsCardPr
               <div className="xp-bar-fill" style={{ width: `${pct}%` }} />
             </div>
           </div>
+          <FontAwesomeIcon icon={faChevronRight} />
         </div>
         {streakAtRisk && (
           <div className="streak-risk-nudge">
             <FontAwesomeIcon icon={faFire} /> Log something today to keep your streak going!
           </div>
         )}
-      </div>
+      </button>
       <div className="stats-top-row">
         <button
           type="button"
