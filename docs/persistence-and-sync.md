@@ -30,18 +30,31 @@ Deep reference for localStorage persistence, Supabase cloud sync, the household 
   job. The table's SELECT grant/policy is open to `anon` **and** `authenticated` (both required for
   Realtime's `postgres_changes` delivery, which has no per-household auth claim to scope by), so this
   throttles the documented join flow, not a client querying the REST endpoint directly.
-- **Ownership (Epic 8).** As of `20260627000000_auth_household_ownership.sql`, those RPCs are
-  membership-aware: a **claimed** household (`owner_id IS NOT NULL`) only accepts writes
-  (`gravy_upsert_household_state`/`gravy_rename_household`) from its members, and delete only from
-  its owner; an **unclaimed** household (`owner_id IS NULL`, every pre-Epic-8 row) keeps the exact
-  legacy "anyone with the code" behavior, so no existing household breaks. Two new RPCs back this:
-  `gravy_claim_household` (sets `owner_id` on an unclaimed row + records the caller as owner;
-  idempotent for the owner, rejects a code owned by someone else) and `gravy_household_status`
-  (read-only `{claimed,is_member,is_owner}` for the claim banner). `gravy_lookup_household` also links
-  a signed-in caller as a `member` when they enter a claimed household's code — the join/invite path.
-  An internal `gravy_is_member` helper is **not** granted to `anon`/`authenticated` (Supabase's
-  schema default-privileges auto-grant required an explicit per-role revoke). Tightening the still-
-  open `anon`/`authenticated` SELECT into `auth.uid()`-scoped RLS is deferred to Epic 9.
+- **Ownership (Epic 8, tightened by the account-mandatory migration).**
+  `20260627000000_auth_household_ownership.sql` introduced membership-aware RPCs and a
+  claim-or-deprecate transition window (unclaimed households — `owner_id IS NULL` — kept working
+  anonymously). `20260701000000_require_account_for_household.sql` closed that window: creating a
+  household (`gravy_create_household`, and the first-write branch of
+  `gravy_upsert_household_state`) now requires `auth.uid()`, so every household is claimed
+  (owned) from the moment it exists — there's no more unclaimed state to transition out of.
+  Renaming (`gravy_rename_household`) and deleting (`gravy_delete_household`) require membership
+  and ownership respectively, unconditionally. The one deliberate exception:
+  `gravy_upsert_household_state`'s *existing-row* branch still accepts anonymous writes to an
+  already-claimed household — this is what lets a kid's device (or any device that joined by code
+  without an account, see the Onboarding "kid device" fork in `docs/ui-surfaces.md`) sync progress
+  without ever having a parent account. A signed-in caller who isn't a member is still rejected.
+  Enforcement that such a device can never reach settings-shaped UI happens entirely client-side
+  (`isGrownUpUnlocked` in `src/state/auth.ts`) — the RPC only guards the household-code boundary,
+  not the shape of the write, since it can't tell one from the other.
+  `gravy_household_status` (`{claimed,is_member,is_owner}`) and `gravy_claim_household` (sets
+  `owner_id` on an unclaimed row, idempotent for the owner) are unchanged; `claimed` is now
+  effectively always `true`, and `gravy_claim_household` is a dead-code safety valve kept at no
+  cost. `gravy_lookup_household` links a signed-in caller as a `member` when they enter a claimed
+  household's code — the mechanism both "sign in to join an existing family" and co-parent
+  onboarding paths reuse unchanged. An internal `gravy_is_member` helper is **not** granted to
+  `anon`/`authenticated` (Supabase's schema default-privileges auto-grant required an explicit
+  per-role revoke). Tightening the still-open `anon`/`authenticated` SELECT into
+  `auth.uid()`-scoped RLS is deferred to Epic 9.
 - `leaveHousehold()` ("Turn off cloud sync" in `SyncPanel`) only disconnects the current device —
   the household row keeps existing for any other device still using that code.
   `deleteHouseholdEverywhere()` ("Delete household everywhere", same panel) is the separate, more
@@ -60,13 +73,11 @@ Deep reference for localStorage persistence, Supabase cloud sync, the household 
   result) and lets the push effect re-send any local-only additions; both devices converge to
   union-of-collections + last-writer's scalars. Server-side write races (two pushes inside the 800ms
   debounce) and `pendingRewards` add/remove tombstones remain for the offline-queue/RLS items.
-- `SyncGateModal` prompts new users to create/join a household after onboarding, unless dismissed
-  (`gravy_sync_skipped` key) — onboarding's own `sync` phase covers first-run setup, so this modal
-  mainly catches users who skipped that step. Like onboarding, if the modal's own "Create New
-  Household" (or custom-code) button is what creates the household, it tracks that with a local
-  `justCreated` flag and renders `PinSetupStep` in place of the create/join form before closing, so
-  this path also gets prompted to replace the default PIN/add a recovery question — joining an
-  existing household skips this, since that household's PIN was already set by whoever created it.
+- `SyncGateModal` is only reachable post-onboarding, after `resetAll()` ("Reset Everything")
+  disconnects sync (`setHouseholdCode(null)`) without signing the account out — reconnecting here is
+  optional (`gravy_sync_skipped` key) since the account, and this device's settings access, are
+  untouched either way. Onboarding itself is now the mandatory create/join path (see
+  `docs/ui-surfaces.md`), so this modal no longer has a first-run role.
 - All `localStorage` reads/writes go through `safeGetItem`/`safeSetItem`/`safeRemoveItem`
   (`src/state/storage.ts`), which swallow the exception `localStorage` throws when storage is
   disabled or full (iOS private browsing, quota exceeded) instead of crashing the caller.
@@ -78,23 +89,26 @@ Deep reference for localStorage persistence, Supabase cloud sync, the household 
   is dropped rather than crashing the subscription callback. Deeper per-field validation happens via
   `hydrateState`/`sanitizeState` once this passes.
 
-## Parent Accounts (Supabase Auth, Epic 8)
+## Parent Accounts (Supabase Auth, Epic 8) — the sole access gate
 
-A parent can optionally create an account (email/password or magic link) via `AccountPanel`.
-`src/state/auth.ts` is the only module that touches `supabase.auth` — it exposes
+Creating a parent account (email/password or magic link) is **mandatory** — every onboarding path
+that reaches parental controls goes through `AccountSetupStep` first (see `docs/ui-surfaces.md`);
+the only account-free path is the "kid's device" onboarding fork, which by design never reaches
+those controls. `src/state/auth.ts` is the only module that touches `supabase.auth` — it exposes
 `signUpWithPassword`/`signInWithPassword`/`sendMagicLink`/`signOut`, an `onAuthChange` subscription,
-and the ownership RPC wrappers (`claimHousehold`/`getHouseholdStatus`, plus the pure
-`normalizeHouseholdStatus` covered by `auth.test.ts`). `useHouseholdSync`
-(`src/state/useHouseholdSync.ts`, the sync/auth reactive hook GravyContext calls) tracks
-`authUser`/`authReady` and re-checks `householdStatus` on code/account change. Once signed in, `createHousehold`
-automatically sets `owner_id` (supabase-js sends the JWT to the RPC); an already-synced legacy
-household is secured via the "Secure this household" banner in `SyncPanel` → `claimHousehold()`. The
-account is **only** a parent identity for household ownership — it is deliberately decoupled from the
-kid-screen PIN below (COPPA: account signup never collects child data; see `DATA_HANDLING.md`).
+the ownership RPC wrappers (`claimHousehold`/`getHouseholdStatus`, plus the pure
+`normalizeHouseholdStatus` covered by `auth.test.ts`), and **`isGrownUpUnlocked(authUser,
+householdStatus)`** — the pure predicate (`!!authUser && !!householdStatus?.isMember`, also
+unit-tested in `auth.test.ts`) that `GravyContext` uses to derive `grownUpUnlocked` every render.
+`useHouseholdSync` (`src/state/useHouseholdSync.ts`, the sync/auth reactive hook `GravyContext`
+calls) tracks `authUser`/`authReady` and re-checks `householdStatus` on code/account change. Once
+signed in, `createHousehold` automatically sets `owner_id` (supabase-js sends the JWT to the RPC) —
+there's no unclaimed state left to separately "claim" (see the Ownership bullet above).
 
-The parent PIN and recovery answer are stored as salted SHA-256 hashes (`src/state/hash.ts`), never
-plaintext, with a per-device exponential-backoff lockout after 5 failed attempts
-(`src/state/pinLockout.ts`). This PIN is a **per-device kid-screen lock** (keeps a kid out of the
-dashboard on a shared device) and is independent of the parent account — see the Epic 8 note in
-`src/state/grownUpUnlock.ts`. See `DATA_HANDLING.md` for what's collected/stored/deletable overall,
-and `BACKLOG.md` Epics 1/8/9 for remaining known gaps.
+There is no PIN. `grownUpUnlocked` — the single gate for Approvals/Profiles/Game Settings/Calendar/
+Log/Advanced Settings — is derived, not stored: a device unlocks those screens only by having a
+signed-in account that's a member (or owner) of the household currently synced to it. Locking a
+device means signing out (`signOutAccount`, surfaced as "Log out" in `AccountMenu`'s header button);
+there's no separate "lock without signing out." COPPA: an account is still only ever a parent
+identity — signup never collects child data; see `DATA_HANDLING.md` for what's collected/stored/
+deletable overall, and `BACKLOG.md` Epics 1/8/9 for remaining known gaps.

@@ -25,10 +25,10 @@ PWA/infra/accessibility, security/privacy) and the full PR history.
 Goals (daily/bonus/multi-step) + streaks, a reward store with parent approval,
 71 badges across 7 groups, a 24-tier rank ladder, 4 educational mini-games
 (Hangman, Math Facts, Word Scramble, Memory Match), multi-kid profiles per
-household, 5 visual themes, full-screen onboarding, optional parent accounts
-(Supabase Auth), a PIN-gated parent dashboard
-(Approvals/Goals/Calendar/Store/Badges/Admin-Log), and optional real-time Supabase
-sync via a 6-character household code. This is a mature, feature-complete product
+household, 5 visual themes, full-screen onboarding, mandatory parent accounts
+(Supabase Auth) as the sole gate for the parent dashboard
+(Approvals/Goals/Calendar/Store/Badges/Admin-Log — no PIN), and real-time Supabase
+sync via a 6-character household code, bundled into account creation. This is a mature, feature-complete product
 surface — the gaps below are about durability (security, tests, accessibility,
 process) and the next wave of capability (cloud-first sync, native app), not
 missing core features.
@@ -131,10 +131,10 @@ biometrics, camera, widgets, legitimate store-review posture) with near-zero rew
 - **Native push notifications (APNs/FCM).** Distinct implementation from the existing
   web-push item in Epic 5 (see annotation there) — native transport only available once
   wrapped. *(P1, M, once wrapped.)*
-- **Biometric unlock alongside PIN.** Face ID/Touch ID/Android biometric as an *additional*
-  unlock path for the grown-up lock — PIN stays as fallback (no biometric-hardware
-  guarantee, and the recovery-question flow already covers PIN-forgotten). No equivalent
-  exists for a PWA. *(P2, S, once wrapped.)*
+- **Biometric quick re-entry.** Face ID/Touch ID/Android biometric as a faster way to
+  re-open the grown-up lock on a device that's already signed into a parent account — the
+  account sign-in stays the actual gate (no PIN exists to "fall back" to; a fully signed-out
+  device still needs a real sign-in). No equivalent exists for a PWA. *(P2, S, once wrapped.)*
 - **Haptics on native.** `src/lib/haptics.ts` already exists and calls
   `navigator.vibrate()` — extend the same call site to use native haptic engines once
   wrapped; the abstraction point already exists, so this is a small win. *(P2, S.)*

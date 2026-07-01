@@ -4,18 +4,19 @@ import { faUserShield, faEnvelope, faCircleCheck, faTriangleExclamation } from '
 import { useGravy } from '../state/GravyContext';
 
 interface AccountSetupStepProps {
-  // Called when the parent finishes (signed in) or chooses to skip account setup — the caller
-  // decides what "done" means (advance onboarding, close a modal, etc).
-  onDone: () => void;
+  initialMode?: 'signup' | 'signin';
+  // Called once the parent finishes signing in — reports which mode they used so Onboarding can
+  // branch (signup: auto-create+own a new household; signin: prompt for a family code to join).
+  onDone: (mode: 'signup' | 'signin') => void;
 }
 
-// Optional parent-account step shown during onboarding, BEFORE the household is created — so a
+// Mandatory parent-account step shown during onboarding, BEFORE the household is created — so a
 // signed-in parent's new household is owned from the start (createHousehold sets owner_id
 // automatically), with no separate "claim" needed later. COPPA: collects only a parent email,
-// never any child data. Mirrors PinSetupStep's onboarding-card structure.
-export function AccountSetupStep({ onDone }: AccountSetupStepProps) {
+// never any child data.
+export function AccountSetupStep({ initialMode = 'signup', onDone }: AccountSetupStepProps) {
   const { authUser, signUp, signIn, sendSignInLink } = useGravy();
-  const [mode, setMode] = useState<'signup' | 'signin'>('signup');
+  const [mode, setMode] = useState<'signup' | 'signin'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -52,11 +53,12 @@ export function AccountSetupStep({ onDone }: AccountSetupStepProps) {
         <span className="onb-icon-badge"><FontAwesomeIcon icon={faCircleCheck} /></span>
         <div className="onb-title">You're Signed In</div>
         <div className="onb-desc">
-          Signed in as {authUser.email ?? 'your account'}. The household you set up next will be
-          secured to this account automatically.
+          {mode === 'signup'
+            ? `Signed in as ${authUser.email ?? 'your account'}. We'll set up your family's code next.`
+            : `Signed in as ${authUser.email ?? 'your account'}. Enter your family code next to join.`}
         </div>
         <div className="onb-actions">
-          <button className="btn btn-primary" onClick={onDone}>Continue</button>
+          <button className="btn btn-primary" onClick={() => onDone(mode)}>Continue</button>
         </div>
       </>
     );
@@ -67,9 +69,8 @@ export function AccountSetupStep({ onDone }: AccountSetupStepProps) {
       <span className="onb-icon-badge"><FontAwesomeIcon icon={faUserShield} /></span>
       <div className="onb-title">{mode === 'signup' ? 'Create a Parent Account' : 'Sign In'}</div>
       <div className="onb-desc">
-        For grown-ups only. An account secures your family's data so only your devices can change
-        it. We only store your email — never your child's information. You can skip this and do it
-        later from Settings.
+        For grown-ups only. An account secures your family's data — you'll create or join a family
+        right after this. We only store your email — never your child's information.
       </div>
       <input
         type="email"
@@ -95,7 +96,8 @@ export function AccountSetupStep({ onDone }: AccountSetupStepProps) {
       )}
       {linkSent && (
         <div className="settings-sub sync-gate-status">
-          <FontAwesomeIcon icon={faEnvelope} /> Sign-in link sent — tap it in your email to finish. You can keep going here.
+          <FontAwesomeIcon icon={faEnvelope} /> Check your email and tap the link to finish signing
+          in — this screen will continue automatically.
         </div>
       )}
       <div className="onb-actions">
@@ -107,9 +109,6 @@ export function AccountSetupStep({ onDone }: AccountSetupStepProps) {
         </button>
         <button className="onb-link" onClick={() => { setMode((m) => (m === 'signup' ? 'signin' : 'signup')); setError(null); }}>
           {mode === 'signup' ? 'Already have an account? Sign in' : 'No account yet? Create one'}
-        </button>
-        <button className="btn btn-sm btn-ghost" onClick={onDone}>
-          Skip for now
         </button>
       </div>
     </>

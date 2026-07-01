@@ -4,7 +4,6 @@ import type { Goal, GravyState, Reward } from '../types';
 import { applyDayRollover, cloneDefaultState } from '../defaultState';
 import { appendAuditLog } from '../auditLog';
 import type { LogActor } from '../actionLog';
-import { hashWithSalt, randomSaltHex } from '../hash';
 import { isValidTimezone } from '../../data/timezones';
 import { safeRemoveItem } from '../storage';
 import { HOUSEHOLD_CODE_KEY, SYNC_SKIPPED_KEY, clone } from './shared';
@@ -12,9 +11,6 @@ import type { SettableSettingKey, ShowToast, SyncStatus } from './types';
 
 // Friendly names for the Admin Log's settingChanged entries (Epic 8 item 6).
 const SETTING_LABELS: Partial<Record<SettableSettingKey, string>> = {
-  pin: 'PIN',
-  recoveryAnswer: 'recovery answer',
-  recoveryQuestion: 'recovery question',
   childName: 'child name',
   foodPts: 'food points',
   bonusPts: 'bonus points',
@@ -121,29 +117,12 @@ export function useCatalogActions(deps: CatalogDeps) {
   const saveSetting = useCallback((key: SettableSettingKey, val: string) => {
     setState((prev) => {
       const next = clone(prev);
-      if (key === 'pin') {
-        const p = String(val).slice(0, 4) || '1234';
-        const salt = randomSaltHex();
-        next.settings.pinHash = hashWithSalt(p, salt);
-        next.settings.pinSalt = salt;
-      } else if (key === 'recoveryAnswer') {
-        const answer = val.trim().toLowerCase();
-        if (answer) {
-          const salt = randomSaltHex();
-          next.settings.recoveryAnswerHash = hashWithSalt(answer, salt);
-          next.settings.recoveryAnswerSalt = salt;
-        } else {
-          next.settings.recoveryAnswerHash = '';
-          next.settings.recoveryAnswerSalt = '';
-        }
-      } else if (key === 'childName') {
+      if (key === 'childName') {
         next.settings.childName = val.trim() || 'Zack';
       } else if (key === 'foodPts') {
         next.settings.foodPts = Math.max(1, parseInt(val) || 1);
       } else if (key === 'bonusPts') {
         next.settings.bonusPts = Math.max(0, parseInt(val) || 0);
-      } else if (key === 'recoveryQuestion') {
-        next.settings.recoveryQuestion = val.trim();
       } else if (key === 'theme') {
         if (val === 'capri' || val === 'classic' || val === 'midnight' || val === 'ocean' || val === 'bubblegum' || val === 'cyberpunk' || val === 'ranger') {
           next.settings.theme = val;
@@ -157,14 +136,12 @@ export function useCatalogActions(deps: CatalogDeps) {
       } else {
         (next.settings[key] as number) = Math.max(0, parseInt(val) || 0);
       }
-      // Audit only real changes (SecurityPanel blur-saves can fire with no actual edit). Never
-      // record the value of secret fields (PIN / recovery answer), only that they changed.
+      // Audit only real changes (blur-saves can fire with no actual edit).
       if (JSON.stringify(next.settings) !== JSON.stringify(prev.settings)) {
         const name = SETTING_LABELS[key] ?? key;
-        const secret = key === 'pin' || key === 'recoveryAnswer';
         appendAuditLog(next, actorRef.current, {
           type: 'settingChanged',
-          label: secret ? `Updated ${name}` : `Changed ${name} to "${val}"`,
+          label: `Changed ${name} to "${val}"`,
         });
       }
       return next;
@@ -203,12 +180,7 @@ export function useCatalogActions(deps: CatalogDeps) {
       const badgeConfig = prev.badgeConfig;
       const next = cloneDefaultState();
       // "Reset Everything" wipes progress (points, badges, history, goals, rewards) but
-      // keeps account + personalization settings — security and the kid's name/look.
-      next.settings.pinHash = prev.settings.pinHash;
-      next.settings.pinSalt = prev.settings.pinSalt;
-      next.settings.recoveryQuestion = prev.settings.recoveryQuestion;
-      next.settings.recoveryAnswerHash = prev.settings.recoveryAnswerHash;
-      next.settings.recoveryAnswerSalt = prev.settings.recoveryAnswerSalt;
+      // keeps personalization settings — the kid's name/look.
       next.settings.childName = prev.settings.childName;
       next.settings.theme = prev.settings.theme;
       next.settings.avatarIcon = prev.settings.avatarIcon;

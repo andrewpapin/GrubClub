@@ -2,9 +2,12 @@ import { supabase } from '../lib/supabaseClient';
 import type { GravyRoot } from './types';
 
 // Epic 8 — Real Auth & Account Model. Thin wrappers around Supabase Auth so the rest of the
-// app never imports the supabase client for auth directly, and so the parent-account model is
-// decoupled from the kid-screen PIN (which stays a per-device session lock — see
-// src/state/grownUpUnlock.ts / src/state/pinLockout.ts).
+// app never imports the supabase client for auth directly.
+//
+// The parent account IS the access gate for parental controls (Approvals/Profiles/Game
+// Settings/Calendar/Log/Advanced Settings) — see isGrownUpUnlocked below. There is no PIN; a
+// device unlocks those screens only by having a signed-in account that's a member (or owner)
+// of the household currently synced to this device.
 //
 // IMPORTANT (COPPA): an account is a *parent* identity only. Nothing here ever collects a
 // child's name or progress — that lives in the in-app GravyState after a parent is signed in.
@@ -102,4 +105,12 @@ export async function getHouseholdStatus(code: string): Promise<HouseholdStatus>
   const { data, error } = await supabase.rpc('gravy_household_status', { p_code: code });
   if (error) throw error;
   return normalizeHouseholdStatus(data);
+}
+
+// The sole gate for parental-control screens: signed in AND a member (or owner) of the
+// household this device is currently synced to. Fails closed while householdStatus hasn't
+// resolved yet (null = still loading, or no household). Pure so it's unit-testable without a
+// live Supabase session — see auth.test.ts.
+export function isGrownUpUnlocked(authUser: AuthUser | null, householdStatus: HouseholdStatus | null): boolean {
+  return !!authUser && !!householdStatus?.isMember;
 }

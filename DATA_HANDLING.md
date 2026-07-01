@@ -10,20 +10,16 @@ privacy policy/ToS page is a separate, contingent item (`BACKLOG.md` Epic 6).
 Gravy collects nothing beyond what's needed to run the app for the kids in one
 household:
 
-- **Parent account email (optional).** A parent may create a Supabase Auth
-  account (email/password or magic link) to *secure* a household — see "Parent
-  accounts" below. This is the only personal data tied to a real adult, and it
-  is strictly a grown-up identity: account creation never collects a child's
-  name or any in-app data (those are entered in the app *after* a parent is
-  signed in). A household with no account works exactly as before.
+- **Parent account email (required).** A parent must create a Supabase Auth
+  account (email/password or magic link) to reach any parental-control screen
+  — see "Parent accounts" below. This is the only personal data tied to a real
+  adult, and it is strictly a grown-up identity: account creation never
+  collects a child's name or any in-app data (those are entered in the app
+  *after* a parent is signed in). A device can still join a household by just
+  entering its code with no account at all, for kid-mode use only — see
+  "Where it lives" below.
 - **Child name** — free text, parent-entered, per profile. The only field
   in the in-app data that could identify a real person.
-- **Parent PIN and recovery answer** — never stored or transmitted in
-  plaintext. Only a per-installation salted SHA-256 hash of each
-  (`src/state/hash.ts`) is saved; failed PIN attempts are also rate-limited
-  with an exponential-backoff lockout (`src/state/pinLockout.ts`).
-- **Recovery question** — parent-chosen prompt text (e.g. "Pet's name?"),
-  not identifying on its own.
 - **Gameplay/progress data** — points, streaks, badges, goals, rewards,
   day-by-day logs, game stats. Behavioral, not personal.
 - **Appearance preferences** — theme, avatar icon, avatar colors.
@@ -35,22 +31,25 @@ third-party tracking script anywhere in the app.
 
 ## Parent accounts (Supabase Auth)
 
-Creating a parent account is optional and exists to give a household real
-ownership instead of "anyone with the 6-character code can read and write it":
+Creating a parent account is **required** — it's the only way to reach any
+parental-control screen (Approvals/Profiles/Game Settings/Calendar/Log/
+Advanced Settings; there is no PIN). It also gives a household real ownership
+instead of "anyone with the 6-character code can read and write it":
 
 - **What's stored, and where.** The email (and, for password sign-in, a hashed
   password) lives in Supabase's managed `auth.users` table, not in the app's
   `state` JSONB. Magic-link sign-in stores a short-lived token the same way any
   Supabase Auth project does. The app never sees or stores the plaintext
   password.
-- **Ownership link.** When a signed-in parent *claims* a household, the
-  household row records that account's id (`households.owner_id`) and a
-  membership row (`household_members`). After that, only the household's members
-  can write to it; the 6-character code becomes a join/invite token for adding
-  more parent devices/accounts. Households that haven't been claimed keep
-  working anonymously during a deliberate migration window.
-- **Deletion.** Signing out (Parent Dashboard → Settings → Parent Account →
-  "Sign out") ends the session on this device. Full account-level deletion
+- **Ownership link.** A household is owned by the account that created it from
+  the moment it exists (`households.owner_id`, plus a membership row in
+  `household_members`) — there's no separate unclaimed state to transition out
+  of. Only the household's members can rename or write settings-shaped changes
+  to it, and only its owner can delete it everywhere; the 6-character code is
+  the join/invite token a second parent's account (or a kid's device, for
+  kid-mode sync only — see "Where it lives" below) uses to connect to it.
+- **Deletion.** Signing out (`AccountMenu` header button, "Log out" when
+  unlocked) ends the session on this device. Full account-level deletion
   (removing the `auth.users` row itself) is tracked as a follow-up in
   `BACKLOG.md` Epic 9 ("Account-level data deletion").
 
@@ -62,10 +61,12 @@ ownership instead of "anyone with the 6-character code can read and write it":
 - **Supabase, optionally.** If a household enables sync, the same data — the
   *whole* household (every kid's profile, not just one) — is upserted into a
   single `households` row keyed by a 6-character household code (`code TEXT
-  PRIMARY KEY`, `state JSONB`, plus a nullable `owner_id`). Until the household
-  is claimed by a parent account, anyone who has (or guesses, within the rate
-  limit) the code can join it; once claimed, writes are restricted to the
-  account's members (see "Parent accounts" below).
+  PRIMARY KEY`, `state JSONB`, plus `owner_id`, always set from the moment the
+  row is created). A device that just enters the code — no account — can still
+  join and sync kid-mode progress (goal checkboxes, food log, etc.); creating,
+  renaming, or deleting the household, and reaching any parental-control
+  screen, requires being signed into a member (or owner) account (see "Parent
+  accounts" below).
 - **Rate-limit bookkeeping.** Looking up a household by code is throttled
   server-side; the limiter stores a bucket derived from the request's source
   IP in `household_lookup_attempts`, separately from the household data
@@ -73,22 +74,22 @@ ownership instead of "anyone with the 6-character code can read and write it":
 
 ## How to delete it
 
-- **Local data:** Parent Dashboard → Settings → Danger Zone → "Reset
+- **Local data:** `AccountMenu` → Advanced Settings → Reset → "Reset
   Everything" clears all progress on the active profile (points, badges,
-  history, counters) and disconnects the device from sync. It intentionally
-  leaves the parent PIN, recovery answer, child's name, theme, and avatar set
-  — those are identity/account settings, not progress, and resetting a kid's
-  points shouldn't lock the parent out or rename the kid. Clearing the
-  browser's site data for the app removes the `gravy_v1` entry entirely.
-- **Synced data, this device only:** Parent Dashboard → Settings → Sync →
-  "Turn off cloud sync" stops *this device* from syncing and forgets the
-  code locally — the household row keeps existing for any other device
-  still using that code.
-- **Synced data, everywhere:** Parent Dashboard → Settings → Sync → "Delete
-  household everywhere" permanently deletes the Supabase `households` row
-  for that code, so every device synced to it (not just this one) loses
-  access. Deliberately a separate, more destructive action from "Turn off
-  cloud sync" for that reason.
+  history, counters) and disconnects the device from sync (it does not sign
+  the account out). It intentionally leaves the child's name, theme, and
+  avatar set — those are identity settings, not progress, and resetting a
+  kid's points shouldn't rename the kid. Clearing the browser's site data for
+  the app removes the `gravy_v1` entry entirely.
+- **Synced data, this device only:** `AccountMenu` → Advanced Settings →
+  Family Code → "Turn off cloud sync" stops *this device* from syncing and
+  forgets the code locally — the household row keeps existing for any other
+  device still using that code.
+- **Synced data, everywhere:** `AccountMenu` → Advanced Settings → Family
+  Code → "Delete household everywhere" permanently deletes the Supabase
+  `households` row for that code, so every device synced to it (not just
+  this one) loses access. Deliberately a separate, more destructive action
+  from "Turn off cloud sync" for that reason.
 
 ## Known limitations
 

@@ -8,7 +8,8 @@ devices via Supabase.
 Kids log food groups eaten and complete daily goals to earn points, climb a
 24-tier rank ladder, build streaks, play mini-games, and unlock badges.
 Points can be redeemed for rewards from a parent-managed store, with a
-PIN-protected parent menu for approvals and configuration.
+parent menu (approvals and configuration) locked behind a required parent
+account — there's no PIN.
 
 ## Features
 
@@ -23,18 +24,20 @@ PIN-protected parent menu for approvals and configuration.
   store, combo, and games categories
 - **Multi-profile households** — multiple kid profiles per device, each
   with independent progress/streaks but shared goals, rewards, badge
-  config, and points settings; switch between them from a PIN-gated
-  quick-switch list
-- **Parent menu** (PIN-protected, default `1234`)
+  config, and points settings; switch between them from a parent
+  account-gated quick-switch list
+- **Parent menu** (locked to a signed-in parent account)
   - **Approvals** — approve or decline reward requests
   - **Game Settings** — manage daily goals, bonus items, per-action point
     values, store rewards, and badge names/emoji/icons/visibility
   - **Calendar** — view and edit past days
   - **Log** — history of every action, including admin changes
-  - **Advanced Settings** — PIN, recovery question, household sync code,
-    and reset today's progress or everything
-- **Cloud sync** (optional) — create or join a household with a short code
-  to sync the whole household's data across devices in real time via
+  - **Advanced Settings** — time zone, family code, and reset today's
+    progress or everything
+- **Parent accounts + family code** (required) — creating an account
+  auto-creates and owns a household's family code; a device can also join
+  an existing family by just entering that code, but only a signed-in
+  member account can reach the parent menu — sync happens in real time via
   Supabase
 
 ## Getting started
@@ -70,7 +73,7 @@ src/
   state/            Gravy state, localStorage persistence, Supabase sync, badge logic, React context
   components/       kid-facing screens and widgets (Home, Store, Badges, Arcade, Rank ladder, etc.)
   components/games/ individual mini-game components
-  components/parent/ PIN-gated parent panels (approvals, goals, calendar, store, badges, settings)
+  components/parent/ account-gated parent panels (approvals, goals, calendar, store, badges, settings)
 ```
 
 ## Deployment

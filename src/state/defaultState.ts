@@ -1,6 +1,5 @@
 import type { ActionLogEntry, AuditLogEntry, GravyState, GravyRoot, ProfileEntry, Settings, Theme, Goal, Reward, PendingReward } from './types';
 import { FOODS } from '../data/foods';
-import { hashWithSalt, randomSaltHex } from './hash';
 import { safeGetItem, safeSetItem } from './storage';
 import { DEFAULT_TIMEZONE, isValidTimezone } from '../data/timezones';
 
@@ -8,12 +7,6 @@ export const STORAGE_KEY = 'gravy_v1';
 // Lives here (not in Onboarding.tsx) so App.tsx can read it without a static import that
 // would pull the lazy-loaded Onboarding component back into the main bundle.
 export const ONBOARDING_DONE_KEY = 'gravy_onboarded';
-
-// Fixed salt for the shipped default PIN only — the value '1234' is already public
-// (documented as the default), so there's nothing to protect by randomizing it. Any
-// PIN a parent actually sets gets a fresh random salt (see saveSetting/migration below).
-const DEFAULT_PIN_SALT = 'gravy-default-pin-salt-v1';
-const DEFAULT_PIN_HASH = hashWithSalt('1234', DEFAULT_PIN_SALT);
 
 export const defaultState: GravyState = {
   points: 0,
@@ -77,12 +70,7 @@ export const defaultState: GravyState = {
     foodPts: 10,
     bonusPts: 25,
     gamePts: 15,
-    pinHash: DEFAULT_PIN_HASH,
-    pinSalt: DEFAULT_PIN_SALT,
     childName: 'Zack',
-    recoveryQuestion: '',
-    recoveryAnswerHash: '',
-    recoveryAnswerSalt: '',
     theme: 'capri',
     avatarIcon: 'faceSmile',
     avatarIconColor: '#2F3E46',
@@ -208,29 +196,16 @@ export function migrateLegacyState(state: Record<string, unknown>): void {
     }
   }
 
-  // PIN and recovery answer used to be stored as plaintext. Hash any plaintext value found
-  // (one-time, on first load after upgrading) and delete the original field immediately —
-  // it must never reach the typed GravyState, since that's what gets autosaved/synced.
+  // PIN/recovery-question/recovery-answer fields (plaintext or hashed) from any pre-account-
+  // mandatory save are dropped entirely — there's no PIN gate anymore, only account sign-in.
   if (settings) {
-    if (typeof settings.pin === 'string' && !('pinHash' in settings)) {
-      const pin = settings.pin.slice(0, 4) || '1234';
-      const salt = randomSaltHex();
-      settings.pinHash = hashWithSalt(pin, salt);
-      settings.pinSalt = salt;
-    }
     delete settings.pin;
-    if (typeof settings.recoveryAnswer === 'string' && !('recoveryAnswerHash' in settings)) {
-      const answer = settings.recoveryAnswer.trim().toLowerCase();
-      if (answer) {
-        const salt = randomSaltHex();
-        settings.recoveryAnswerHash = hashWithSalt(answer, salt);
-        settings.recoveryAnswerSalt = salt;
-      } else {
-        settings.recoveryAnswerHash = '';
-        settings.recoveryAnswerSalt = '';
-      }
-    }
+    delete settings.pinHash;
+    delete settings.pinSalt;
+    delete settings.recoveryQuestion;
     delete settings.recoveryAnswer;
+    delete settings.recoveryAnswerHash;
+    delete settings.recoveryAnswerSalt;
   }
 }
 
@@ -372,11 +347,6 @@ function sanitizeState(state: GravyState): void {
   counters.foodLogs = asPlainObject(counters.foodLogs);
 
   const settings = state.settings as unknown as Record<string, unknown>;
-  settings.pinHash = asString(settings.pinHash, defaultState.settings.pinHash);
-  settings.pinSalt = asString(settings.pinSalt, defaultState.settings.pinSalt);
-  settings.recoveryAnswerHash = asString(settings.recoveryAnswerHash, '');
-  settings.recoveryAnswerSalt = asString(settings.recoveryAnswerSalt, '');
-  settings.recoveryQuestion = asString(settings.recoveryQuestion, '');
   settings.childName = asString(settings.childName, defaultState.settings.childName);
   settings.avatarIcon = asString(settings.avatarIcon, defaultState.settings.avatarIcon);
   settings.avatarIconColor = asString(settings.avatarIconColor, defaultState.settings.avatarIconColor);
@@ -450,11 +420,6 @@ export const SHARED_SETTING_KEYS: (keyof Settings)[] = [
   'foodPts',
   'bonusPts',
   'gamePts',
-  'pinHash',
-  'pinSalt',
-  'recoveryQuestion',
-  'recoveryAnswerHash',
-  'recoveryAnswerSalt',
   'timezone',
 ];
 
@@ -474,8 +439,8 @@ function copySharedInto(dest: GravyState, src: GravyState): void {
 }
 
 // Pushes the shared fields from the active profile (where all parent config edits happen) into
-// every other profile, so goals/rewards/points-config/PIN/recovery stay identical across kids.
-// Per-kid fields (progress, name, avatar, theme) are left untouched.
+// every other profile, so goals/rewards/points-config stay identical across kids. Per-kid
+// fields (progress, name, avatar, theme) are left untouched.
 export function mirrorSharedFields(root: GravyRoot): void {
   const active = root.profiles.find((p) => p.id === root.activeProfileId);
   if (!active) return;

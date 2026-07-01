@@ -10,11 +10,9 @@ import {
   faChevronLeft,
   faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
-import { useGravy, SYNC_SKIPPED_KEY } from '../state/GravyContext';
-import { isValidHouseholdCode } from '../state/sync';
+import { useGravy } from '../state/GravyContext';
 import { ONBOARDING_DONE_KEY } from '../state/defaultState';
 import { safeSetItem } from '../state/storage';
-import { PinSetupStep } from './PinSetupStep';
 import { AccountSetupStep } from './AccountSetupStep';
 import { CopyCodeButton } from './CopyCodeButton';
 
@@ -47,18 +45,24 @@ const STEPS: WalkStep[] = [
   },
 ];
 
-type Phase = 'welcome' | 'join' | 'name' | 'walkthrough' | 'account' | 'sync' | 'creating' | 'pinSetup';
-type JoinOrigin = 'welcome' | 'sync';
+// Three-way fork: a brand-new family (creates + owns a household), an existing parent setting up
+// another device (signs in, then joins by family code), or a kid/family device that never gets an
+// account at all (just enters the family code for kid-mode sync — settings stay locked on it,
+// see isGrownUpUnlocked in state/auth.ts).
+type Phase = 'welcome' | 'join' | 'name' | 'walkthrough' | 'account' | 'creating';
+type JoinOrigin = 'welcome' | 'account';
 
 export function Onboarding({ onComplete }: { onComplete: () => void }) {
   const { state, saveSetting, createHousehold, joinHousehold, syncStatus } = useGravy();
   const [phase, setPhase] = useState<Phase>('welcome');
   const [joinOrigin, setJoinOrigin] = useState<JoinOrigin>('welcome');
+  const [accountInitialMode, setAccountInitialMode] = useState<'signup' | 'signin'>('signup');
+  // Where 'account' was entered from, so Back returns to the right place — the "new family" path
+  // reaches it via walkthrough, the "existing parent" path reaches it directly from welcome.
+  const [accountEntry, setAccountEntry] = useState<'walkthrough' | 'welcome'>('walkthrough');
   const [walkStep, setWalkStep] = useState(0);
   const [name, setName] = useState('');
   const [joinCode, setJoinCode] = useState('');
-  const [customCode, setCustomCode] = useState('');
-  const [pendingCode, setPendingCode] = useState<string | undefined>(undefined);
   const [revealCode, setRevealCode] = useState<string | null>(null);
   const [revealFailed, setRevealFailed] = useState(false);
 
@@ -70,11 +74,10 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
     onComplete();
   };
 
-  const startCreate = (code?: string) => {
+  const startCreate = () => {
     setPhase('creating');
     setRevealFailed(false);
-    setPendingCode(code);
-    createHousehold(code).then((result) => {
+    createHousehold().then((result) => {
       if (result) setRevealCode(result);
       else setRevealFailed(true);
     });
@@ -104,12 +107,19 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
       setWalkStep((s) => s + 1);
       return;
     }
+    setAccountEntry('walkthrough');
+    setAccountInitialMode('signup');
     setPhase('account');
   };
 
-  const handleSkipForNow = () => {
-    safeSetItem(SYNC_SKIPPED_KEY, 'true');
-    finish();
+  // Reported by AccountSetupStep once the parent is signed in — a brand-new account
+  // auto-creates and owns a household; an existing account is prompted for a family code.
+  const handleAccountDone = (usedMode: 'signup' | 'signin') => {
+    if (usedMode === 'signup') {
+      startCreate();
+    } else {
+      goJoin('account');
+    }
   };
 
   const handleBack = () => {
@@ -121,17 +131,19 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
       if (walkStep === 0) setPhase('name');
       else setWalkStep((s) => s - 1);
     } else if (phase === 'account') {
-      setWalkStep(STEPS.length - 1);
-      setPhase('walkthrough');
-    } else if (phase === 'sync') {
-      setPhase('account');
+      if (accountEntry === 'walkthrough') {
+        setWalkStep(STEPS.length - 1);
+        setPhase('walkthrough');
+      } else {
+        setPhase('welcome');
+      }
     }
   };
 
-  const showBack = phase === 'join' || phase === 'name' || phase === 'walkthrough' || phase === 'account' || phase === 'sync';
-  const showDots = phase === 'name' || phase === 'walkthrough' || phase === 'sync';
-  const dotCount = STEPS.length + 2;
-  const activeDot = phase === 'name' ? 0 : phase === 'walkthrough' ? walkStep + 1 : STEPS.length + 1;
+  const showBack = phase === 'join' || phase === 'name' || phase === 'walkthrough' || phase === 'account';
+  const showDots = phase === 'name' || phase === 'walkthrough';
+  const dotCount = STEPS.length + 1;
+  const activeDot = phase === 'name' ? 0 : walkStep + 1;
 
   return (
     <div className="onb-screen">
@@ -153,11 +165,17 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             </div>
             <div className="onb-actions">
               <button className="btn btn-primary" onClick={() => setPhase('name')}>
-                Get Started
+                Set Up a New Family
               </button>
             </div>
+            <button
+              className="onb-link"
+              onClick={() => { setAccountEntry('welcome'); setAccountInitialMode('signin'); setPhase('account'); }}
+            >
+              I'm a parent — sign in to join my family
+            </button>
             <button className="onb-link" onClick={() => goJoin('welcome')}>
-              Already set up on another device? Join your family
+              This is my kid's device — just enter a family code
             </button>
           </>
         )}
@@ -216,17 +234,6 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
           </>
         )}
 
-        {phase === 'sync' && (
-          <>
-            <span className="onb-icon-badge"><FontAwesomeIcon icon={faCloud} /></span>
-            <div className="onb-title">Keep the Family in Sync</div>
-            <div className="onb-desc">
-              Create a code so grown-ups' phones can follow along with {state.settings.childName}'s progress.
-              You can always do this later from Settings.
-            </div>
-          </>
-        )}
-
         {phase === 'creating' && (
           <>
             <span className="onb-icon-badge"><FontAwesomeIcon icon={faCloud} /></span>
@@ -278,49 +285,18 @@ export function Onboarding({ onComplete }: { onComplete: () => void }) {
             </button>
           </div>
         )}
-        {phase === 'sync' && (
-          <div className="onb-actions">
-            <button className="btn btn-primary" onClick={() => startCreate()}>
-              <FontAwesomeIcon icon={faCloud} /> Create Household
-            </button>
-            <div className="flex-row-full sync-gate-join">
-              <input
-                type="text"
-                className="onb-input"
-                placeholder="Or pick your own code"
-                maxLength={6}
-                value={customCode}
-                onChange={(e) => setCustomCode(e.target.value.toUpperCase())}
-              />
-              <button className="btn btn-primary" onClick={() => startCreate(customCode)} disabled={!isValidHouseholdCode(customCode)}>
-                Create
-              </button>
-            </div>
-            <div className="settings-sub">6 characters — no 0, O, 1, or I</div>
-            <button className="onb-link" onClick={() => goJoin('sync')}>
-              Have a code already? Join instead
-            </button>
-            <button className="btn btn-sm btn-ghost" onClick={handleSkipForNow}>
-              Skip for now — just use this device
-            </button>
-          </div>
-        )}
         {phase === 'creating' && revealCode && (
           <div className="onb-actions">
-            <button className="btn btn-primary" onClick={() => setPhase('pinSetup')}>
+            <button className="btn btn-primary" onClick={finish}>
               Let's go!
             </button>
           </div>
         )}
-        {phase === 'account' && <AccountSetupStep onDone={() => setPhase('sync')} />}
-        {phase === 'pinSetup' && <PinSetupStep onDone={finish} />}
+        {phase === 'account' && <AccountSetupStep initialMode={accountInitialMode} onDone={handleAccountDone} />}
         {phase === 'creating' && revealFailed && (
           <div className="onb-actions">
-            <button className="btn btn-primary" onClick={() => startCreate(pendingCode)}>
+            <button className="btn btn-primary" onClick={startCreate}>
               Try Again
-            </button>
-            <button className="btn btn-sm btn-ghost" onClick={handleSkipForNow}>
-              Skip for now
             </button>
           </div>
         )}
