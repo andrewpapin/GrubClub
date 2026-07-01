@@ -49,9 +49,9 @@ export function useHouseholdSync({ root, state, setRoot, setState }: HouseholdSy
     safeGetItem(HOUSEHOLD_CODE_KEY),
   );
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  // Parent account (Epic 8). Independent of the kid-screen PIN/grownUpUnlocked lock in GravyContext —
-  // signing in identifies a parent for household ownership, the PIN keeps a kid out of the
-  // dashboard on a shared device. authReady gates UI until the initial session check resolves.
+  // Parent account (Epic 8). This IS the access gate — GravyContext derives grownUpUnlocked from
+  // authUser + householdStatus (see isGrownUpUnlocked in ./auth.ts). authReady gates UI until the
+  // initial session check resolves.
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [householdStatus, setHouseholdStatus] = useState<HouseholdStatus | null>(null);

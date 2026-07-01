@@ -104,6 +104,20 @@ work lives in `BACKLOG.md`.
   (`owner_id IS NULL`) keep working anonymously until a signed-in parent claims
   them via `gravy_claim_household` (no data migration); "Secure this household"
   banner in `SyncPanel` drives it. RLS close-out is the Epic 9 item.
+- **PIN removed; account made mandatory and the sole access gate** — supersedes
+  the "PIN kept as a local kid-screen lock" decision above. The PIN subsystem
+  (`grownUpUnlock.ts`, `pinLockout.ts`, `hash.ts`, `PinScreen`/`PinSetupStep`/
+  `SecurityPanel`) is deleted; `grownUpUnlocked` is now a derived value
+  (`isGrownUpUnlocked(authUser, householdStatus)` in `src/state/auth.ts`) —
+  signed in AND a household member, nothing else. Household creation now
+  requires `auth.uid()` (`20260701000000_require_account_for_household.sql`),
+  closing the claim-or-deprecate window above: every household is claimed at
+  creation, so there's no more unclaimed state. An anonymous device can still
+  join a household by code and sync kid-mode progress (the RPC's existing-row
+  write path stays anon-writable for a claimed household) — it just can never
+  reach a parental-control screen. Onboarding gained a three-way fork (new
+  family / sign in to join / kid device with no account) replacing the old
+  optional account+sync steps and `PinSetupStep` wizard.
 - **Per-parent attribution on `actionLog`** — `actorUserId`/`actorLabel` stamped
   by `appendActionLog`; `LogPanel` shows "· by <email>". `actionLog.test.ts`.
 - **Audit trail for dashboard/destructive actions** — shared `auditLog` +

@@ -15,9 +15,7 @@ export function SyncPanel() {
     leaveHousehold,
     deleteHouseholdEverywhere,
     changeHouseholdCode,
-    authUser,
     householdStatus,
-    claimHousehold,
   } = useGravy();
   const [joinCode, setJoinCode] = useState('');
   const [customCreateCode, setCustomCreateCode] = useState('');
@@ -87,33 +85,12 @@ export function SyncPanel() {
               signed-in devices can change it.
             </div>
           </div>
-        ) : householdStatus.claimed ? (
+        ) : (
           <div className="settings-row settings-row--col">
             <div className="settings-sub">
               <FontAwesomeIcon icon={faLock} /> This household is secured by its owner.
               {householdStatus.isMember ? " You're a member." : ''}
             </div>
-          </div>
-        ) : (
-          <div className="settings-row settings-row--col">
-            <div>
-              <div className="settings-label">
-                <FontAwesomeIcon icon={faShieldHalved} /> Secure this household
-              </div>
-              <div className="settings-sub">
-                This household isn't tied to an account yet — anyone with the code can change it.
-                {authUser
-                  ? ' Claim it to lock changes to your household’s signed-in devices.'
-                  : ' Create or sign in to a parent account above, then come back to claim it.'}
-              </div>
-            </div>
-            <button
-              className="btn btn-primary"
-              onClick={() => claimHousehold()}
-              disabled={!authUser || syncStatus === 'syncing'}
-            >
-              <FontAwesomeIcon icon={faShieldHalved} /> Secure to my account
-            </button>
           </div>
         )
       )}

@@ -36,8 +36,8 @@ All state flows through a single React Context in `src/state/GravyContext.tsx`, 
   `appendAuditLog(next, actor, entry)` (push + cap at `AUDIT_LOG_MAX_ENTRIES` 300, same
   actor-stamping). Appended inline in the relevant `GravyContext` actions via the `actorRef` ref;
   shown read-only (never undoable) in `AuditLogPanel`. `saveSetting` only logs a `settingChanged`
-  entry when the value actually changed, and never records the value of secret fields (PIN /
-  recovery answer); `resetAll` preserves the prior audit trail rather than wiping it.
+  entry when the value actually changed; `resetAll` preserves the prior audit trail rather than
+  wiping it.
 - Parent account / Supabase Auth state (`authUser`, `authReady`) and actions
   (`signUp`/`signIn`/`sendSignInLink`/`signOutAccount`, plus `claimHousehold` and
   `householdStatus`) — see `docs/persistence-and-sync.md`. `src/state/auth.ts` wraps the Supabase
@@ -103,7 +103,7 @@ single-profile save by wrapping it as a one-entry root.
   `id` active and runs `applyDayRollover()` on its state.
 - `addProfile(name, opts)` calls `makeNewProfile()`, which clones `defaultState`, copies in the
   current shared config, and sets the new kid's identity — so a new sibling starts with zero
-  progress but the same goals/rewards/points config/PIN.
+  progress but the same goals/rewards/points config.
 - The context exposes per-profile actions distinct from the active-profile ones:
   `profiles: ProfileSummary[]` (id/name/avatar/theme/points for every kid),
   `switchProfile`, `addProfile`, `updateProfile(id, patch)`, `deleteProfile(id)` (refuses to delete
@@ -137,7 +137,7 @@ single-profile save by wrapping it as a one-entry root.
 - **Pending rewards** — kids request via `requestReward` (which reserves points already promised to
   other pending requests so a kid can't queue more than their balance covers); they sit in
   `pendingRewards` until a parent calls `approveReward`/`declineReward` from `ApprovalsPanel`.
-- **Editing past days** — the Calendar lives in the PIN-gated parent dashboard (`CalendarPanel`),
+- **Editing past days** — the Calendar lives in the account-gated parent dashboard (`CalendarPanel`),
   since past-day edits affect real points. Picking a day renders `FoodTray`/`DailyGoals`/
   `BonusPoints` with a `dateStr` prop; when it's not today they read/write that day's log via
   `getDayLog()` (`src/state/dayLog.ts`) and the `*ForDay` actions
@@ -153,9 +153,9 @@ single-profile save by wrapping it as a one-entry root.
   goals (`target > 1`) only track step counts for today — past days store goal completion as a
   boolean (`goalIds` membership), so `DailyGoals` renders past-day multi-step goals as a simple
   toggle tile rather than a stepper. There's no kid-facing calendar/history view — the Calendar is
-  reached only through the PIN-gated parent dashboard described above. `TopBar`
+  reached only through the account-gated parent dashboard described above. `TopBar`
   (`src/components/TopBar.tsx`) is just the avatar, `Greeting` (`src/components/Greeting.tsx`), and
-  the grown-up lock icon (opens `AccountMenu`); it carries no date nav. `src/components/
+  the grown-up menu (hamburger) icon (opens `AccountMenu`); it carries no date nav. `src/components/
   CalendarGrid.tsx` is the month-grid UI used by `CalendarPanel`; it disables/mutes any day cell
   whose date string is greater than today's so it can't navigate to a future date.
   `formatFriendlyDate()` (`src/state/defaultState.ts`, alongside `todayStr`/`addDaysToDateStr`) is

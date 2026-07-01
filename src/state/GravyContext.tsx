@@ -11,11 +11,11 @@ import { resolveToastIcon } from '../data/icons';
 import { findNewlyEarnedBadges, getBadgeDisplay } from './badges';
 import { applyAward, applyAwardForDay } from './points';
 import { getRank, RANKS } from '../data/ranks';
-import { readGrownUpUnlocked, writeGrownUpUnlocked } from './grownUpUnlock';
 import {
   type AuthResult,
   type AuthUser,
   type HouseholdStatus,
+  isGrownUpUnlocked,
 } from './auth';
 import { SYNC_SKIPPED_KEY, DAILY_GAME_WIN_CAP, activeStateOf, buildMergedRoot, clone } from './actions/shared';
 import type { ProfilePatch, SettableSettingKey, SyncStatus } from './actions/types';
@@ -104,9 +104,9 @@ interface GravyContextValue {
   resetToday: () => void;
   resetAll: () => void;
   updateBadgeConfig: (id: string, key: 'enabled' | 'name' | 'emoji' | 'icon', value: string | boolean) => void;
+  // The sole gate for parental-control screens — derived from authUser + householdStatus, not
+  // stored. See src/state/auth.ts#isGrownUpUnlocked.
   grownUpUnlocked: boolean;
-  unlockGrownUpAccess: () => void;
-  lockGrownUpAccess: () => void;
   householdCode: string | null;
   syncStatus: SyncStatus;
   createHousehold: (customCode?: string) => Promise<string | null>;
@@ -146,15 +146,6 @@ export function GravyProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [celebration, setCelebration] = useState<CelebrationData | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState(0);
-  const [grownUpUnlocked, setGrownUpUnlocked] = useState(() => readGrownUpUnlocked());
-  const unlockGrownUpAccess = useCallback(() => {
-    writeGrownUpUnlocked(true);
-    setGrownUpUnlocked(true);
-  }, []);
-  const lockGrownUpAccess = useCallback(() => {
-    writeGrownUpUnlocked(false);
-    setGrownUpUnlocked(false);
-  }, []);
   const pendingTimersRef = useRef<number[]>([]);
   const storageWarnedRef = useRef(false);
 
@@ -169,6 +160,8 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     householdStatus, setHouseholdStatus,
     lastSyncedRef, actorRef,
   } = useHouseholdSync({ root, state, setRoot, setState });
+
+  const grownUpUnlocked = isGrownUpUnlocked(authUser, householdStatus);
 
   // Applies the parent-selected theme to the whole app. useLayoutEffect (rather than
   // useEffect) so the attribute is set before paint, avoiding a flash of the light theme.
@@ -353,8 +346,6 @@ export function GravyProvider({ children }: { children: ReactNode }) {
     dismissToast,
     hideCelebration,
     grownUpUnlocked,
-    unlockGrownUpAccess,
-    lockGrownUpAccess,
     householdCode,
     syncStatus,
     authUser,

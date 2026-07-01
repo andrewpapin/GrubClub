@@ -24,20 +24,21 @@ Tapping the hamburger icon in `TopBar` always opens **`AccountMenu`**, whether l
 it's a single "open the menu" button, not a lock/unlock toggle, so closing the menu (e.g. after
 using an item) and tapping the icon again reopens the menu rather than re-locking. `AccountMenu` is
 styled like every other drawer (the shared `Modal` bottom-sheet — header with title + close button,
-scrollable body), plus a round lock button passed via `Modal`'s `headerExtra` prop, rendered
-immediately to the left of the close (X) button. The lock button reflects `grownUpUnlocked`
-(closed-lock glyph + neutral background when locked, open-lock glyph + yellow background when
-unlocked) and is the only lock/unlock control — there's no separate "Lock" list item. The item list
-itself always renders (it's not swapped out for `PinScreen`): each item button gets `disabled` and a
-greyed-out/desaturated style whenever `grownUpUnlocked` is false, so the menu's shape is visible but
-inert while locked. Tapping the lock button when locked swaps the body (title becomes "Grown-Up
-Access", and a back-chevron appears via `Modal`'s `onBack`) to render `PinScreen` inline; on a
-correct PIN, `onSuccess` calls `unlockGrownUpAccess()` and the body reverts to the now-enabled item
-list. Tapping the lock button when unlocked calls `lockGrownUpAccess()` directly (no PIN re-entry to
-lock) and the menu stays open with items now greyed/disabled — re-locking doesn't close the drawer.
-A `pinPromptOpen` flag tracks whether the inline `PinScreen` is showing; it resets to `false`
-whenever the drawer transitions from closed to open (see the `pinNonce` note below), so the menu
-always opens to the greyed item list rather than mid-PIN-entry.
+scrollable body), plus a round button passed via `Modal`'s `headerExtra` prop, rendered immediately
+to the left of the close (X) button. That button reflects `grownUpUnlocked` (a derived value — see
+`isGrownUpUnlocked` in `src/state/auth.ts` — not stored state): "Sign In" glyph + neutral background
+when locked, "Log Out" glyph + yellow background when unlocked. The item list itself always renders
+(it's not swapped out for a PIN pad): each item button gets `disabled` and a greyed-out/desaturated
+style whenever `grownUpUnlocked` is false, so the menu's shape is visible but inert while locked.
+Tapping the button when locked swaps the body (title becomes "Sign In", and a back-chevron appears
+via `Modal`'s `onBack`) to render `SignInPrompt` (`src/components/SignInPrompt.tsx`) inline — either
+a sign-up/sign-in/magic-link form (not signed in at all) or a family-code join prompt (signed in but
+not yet a member of this device's household). There's no explicit "unlock" call: `grownUpUnlocked`
+recomputes automatically once `authUser`/`householdStatus` update, and a `useEffect` in `AccountMenu`
+watches it and closes the prompt back to the item list once it flips true. Tapping the button when
+unlocked calls `signOutAccount()` directly — logging out is what re-locks the device, there's no
+separate "lock without signing out." A `signInNonce` flag remounts a fresh `SignInPrompt` on every
+open (mirroring the old `pinNonce` idea) so a half-finished sign-in attempt never lingers.
 
 - **Reward Store** — no PIN, always tappable (its entry point is on `StatsCard`, not this menu).
 - **Approvals** — the first item in the list. Opens `ApprovalsDrawer`
@@ -77,14 +78,13 @@ always opens to the greyed item list rather than mid-PIN-entry.
   `AccountMenu` item, sibling to Profiles, since it's account-level config rather than day-to-day
   parenting tasks.
 
-A `pinNonce` key on `PinScreen`, bumped whenever the drawer transitions from closed to open, forces
-a fresh `PinScreen` instance on every open so a half-entered PIN never lingers across opens/closes.
-
-The unlocked state (`grownUpUnlocked` in `GravyContext`, backed by `src/state/grownUpUnlock.ts`) is
-stored in `sessionStorage`, not `localStorage` — so it follows the current browser tab/PWA window and
-resets to locked whenever that session ends, even though everything else persists indefinitely.
+The unlocked state (`grownUpUnlocked` in `GravyContext`) is not stored anywhere — it's recomputed on
+every render from `authUser` (the Supabase Auth session, which persists across tab/PWA restarts) and
+`householdStatus.isMember` (this device's membership in its currently-synced household). So a device
+stays unlocked across reopens as long as the parent stays signed in and synced to a household they
+belong to; it only re-locks when they sign out (or this device's household membership changes).
 `GrownUpsDrawer`/`ProfilesManager`/`ProfileSwitcher`/`AdvancedSettingsDrawer`/`LogDrawer`/
-`CalendarDrawer`/`ApprovalsDrawer` don't render `PinScreen` themselves; they assume they're only
+`CalendarDrawer`/`ApprovalsDrawer` don't render `SignInPrompt` themselves; they assume they're only
 opened from `AccountMenu` once unlocked.
 
 Every drawer reached directly from `AccountMenu` (the seven above) is a first-level drawer and gets
@@ -131,15 +131,18 @@ merged into the top-level `LogPanel` reached via `AccountMenu` → "Log" (see ab
 root-menu panels — it's reached directly from `AccountMenu`'s "Advanced Settings" item via
 `AdvancedSettingsDrawer`, not nested inside the Game Settings dashboard. It follows the same
 two-level menu/drill-down router shape as `ParentDashboard`: a local `root` state (`'menu' |
-SettingsDest` where `SettingsDest` is `'timezone' | 'account' | 'security' | 'sync' | 'reset'`) that
-renders `SettingsMenu` (a `menu-card` list, mirroring `RootMenu`) at `'menu'`, and drills into one
-panel with a back button otherwise:
+SettingsDest` where `SettingsDest` is `'timezone' | 'account' | 'sync' | 'reset'`) that renders
+`SettingsMenu` (a `menu-card` list, mirroring `RootMenu`) at `'menu'`, and drills into one panel
+with a back button otherwise:
 
 - `TimezonePanel` — household time zone.
-- `AccountPanel` — parent account sign up/in/out + magic link.
-- `SecurityPanel` — PIN + recovery Q&A.
-- `SyncPanel` — household code create/join/change/leave, plus the "Secure this household" claim
-  banner.
+- `AccountPanel` — signed-in-only view (email + Sign out). There's no not-signed-in form here
+  anymore — reaching this screen at all requires being signed in (see `isGrownUpUnlocked`), and
+  signing out immediately re-locks `AccountMenu`, closing this screen too. The sign-in form itself
+  now lives only in `SignInPrompt` (see above).
+- `SyncPanel` (menu label "Family Code") — household code create/join/change/leave. The old "Secure
+  this household" claim banner is gone: every household is now claimed (owned) at creation, so the
+  unclaimed-state branch it handled can no longer occur.
 - `DangerZonePanel` — reset today / reset everything (surfaced as "Reset" on the menu card).
 
 `AdvancedSettingsDrawer` owns the `header` state and passes `onHeaderChange` into `SettingsPanel`,
@@ -150,29 +153,31 @@ which settings section (if any) is drilled into.
 
 First-run users (no `localStorage[STORAGE_KEY]` and no `ONBOARDING_DONE_KEY = 'gravy_onboarded'`)
 see `Onboarding` instead of the normal home screen — see the check in `AppShell` (`src/App.tsx`).
-It's a phase state machine (`welcome → name → walkthrough → account → sync → creating → pinSetup`,
-with a parallel `join` phase) that collects the child's name, shows a short walkthrough, offers to
-create a parent account, then offers to create/join/skip a Supabase household before landing in the
-app. Existing users (saved progress before this feature shipped) are detected via the `STORAGE_KEY`
-check and skip past it.
+It's a phase state machine (`welcome → name → walkthrough → account → creating`, with a parallel
+`join` phase) built around a three-way fork at `'welcome'`, since account creation is now mandatory
+and there's no PIN — a device's only way into parental controls is a signed-in account that's a
+member of its synced household (see `isGrownUpUnlocked` in `src/state/auth.ts`):
 
-The `'account'` phase (Epic 8) renders `AccountSetupStep` (`src/components/AccountSetupStep.tsx`) —
-an optional, skippable parent-account step (email/password or magic link, parent-only/COPPA
-language) placed **before** household creation on purpose: a parent who signs in here owns the
-household automatically when the next `'sync'` phase creates it (`createHousehold` sets `owner_id`
-from the JWT), so no separate "claim" is needed. Skipping leaves the household unclaimed (legacy
-path), claimable later via the `SyncPanel` banner. It's rendered self-contained like `PinSetupStep`.
-The same account form also lives in `AccountPanel` (Advanced Settings) for users who skip or who
-onboarded before this step existed.
+1. **Set up a new family** — `'name'` (kid's name) → `'walkthrough'` (product tour) → `'account'`
+   forced into `signup` mode → on success, `createHousehold()` auto-fires (no custom-code option
+   here; that's still available later via `SyncPanel` → "Customize code") → `'creating'` reveals the
+   generated code → `finish()`.
+2. **"I'm a parent — sign in to join my family"** (link on `'welcome'`) — skips straight to
+   `'account'` forced into `signin` mode (no name/walkthrough, since joining pulls the existing
+   family's kid profiles) → on success, `'join'` prompts for the family code → `joinHousehold(code)`
+   (signed in, so `gravy_lookup_household` auto-adds this account as a `household_members` row —
+   the same mechanism a co-parent uses) → `finish()`.
+3. **"This is my kid's device — just enter a family code"** (link on `'welcome'`) — skips `'account'`
+   entirely, straight to `'join'` → `joinHousehold(code)` called anonymously → `finish()`. This
+   device never has an account, so `grownUpUnlocked` stays false on it permanently unless someone
+   signs in later via `SignInPrompt` (see above) — which doesn't change this device's own
+   no-account default once they sign back out.
 
-When a household is freshly **created** (not joined — an existing household already has a real PIN),
-the `'creating'` phase's "Let's go!" button advances to `'pinSetup'` instead of finishing onboarding
-directly. That phase renders `PinSetupStep` (`src/components/PinSetupStep.tsx`), a two-screen
-mini-wizard (`'pin' → 'recovery'`) that walks the parent through replacing the default PIN (`1234`)
-with a real one and optionally setting a recovery question/answer, both via `saveSetting()` —
-`onDone` calls `finish()` to complete onboarding either way (both steps have a skip option). The same
-component is reused by `SyncGateModal` for the other household-creating path. This exists so
-PIN/recovery setup isn't only reachable later via the PIN-gated Settings screen (`SecurityPanel`).
-`PinSetupStep` lays the PIN/Confirm (or question/answer) inputs side by side within a step rather
-than stacking every field in one tall form, the same fix applied to `PinScreen`'s pre-existing
-"Forgot PIN? → set new PIN" recovery step.
+`'join'` tracks a `JoinOrigin` (`'welcome' | 'account'`) so Back returns to the right place. Existing
+users (saved progress before this feature shipped) are detected via the `STORAGE_KEY` check and skip
+past onboarding entirely.
+
+`AccountSetupStep` (`src/components/AccountSetupStep.tsx`) takes an `initialMode` prop (`'signup'`
+for fork 1, `'signin'` for fork 2) and reports which mode was actually used back to `Onboarding` via
+`onDone(mode)`, so the caller can branch (auto-create a household vs. prompt for a code to join).
+There's no "Skip for now" — account creation is mandatory on every path that reaches this phase.

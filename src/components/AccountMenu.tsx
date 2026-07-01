@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLock, faLockOpen, faRightLeft, faUsers, faUserShield, faGear, faClockRotateLeft, faCalendarDays, faCircleCheck } from '@fortawesome/free-solid-svg-icons';
+import { faRightToBracket, faRightFromBracket, faRightLeft, faUsers, faUserShield, faGear, faClockRotateLeft, faCalendarDays, faCircleCheck } from '@fortawesome/free-solid-svg-icons';
 import { useGravy } from '../state/GravyContext';
 import { Modal } from './Modal';
-import { PinScreen } from './PinScreen';
+import { SignInPrompt } from './SignInPrompt';
 import { APP_VERSION } from '../version';
 
 interface AccountMenuProps {
@@ -29,45 +29,49 @@ export function AccountMenu({
   onOpenCalendar,
   onOpenApprovals,
 }: AccountMenuProps) {
-  const { state, profiles, grownUpUnlocked, unlockGrownUpAccess, lockGrownUpAccess } = useGravy();
+  const { state, profiles, grownUpUnlocked, signOutAccount } = useGravy();
   const pendingCount = state.pendingRewards.length;
-  // Re-prompt the PIN on every fresh open, adjusted during render (not an effect) — this
+  // Re-prompt sign-in on every fresh open, adjusted during render (not an effect) — this
   // component never unmounts (only its inner JSX is conditionally rendered below), so a
-  // half-finished PIN attempt would otherwise linger across opens/closes.
+  // half-finished sign-in attempt would otherwise linger across opens/closes.
   const [prevOpen, setPrevOpen] = useState(open);
-  const [pinNonce, setPinNonce] = useState(0);
-  const [pinPromptOpen, setPinPromptOpen] = useState(false);
+  const [signInNonce, setSignInNonce] = useState(0);
+  const [signInPromptOpen, setSignInPromptOpen] = useState(false);
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
-      setPinNonce((n) => n + 1);
-      setPinPromptOpen(false);
+      setSignInNonce((n) => n + 1);
+      setSignInPromptOpen(false);
     }
   }
 
   const locked = !grownUpUnlocked;
   const runIfUnlocked = (action: () => void) => () => { if (!locked) action(); };
+  // Once signing in (or joining) actually unlocks the device, the prompt should fall away back
+  // to the item list on its own — grownUpUnlocked is derived, not something SignInPrompt sets
+  // itself, so this is computed at render time rather than reset via an effect.
+  const showSignInPrompt = signInPromptOpen && locked;
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       closeLabel="Close grown-up menu"
-      title={pinPromptOpen ? 'Grown-Up Access' : 'Grown-Up Menu'}
-      onBack={pinPromptOpen ? () => setPinPromptOpen(false) : undefined}
+      title={showSignInPrompt ? 'Sign In' : 'Grown-Up Menu'}
+      onBack={showSignInPrompt ? () => setSignInPromptOpen(false) : undefined}
       headerExtra={
         <button
           type="button"
           className={`calendar-modal-lock ${locked ? '' : 'unlocked'}`}
-          onClick={() => { if (locked) setPinPromptOpen(true); else lockGrownUpAccess(); }}
-          aria-label={locked ? 'Unlock grown-up access' : 'Lock grown-up access'}
+          onClick={() => { if (locked) setSignInPromptOpen(true); else void signOutAccount(); }}
+          aria-label={locked ? 'Sign in' : 'Log out'}
         >
-          <FontAwesomeIcon icon={locked ? faLock : faLockOpen} />
+          <FontAwesomeIcon icon={locked ? faRightToBracket : faRightFromBracket} />
         </button>
       }
     >
-      {pinPromptOpen ? (
-        <PinScreen key={pinNonce} onSuccess={() => { unlockGrownUpAccess(); setPinPromptOpen(false); }} />
+      {showSignInPrompt ? (
+        <SignInPrompt key={signInNonce} />
       ) : (
         <div className="account-menu">
           <button type="button" className="account-menu-option" disabled={locked} onClick={runIfUnlocked(onOpenApprovals)}>
@@ -120,7 +124,7 @@ export function AccountMenu({
             <span className="account-menu-option-icon"><FontAwesomeIcon icon={faGear} /></span>
             <span className="account-menu-option-text">
               <span className="account-menu-option-title">Advanced Settings</span>
-              <span className="account-menu-option-sub">PIN, time zone, cloud sync, and reset</span>
+              <span className="account-menu-option-sub">Time zone, family code, and reset</span>
             </span>
           </button>
           <div className="account-menu-version">v{APP_VERSION}</div>

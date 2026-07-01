@@ -29,10 +29,10 @@ smoke-test (not wired into `npm`) that drives the app in a headless browser agai
 `npm run dev`; run it manually with `node verify_gravy.mjs` if you need a scripted UI walkthrough.
 
 See `BACKLOG.md` for the living backlog of **open** items (security, infra, accessibility, process
-gaps) — check it before assuming a known gap (e.g. plaintext PIN storage) is unintentional or
-unreported. Completed/decided items are condensed to one-liners in `BACKLOG_DONE.md` (the decision
-record — the "why" behind shipped work); epic numbers are stable across both files, so `BACKLOG.md`
-has numbering gaps where fully-done epics live only in `BACKLOG_DONE.md`.
+gaps) — check it before assuming a known gap (e.g. the open-SELECT RLS policy on `households`) is
+unintentional or unreported. Completed/decided items are condensed to one-liners in `BACKLOG_DONE.md`
+(the decision record — the "why" behind shipped work); epic numbers are stable across both files, so
+`BACKLOG.md` has numbering gaps where fully-done epics live only in `BACKLOG_DONE.md`.
 
 ## Keeping tests and docs in sync
 
@@ -77,15 +77,18 @@ Deep detail lives in `docs/`. Read the linked file when working in that area.
   `*ForDay` actions + `dayLogs`; read-only kid history view via `viewedDate`/`CalendarGrid`).
 - **Persistence & sync** (`docs/persistence-and-sync.md`) — `localStorage` (`STORAGE_KEY`
   `gravy_v1`); Supabase `households`/`household_members` tables; `SECURITY DEFINER` RPCs +
-  rate-limiting in `supabase/migrations/`; Epic 8 ownership/claim model; `safe*` storage wrappers;
-  Parent Accounts (`src/state/auth.ts`) and the salted-SHA-256 PIN (`src/state/hash.ts`,
-  `src/state/pinLockout.ts`).
+  rate-limiting in `supabase/migrations/`; the account-mandatory ownership model (every household
+  is claimed at creation); `safe*` storage wrappers; Parent Accounts (`src/state/auth.ts`) —
+  there's no PIN; `isGrownUpUnlocked` (also in `src/state/auth.ts`) is the sole access gate,
+  derived from the signed-in account and its household membership.
 - **UI surfaces** (`docs/ui-surfaces.md`) — kid view + `AccountMenu` (the single `grownUpUnlocked`
-  lock gating Approvals/Profiles/Game Settings/Calendar/Log/Advanced Settings); the "Game Settings"
-  dashboard (`ParentDashboard` component, formerly labeled "Grown ups") two-level router and its
-  panels (`GoalsPanel`/`StorePanel`/`BadgesPanel`); `ApprovalsPanel`/`CalendarPanel` reached
-  directly from `AccountMenu` via `ApprovalsDrawer`/`CalendarDrawer`, plus `SettingsPanel` reached
-  via `AdvancedSettingsDrawer`; `Onboarding` phase machine.
+  lock gating Approvals/Profiles/Game Settings/Calendar/Log/Advanced Settings, now account-based
+  via `SignInPrompt` rather than PIN-based); the "Game Settings" dashboard (`ParentDashboard`
+  component, formerly labeled "Grown ups") two-level router and its panels
+  (`GoalsPanel`/`StorePanel`/`BadgesPanel`); `ApprovalsPanel`/`CalendarPanel` reached directly from
+  `AccountMenu` via `ApprovalsDrawer`/`CalendarDrawer`, plus `SettingsPanel` reached via
+  `AdvancedSettingsDrawer`; `Onboarding`'s three-way account fork (new family / sign in to join /
+  kid device).
 - **Subsystems** (`docs/systems.md`) — Arcade/games hub (`src/data/games.ts`, `completeGameRound`,
   `DAILY_GAME_WIN_CAP`); Rank ladder (`src/data/ranks.ts`, `getRank`, `useTodaySnapshot`); 71 Badges
   (`src/data/badges.ts`, `src/state/badges.ts`, `badgeConfig`); Icon system (`src/data/icons.ts`,

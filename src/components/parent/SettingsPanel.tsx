@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { SettingsMenu, type SettingsDest } from './SettingsMenu';
 import { TimezonePanel } from './TimezonePanel';
 import { AccountPanel } from './AccountPanel';
-import { SecurityPanel } from './SecurityPanel';
 import { SyncPanel } from './SyncPanel';
 import { DangerZonePanel } from './DangerZonePanel';
 
@@ -12,8 +11,7 @@ type Root = 'menu' | SettingsDest;
 const ROOT_TITLES: Record<Exclude<Root, 'menu'>, string> = {
   timezone: 'Time Zone',
   account: 'Parent Account',
-  security: 'PIN & Recovery',
-  sync: 'Cloud Sync',
+  sync: 'Family Code',
   reset: 'Reset',
 };
 
@@ -39,7 +37,6 @@ export function SettingsPanel({ onHeaderChange }: SettingsPanelProps) {
   }
   if (root === 'timezone') return <TimezonePanel />;
   if (root === 'account') return <AccountPanel />;
-  if (root === 'security') return <SecurityPanel />;
   if (root === 'sync') return <SyncPanel />;
   return <DangerZonePanel />;
 }

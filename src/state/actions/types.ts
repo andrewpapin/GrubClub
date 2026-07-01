@@ -13,9 +13,7 @@ export type AwardPointsForDay = (next: GravyState, log: DayLog, pts: number, rea
 export type MaybeCelebrateRankUp = (prevTotalPoints: number, next: GravyState, delayMs?: number) => void;
 export type CheckBadges = (next: GravyState, delayMs?: number) => void;
 
-// pinHash/pinSalt/recoveryAnswerHash/recoveryAnswerSalt are internal-only — callers set the PIN
-// or recovery answer via the virtual 'pin'/'recoveryAnswer' keys, never the hash/salt fields directly.
-export type SettableSettingKey = Exclude<keyof Settings, 'pinHash' | 'pinSalt' | 'recoveryAnswerHash' | 'recoveryAnswerSalt'> | 'pin' | 'recoveryAnswer';
+export type SettableSettingKey = keyof Settings;
 
 // Per-kid identity fields a parent can edit for any profile.
 export type ProfilePatch = Partial<

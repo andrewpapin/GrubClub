@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeHouseholdStatus } from './auth';
+import { normalizeHouseholdStatus, isGrownUpUnlocked } from './auth';
+
+const USER = { id: 'u1', email: 'parent@example.com' };
 
 describe('normalizeHouseholdStatus', () => {
   it('reads a single-row array (PostgREST table-function shape)', () => {
@@ -32,5 +34,24 @@ describe('normalizeHouseholdStatus', () => {
       isMember: false,
       isOwner: false,
     });
+  });
+});
+
+describe('isGrownUpUnlocked', () => {
+  it('unlocks when signed in and a member of the household', () => {
+    expect(isGrownUpUnlocked(USER, { claimed: true, isMember: true, isOwner: true })).toBe(true);
+    expect(isGrownUpUnlocked(USER, { claimed: true, isMember: true, isOwner: false })).toBe(true);
+  });
+
+  it('stays locked when not signed in, even if the household would otherwise qualify', () => {
+    expect(isGrownUpUnlocked(null, { claimed: true, isMember: true, isOwner: true })).toBe(false);
+  });
+
+  it('stays locked when signed in but not a member of this device\'s household', () => {
+    expect(isGrownUpUnlocked(USER, { claimed: true, isMember: false, isOwner: false })).toBe(false);
+  });
+
+  it('fails closed while household status hasn\'t resolved yet', () => {
+    expect(isGrownUpUnlocked(USER, null)).toBe(false);
   });
 });
