@@ -8,6 +8,7 @@ import { safeGetItem } from './storage';
 import {
   type AuthUser,
   type HouseholdStatus,
+  claimHousehold,
   getHouseholdStatus,
   onAuthChange,
 } from './auth';
@@ -79,7 +80,15 @@ export function useHouseholdSync({ root, state, setRoot, setState }: HouseholdSy
   }, []);
 
   // Refresh whether the current household is claimed whenever the code or the signed-in account
-  // changes — drives the "secure this household" prompt. Failures (offline) leave status null.
+  // changes. Also self-heals households created before accounts were mandatory: those rows have
+  // no owner and no members, so a signed-in device synced to one would otherwise be permanently
+  // locked out (there's no UI path to claim a household left, since reaching Settings itself
+  // requires already being unlocked). If the household is unclaimed and we're signed in, claim it
+  // automatically — this is the same action the old "Secure this household" button took, just
+  // automatic; gravy_claim_household is idempotent for the existing owner and safely rejects if
+  // another account has already claimed it in the meantime. A failed claim attempt (offline,
+  // already claimed by someone else) just leaves the pre-claim status in place; a failed initial
+  // status fetch (offline, no household) leaves status null.
   useEffect(() => {
     if (!householdCode) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -87,9 +96,27 @@ export function useHouseholdSync({ root, state, setRoot, setState }: HouseholdSy
       return;
     }
     let cancelled = false;
-    getHouseholdStatus(householdCode)
-      .then((s) => { if (!cancelled) setHouseholdStatus(s); })
-      .catch(() => { if (!cancelled) setHouseholdStatus(null); });
+    (async () => {
+      try {
+        let status = await getHouseholdStatus(householdCode);
+        if (!status.claimed && authUser) {
+          try {
+            await claimHousehold(householdCode);
+          } catch {
+            // Rejected (e.g. someone else claimed it first) or offline — re-fetch below
+            // regardless, since the true status may have changed either way.
+          }
+          try {
+            status = await getHouseholdStatus(householdCode);
+          } catch {
+            // Offline — fall back to the pre-claim-attempt status fetched above.
+          }
+        }
+        if (!cancelled) setHouseholdStatus(status);
+      } catch {
+        if (!cancelled) setHouseholdStatus(null);
+      }
+    })();
     return () => { cancelled = true; };
   }, [householdCode, authUser]);
 
