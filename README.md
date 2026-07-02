@@ -38,9 +38,9 @@ account — there's no PIN.
   - **Game Settings** — manage daily goals, bonus items, per-action point
     values, store rewards, and badge names/emoji/icons/visibility
   - **Calendar** — view and edit past days
-  - **Log** — history of every action, including admin changes
-  - **Advanced Settings** — time zone, family code, and reset today's
-    progress or everything
+  - **Advanced Settings** — time zone, family code, Log (history of every
+    action, including admin changes), and reset today's progress or
+    everything
 - **Parent accounts + family code** (required) — creating an account
   auto-creates and owns a household's family code; a device can also join
   an existing family by just entering that code, but only a signed-in

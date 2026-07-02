@@ -1,9 +1,9 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faGlobe, faUser, faCloud, faRotate, faChevronRight,
+  faGlobe, faUser, faCloud, faRotate, faClockRotateLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons';
 
-export type SettingsDest = 'timezone' | 'account' | 'sync' | 'reset';
+export type SettingsDest = 'timezone' | 'account' | 'sync' | 'log' | 'reset';
 
 interface SettingsMenuProps {
   onNavigate: (dest: SettingsDest) => void;
@@ -33,6 +33,14 @@ export function SettingsMenu({ onNavigate }: SettingsMenuProps) {
         <div className="menu-card-body">
           <div className="menu-card-title">Family Code</div>
           <div className="menu-card-sub">Sync your household across phones</div>
+        </div>
+        <FontAwesomeIcon icon={faChevronRight} className="menu-card-chevron" />
+      </button>
+      <button className="menu-card" onClick={() => onNavigate('log')} type="button">
+        <span className="menu-card-icon"><FontAwesomeIcon icon={faClockRotateLeft} /></span>
+        <div className="menu-card-body">
+          <div className="menu-card-title">Log</div>
+          <div className="menu-card-sub">History of every action, including admin changes</div>
         </div>
         <FontAwesomeIcon icon={faChevronRight} className="menu-card-chevron" />
       </button>

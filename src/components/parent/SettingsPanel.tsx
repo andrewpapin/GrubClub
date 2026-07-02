@@ -4,6 +4,7 @@ import { SettingsMenu, type SettingsDest } from './SettingsMenu';
 import { TimezonePanel } from './TimezonePanel';
 import { AccountPanel } from './AccountPanel';
 import { SyncPanel } from './SyncPanel';
+import { LogPanel } from './LogPanel';
 import { DangerZonePanel } from './DangerZonePanel';
 
 type Root = 'menu' | SettingsDest;
@@ -12,6 +13,7 @@ const ROOT_TITLES: Record<Exclude<Root, 'menu'>, string> = {
   timezone: 'Time Zone',
   account: 'Parent Account',
   sync: 'Family Code',
+  log: 'Log',
   reset: 'Reset',
 };
 
@@ -38,5 +40,6 @@ export function SettingsPanel({ onHeaderChange }: SettingsPanelProps) {
   if (root === 'timezone') return <TimezonePanel />;
   if (root === 'account') return <AccountPanel />;
   if (root === 'sync') return <SyncPanel />;
+  if (root === 'log') return <LogPanel />;
   return <DangerZonePanel />;
 }
