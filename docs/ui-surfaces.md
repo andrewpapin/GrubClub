@@ -10,7 +10,12 @@ there is no router, just boolean open/close state per drawer.
 ## Kid view (`src/components/`)
 
 `HomeScreen` (rank/streak/badge stats card, Arcade hub card, food tray, daily goals, bonus items)
-plus drawers for the reward store, badges, the Arcade (games), and the rank ladder. The user-facing
+plus drawers for the reward store, badges, the Arcade (games), and the rank ladder. The badges drawer
+(`BadgesScreen`) filters by the same `badge.group` pills used in the parent Badge Library panel, and
+splits results into a "spotlight" tier (earned or in-progress badges, rendered as the full
+`.badge-tile` card) versus a dense "compact" `.badge-chip` grid for everything not yet started
+(`isBadgeSpotlighted` in `src/state/badges.ts`) — this keeps the 71-badge library from reading as one
+flat undifferentiated wall of icons. The user-facing
 label for the games hub is "Arcade" (`GamesCard`, `GamesScreen`) — kept distinct from the parent
 dashboard's "Game Settings" label (see below) so the two aren't confused; the underlying
 component/file names (`GamesCard`, `GamesScreen`, `onOpenGames`, `gamesOpen`, `src/data/games.ts`)

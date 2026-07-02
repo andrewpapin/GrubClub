@@ -26,7 +26,7 @@ export function BadgePopup({ badgeId, onClose }: BadgePopupProps) {
       }}
     >
       {master && display && (
-        <div className="badge-popup" ref={popupRef} role="dialog" aria-modal="true" aria-label={display.name} tabIndex={-1}>
+        <div className={`badge-popup ${earned ? 'earned' : ''}`} ref={popupRef} role="dialog" aria-modal="true" aria-label={display.name} tabIndex={-1}>
           <button className="badge-popup-close" onClick={onClose} aria-label="Close badge details" type="button">
             <FontAwesomeIcon icon={faXmark} />
           </button>

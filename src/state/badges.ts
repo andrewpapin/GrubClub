@@ -71,6 +71,24 @@ export function getBadgeProgress(state: GravyState, badge: BadgeDef): BadgeProgr
   }
 }
 
+// Whether a badge deserves full-size visual weight on the kid-facing badges screen:
+// already earned, or the next unearned milestone actively in progress. Everything else
+// collapses to a compact chip. Badges of the same trigger type (e.g. chore_count:5/10/25/...)
+// share one underlying counter, so `current > 0` alone would light up an entire threshold
+// ladder at once — only the nearest un-earned rung in each ladder counts as "in progress".
+export function isBadgeSpotlighted(state: GravyState, badge: BadgeDef): boolean {
+  if (state.earnedBadges.includes(badge.id)) return true;
+  const progress = getBadgeProgress(state, badge);
+  if (progress === null || progress.current <= 0) return false;
+  const [type, threshStr] = badge.trigger.split(':');
+  const thresh = parseInt(threshStr) || 0;
+  return !BADGE_MASTER.some((other) => {
+    if (other.id === badge.id || state.earnedBadges.includes(other.id)) return false;
+    const [otherType, otherThreshStr] = other.trigger.split(':');
+    return otherType === type && (parseInt(otherThreshStr) || 0) < thresh;
+  });
+}
+
 export function getEnabledBadgeCount(state: GravyState): number {
   return BADGE_MASTER.filter((b) => {
     const cfg = state.badgeConfig[b.id];

@@ -6,6 +6,7 @@ import {
   getBadgeProgress,
   getEnabledBadgeCount,
   getEnabledBadges,
+  isBadgeSpotlighted,
 } from './badges';
 import type { GravyState } from './types';
 
@@ -110,6 +111,41 @@ describe('getBadgeDisplay', () => {
 
   it('returns null for an unknown badge id', () => {
     expect(getBadgeDisplay(freshState(), 'not_a_real_badge')).toBeNull();
+  });
+});
+
+describe('isBadgeSpotlighted', () => {
+  const veggie5 = { id: 'veggie5', emoji: '', icon: 'carrot' as const, name: '', desc: '', trigger: 'veggie:5' as const, group: 'Food' };
+  const firstFood = { id: 'first_food', emoji: '', icon: 'bowlFood' as const, name: '', desc: '', trigger: 'first_food' as const, group: 'Food' };
+
+  it('is true for an already-earned badge', () => {
+    const state = freshState({ earnedBadges: ['veggie5'] });
+    expect(isBadgeSpotlighted(state, veggie5)).toBe(true);
+  });
+
+  it('is true for an unearned badge with partial progress', () => {
+    const state = freshState({ counters: { ...cloneDefaultState().counters, foodLogs: { veggie: 2 } } });
+    expect(isBadgeSpotlighted(state, veggie5)).toBe(true);
+  });
+
+  it('is false for an unearned badge with zero progress', () => {
+    const state = freshState();
+    expect(isBadgeSpotlighted(state, veggie5)).toBe(false);
+  });
+
+  it('is false for an unearned non-trackable (first-time) badge', () => {
+    const state = freshState();
+    expect(isBadgeSpotlighted(state, firstFood)).toBe(false);
+  });
+
+  it('spotlights only the nearest unearned rung of a shared-counter threshold ladder', () => {
+    // chore5/10/25/50/100/200 all read the same totalGoals counter — 3 completed chores
+    // gives every rung current > 0, but only chore5 (the next milestone) should spotlight.
+    const state = freshState({ counters: { ...cloneDefaultState().counters, totalGoals: 3 } });
+    const chore5 = { id: 'chore5', emoji: '', icon: 'broom' as const, name: '', desc: '', trigger: 'chore_count:5' as const, group: 'Chores' };
+    const chore10 = { id: 'chore10', emoji: '', icon: 'screwdriverWrench' as const, name: '', desc: '', trigger: 'chore_count:10' as const, group: 'Chores' };
+    expect(isBadgeSpotlighted(state, chore5)).toBe(true);
+    expect(isBadgeSpotlighted(state, chore10)).toBe(false);
   });
 });
 
