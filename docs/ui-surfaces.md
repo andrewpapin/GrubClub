@@ -54,50 +54,31 @@ open (mirroring the old `pinNonce` idea) so a half-finished sign-in attempt neve
 - **Switch Profile** — only shown when there's more than one profile. Opens `ProfileSwitcher`, a
   read-only quick-switch list (tap → `switchProfile(id)`).
 - **Game Settings** (formerly "Grown ups") — opens `GrownUpsDrawer` → `ParentDashboard` directly.
-  Renamed because, with Approvals/Calendar/Log/Advanced Settings all graduated to top-level items
-  (see below and this list), all that's left inside is gamification config (Goals/Store/Badges) —
-  "Game Settings" describes that scope more accurately than the old catch-all "Grown ups" label.
+  Renamed because, with Approvals/Calendar/Advanced Settings all graduated to top-level items (see
+  below and this list), all that's left inside is gamification config (Goals/Store/Badges) — "Game
+  Settings" describes that scope more accurately than the old catch-all "Grown ups" label.
 - **Calendar** — opens `CalendarDrawer` (`src/components/parent/CalendarDrawer.tsx`), a thin
   `Modal` wrapper around `CalendarPanel` (view/edit past days) — a first-class `AccountMenu` item,
   sibling to "Game Settings", rather than nested inside the Game Settings dashboard.
-- **Log** — opens `LogDrawer` (`src/components/parent/LogDrawer.tsx`), a thin `Modal` wrapper
-  around `LogPanel` (`src/components/parent/LogPanel.tsx`). Merges and time-sorts (newest first)
-  two separate fields for display: the active profile's `actionLog` — kid-progress and reward
-  actions only (food logged/removed, daily-goal steps, bonus-item taps, game wins, reward
-  requested/approved/declined, points approved/declined, plus the Calendar's `*ForDay`
-  equivalents), each with label, signed point delta, and timestamp — and the shared `auditLog` —
-  household admin/destructive actions (catalog edits, settings, profile CRUD, danger-zone resets,
-  sync/ownership changes), each attributed to the parent account that made it. Only `food`/`goal`/
-  `bonus` action entries get an "Undo" button, shown when they're the most-recent non-undone entry
-  for their (type, item, day) key — tapping calls `undoActionLogEntry(entry)`, which dispatches to
-  the same exact-inverse context function (`removeFood`/`decrementGoal`/`undoBonusItem` or their
-  `*ForDay` variants) used by the live UI. On a kid-only device, that original `food`/`goal`/`bonus`
-  entry logs `pts: 0` (the points are pending, not yet real) until a parent resolves it from
-  Approvals, which appends its own `pointsApproved`/`pointsDeclined` entry carrying the actual point
-  delta — mirroring how `rewardRequested` logs `pts: 0` and `rewardApproved`/`rewardDeclined` carry
-  the real delta. Game/reward/points entries and all audit entries are informational-only — never
-  undoable here (declining or self-cancelling a still-pending item is done from Approvals or the
-  live UI, not the Log). The two fields stay separate in state (`actionLog` is per-profile,
-  `auditLog` is shared/mirrored); the merge happens only at render time in `LogPanel`.
 - **Profiles** — opens `ProfilesManager`, full CRUD for kid profiles (add/edit name, avatar
   icon+colors, theme; delete with confirm; never deletes the last profile).
 - **Advanced Settings** — opens `AdvancedSettingsDrawer`
   (`src/components/parent/AdvancedSettingsDrawer.tsx`) directly — a `Modal` wrapper around
-  `SettingsPanel`, which is itself a two-level menu/drill-down router (see below). It's a top-level
-  `AccountMenu` item, sibling to Profiles, since it's account-level config rather than day-to-day
-  parenting tasks.
+  `SettingsPanel`, which is itself a two-level menu/drill-down router (see below), and includes
+  the Log (see below) as one of its nested panels. It's a top-level `AccountMenu` item, sibling to
+  Profiles, since it's account-level config rather than day-to-day parenting tasks.
 
 The unlocked state (`grownUpUnlocked` in `GravyContext`) is not stored anywhere — it's recomputed on
 every render from `authUser` (the Supabase Auth session, which persists across tab/PWA restarts) and
 `householdStatus.isMember` (this device's membership in its currently-synced household). So a device
 stays unlocked across reopens as long as the parent stays signed in and synced to a household they
 belong to; it only re-locks when they sign out (or this device's household membership changes).
-`GrownUpsDrawer`/`ProfilesManager`/`ProfileSwitcher`/`AdvancedSettingsDrawer`/`LogDrawer`/
-`CalendarDrawer` don't render `SignInPrompt` themselves; they assume they're only opened from
-`AccountMenu` once unlocked. `ApprovalsDrawer` is the one exception — it's reached from the `TopBar`
-bell, not `AccountMenu`, so it gates itself (see above) rather than assuming.
+`GrownUpsDrawer`/`ProfilesManager`/`ProfileSwitcher`/`AdvancedSettingsDrawer`/`CalendarDrawer` don't
+render `SignInPrompt` themselves; they assume they're only opened from `AccountMenu` once unlocked.
+`ApprovalsDrawer` is the one exception — it's reached from the `TopBar` bell, not `AccountMenu`, so
+it gates itself (see above) rather than assuming.
 
-Every drawer reached directly from `AccountMenu` (the six above) is a first-level drawer and gets
+Every drawer reached directly from `AccountMenu` (the five above) is a first-level drawer and gets
 a working back button via the shared `Modal` component's optional `onBack` prop — `Modal` renders a
 back-chevron button ahead of the title when `onBack` is passed. Each of these drawers' `onBack`
 closes itself and reopens `AccountMenu` (wired in `AppShell`, `src/App.tsx`). `ApprovalsDrawer` has
@@ -136,15 +117,16 @@ here — it's reached directly from the `TopBar` bell icon via the standalone, s
 `CalendarPanel` (view/edit past days) is no longer nested here — it's reached directly from
 `AccountMenu`'s top-level "Calendar" item via the standalone `CalendarDrawer` (see above). The old
 "Admin Log" panel (`AuditLogPanel`) was deleted; its content (the shared `auditLog` field) is now
-merged into the top-level `LogPanel` reached via `AccountMenu` → "Log" (see above).
+merged into `LogPanel`, nested inside `SettingsPanel` and reached via `AccountMenu` → "Advanced
+Settings" → "Log" (see below).
 
 `SettingsPanel` (`src/components/parent/SettingsPanel.tsx`) is **not** one of `ParentDashboard`'s
 root-menu panels — it's reached directly from `AccountMenu`'s "Advanced Settings" item via
 `AdvancedSettingsDrawer`, not nested inside the Game Settings dashboard. It follows the same
 two-level menu/drill-down router shape as `ParentDashboard`: a local `root` state (`'menu' |
-SettingsDest` where `SettingsDest` is `'timezone' | 'account' | 'sync' | 'reset'`) that renders
-`SettingsMenu` (a `menu-card` list, mirroring `RootMenu`) at `'menu'`, and drills into one panel
-with a back button otherwise:
+SettingsDest` where `SettingsDest` is `'timezone' | 'account' | 'sync' | 'log' | 'reset'`) that
+renders `SettingsMenu` (a `menu-card` list, mirroring `RootMenu`) at `'menu'`, and drills into one
+panel with a back button otherwise:
 
 - `TimezonePanel` — household time zone.
 - `AccountPanel` — signed-in-only view (email + Sign out). There's no not-signed-in form here
@@ -154,6 +136,24 @@ with a back button otherwise:
 - `SyncPanel` (menu label "Family Code") — household code create/join/change/leave. The old "Secure
   this household" claim banner is gone: every household is now claimed (owned) at creation, so the
   unclaimed-state branch it handled can no longer occur.
+- `LogPanel` (`src/components/parent/LogPanel.tsx`, menu label "Log") — merges and time-sorts
+  (newest first) two separate fields for display: the active profile's `actionLog` — kid-progress
+  and reward actions only (food logged/removed, daily-goal steps, bonus-item taps, game wins,
+  reward requested/approved/declined, points approved/declined, plus the Calendar's `*ForDay`
+  equivalents), each with label, signed point delta, and timestamp — and the shared `auditLog` —
+  household admin/destructive actions (catalog edits, settings, profile CRUD, danger-zone resets,
+  sync/ownership changes), each attributed to the parent account that made it. Only `food`/`goal`/
+  `bonus` action entries get an "Undo" button, shown when they're the most-recent non-undone entry
+  for their (type, item, day) key — tapping calls `undoActionLogEntry(entry)`, which dispatches to
+  the same exact-inverse context function (`removeFood`/`decrementGoal`/`undoBonusItem` or their
+  `*ForDay` variants) used by the live UI. On a kid-only device, that original `food`/`goal`/`bonus`
+  entry logs `pts: 0` (the points are pending, not yet real) until a parent resolves it from
+  Approvals, which appends its own `pointsApproved`/`pointsDeclined` entry carrying the actual point
+  delta — mirroring how `rewardRequested` logs `pts: 0` and `rewardApproved`/`rewardDeclined` carry
+  the real delta. Game/reward/points entries and all audit entries are informational-only — never
+  undoable here (declining or self-cancelling a still-pending item is done from Approvals or the
+  live UI, not the Log). The two fields stay separate in state (`actionLog` is per-profile,
+  `auditLog` is shared/mirrored); the merge happens only at render time in `LogPanel`.
 - `DangerZonePanel` — reset today / reset everything (surfaced as "Reset" on the menu card).
 
 `AdvancedSettingsDrawer` owns the `header` state and passes `onHeaderChange` into `SettingsPanel`,

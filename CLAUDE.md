@@ -82,13 +82,13 @@ Deep detail lives in `docs/`. Read the linked file when working in that area.
   there's no PIN; `isGrownUpUnlocked` (also in `src/state/auth.ts`) is the sole access gate,
   derived from the signed-in account and its household membership.
 - **UI surfaces** (`docs/ui-surfaces.md`) — kid view + `AccountMenu` (the single `grownUpUnlocked`
-  lock gating Approvals/Profiles/Game Settings/Calendar/Log/Advanced Settings, now account-based
+  lock gating Approvals/Profiles/Game Settings/Calendar/Advanced Settings, now account-based
   via `SignInPrompt` rather than PIN-based); the "Game Settings" dashboard (`ParentDashboard`
   component, formerly labeled "Grown ups") two-level router and its panels
   (`GoalsPanel`/`StorePanel`/`BadgesPanel`); `ApprovalsPanel`/`CalendarPanel` reached directly from
-  `AccountMenu` via `ApprovalsDrawer`/`CalendarDrawer`, plus `SettingsPanel` reached via
-  `AdvancedSettingsDrawer`; `Onboarding`'s three-way account fork (new family / sign in to join /
-  kid device).
+  `AccountMenu` via `ApprovalsDrawer`/`CalendarDrawer`, plus `SettingsPanel` (including the nested
+  `LogPanel`) reached via `AdvancedSettingsDrawer`; `Onboarding`'s three-way account fork (new
+  family / sign in to join / kid device).
 - **Subsystems** (`docs/systems.md`) — Arcade/games hub (`src/data/games.ts`, `completeGameRound`,
   `DAILY_GAME_WIN_CAP`); Rank ladder (`src/data/ranks.ts`, `getRank`, `useTodaySnapshot`); 71 Badges
   (`src/data/badges.ts`, `src/state/badges.ts`, `badgeConfig`); Icon system (`src/data/icons.ts`,
